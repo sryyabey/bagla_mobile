@@ -1,0 +1,23 @@
+{
+    "loginTitle": "Kayıt ol Bagla.app",
+    "emailLabel": "E-mail",
+    "passwordLabel": "Şifre",
+    "loginButton": "Giriş yap",
+    "forgotPassword": "Şifreyi unuttun?",
+    "registerButton": "Kayıt ol",
+    "facebookLogin": "Continue with Facebook",
+    "googleLoginButton": "Google ile giriş yap",
+    "googleLogin": "Google ile devam et",
+    "onboardTitle1": "Linklerini tek yerde topla",
+    "onboardDesc1": "Tüm önemli bağlantılarını tek bir yerde kolayca paylaş.",
+    "onboardTitle2": "Tıklamaları takip et",
+    "onboardDesc2": "Bağlantılarına kim, ne zaman tıkladı kolayca gör.",
+    "onboardTitle3": "Ücretsiz kullan",
+    "onboardDesc3": "Bagla.app tamamen ücretsizdir, hemen kullanmaya başla!",
+    "menuTitle": "Menu",
+    "myLinks": "Linklerim",
+    "themes": "Temalar",
+    "profile": "Profil",
+    "exit": "Çıkış",
+    "support": "Destek"
+}

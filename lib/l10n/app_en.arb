@@ -1,0 +1,24 @@
+{
+    "loginTitle": "Log in to Bagla.app",
+    "emailLabel": "Email",
+    "passwordLabel": "Password",
+    "loginButton": "Log in",
+    "forgotPassword": "Forgot password?",
+    "registerButton": "Register",
+    "facebookLogin": "Facebook ile devam et",
+    "googleLoginButton": "Log in with Google",
+    "googleLogin": "Continue with Google",
+    "onboardTitle1": "Gather your links in one place",
+    "onboardDesc1": "Easily share all your important links from a single profile.",
+    "onboardTitle2": "Track your clicks",
+    "onboardDesc2": "See who clicked your links and when they did.",
+    "onboardTitle3": "Use for free",
+    "onboardDesc3": "Bagla.app is completely free — start using it right away!",
+    "menuTitle": "Menu",
+    "myLinks": "My Links",
+    "themes": "Themes",
+    "profile": "Profile",
+    "exit": "Exit",
+    "support": "Support"
+
+}
