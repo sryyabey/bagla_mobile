@@ -7,10 +7,10 @@ class ThemesPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Themes'),
+        title: const Text('Temalar'),
       ),
       body: const Center(
-        child: Text('Tema seçimi burada olacak.'),
+        child: Text('Tema seçimi yakında eklenecek.'),
       ),
     );
   }

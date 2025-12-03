@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'app_localizations.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -19,10 +19,15 @@ class _LoginPageState extends State<LoginPage> {
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
   Locale _locale = const Locale('tr');
+  bool _isLoading = false;
 
   void login() async {
     final email = emailController.text;
     final password = passwordController.text;
+
+    setState(() {
+      _isLoading = true;
+    });
 
     try {
       final response = await http.post(
@@ -31,23 +36,38 @@ class _LoginPageState extends State<LoginPage> {
         body: jsonEncode({'email': email, 'password': password}),
       );
 
+      debugPrint('Response status: ${response.statusCode}');
+
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        final token = data['token'];
+        final token = data['token'] ??
+            (data['data'] != null ? data['data']['token'] : null) ??
+            data['access_token'];
 
-        final prefs = await SharedPreferences.getInstance();
-        await prefs.setString('authToken', token);
+        if (token != null) {
+          debugPrint('Token: $token');
 
-        if (!mounted) return;
-        Navigator.pushReplacement(
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.setString('bearer_token', token);
+          await prefs
+              .reload(); // wait for the preferences to be reloaded from disk
+          final check = prefs.getString('bearer_token');
+          debugPrint('🧪 Kaydedilen token kontrol: $check');
+          if (!mounted) return;
+          Navigator.pushReplacement(
             context,
             MaterialPageRoute(
-              builder: (context) => LoginPage(
-                onLocaleChange: (locale) {
-                  // Optional: Add your locale change logic here
-                },
-              ),
-            ));
+              builder: (context) => DashboardPage(),
+            ),
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Token alınamadı.'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -64,6 +84,12 @@ class _LoginPageState extends State<LoginPage> {
           backgroundColor: Colors.red,
         ),
       );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
     }
   }
 
@@ -164,21 +190,27 @@ class _LoginPageState extends State<LoginPage> {
                   width: double.infinity,
                   height: 50,
                   child: ElevatedButton(
-                    onPressed: login,
+                    onPressed: _isLoading ? null : login,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.white,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
                     ),
-                    child: Text(
-                      loc.loginTitle,
-                      style: const TextStyle(
-                        color: Color(0xFF2575FC),
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
+                    child: _isLoading
+                        ? const SizedBox(
+                            height: 20,
+                            width: 20,
+                            child: CircularProgressIndicator(strokeWidth: 2.5),
+                          )
+                        : Text(
+                            loc.loginTitle,
+                            style: const TextStyle(
+                              color: Color(0xFF2575FC),
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
                   ),
                 ),
                 const SizedBox(height: 30),
