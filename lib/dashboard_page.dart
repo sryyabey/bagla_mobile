@@ -6,6 +6,7 @@ import 'pages/themes.dart';
 import 'pages/myLinks.dart';
 import 'pages/profile.dart';
 import 'pages/support.dart';
+import 'pages/working_preferences.dart';
 
 class DashboardPage extends StatelessWidget {
   const DashboardPage({super.key});
@@ -81,6 +82,18 @@ class DashboardPage extends StatelessWidget {
                   context,
                   MaterialPageRoute(
                     builder: (context) => const ThemesPage(),
+                  ),
+                );
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.schedule),
+              title: const Text('Çalışma Saatleri'),
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const WorkingPreferencesPage(),
                   ),
                 );
               },
