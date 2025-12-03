@@ -7,6 +7,7 @@ import 'pages/myLinks.dart';
 import 'pages/profile.dart';
 import 'pages/support.dart';
 import 'pages/working_preferences.dart';
+import 'pages/appointments.dart';
 
 class DashboardPage extends StatelessWidget {
   const DashboardPage({super.key});
@@ -94,6 +95,18 @@ class DashboardPage extends StatelessWidget {
                   context,
                   MaterialPageRoute(
                     builder: (context) => const WorkingPreferencesPage(),
+                  ),
+                );
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.event),
+              title: const Text('Randevular'),
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const AppointmentsPage(),
                   ),
                 );
               },
