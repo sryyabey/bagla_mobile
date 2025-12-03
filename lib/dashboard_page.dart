@@ -47,6 +47,19 @@ class DashboardPage extends StatelessWidget {
               ),
             ),
             ListTile(
+              leading: const Icon(Icons.person),
+              title: Text(loc.profile),
+              onTap: () {
+                // Profil sayfasına yönlendirme
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const ProfilePage(),
+                  ),
+                );
+              },
+            ),
+            ListTile(
               leading: const Icon(Icons.link),
               title: Text(loc.myLinks),
               onTap: () {
@@ -68,19 +81,6 @@ class DashboardPage extends StatelessWidget {
                   context,
                   MaterialPageRoute(
                     builder: (context) => const ThemesPage(),
-                  ),
-                );
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.person),
-              title: Text(loc.profile),
-              onTap: () {
-                // Profil sayfasına yönlendirme
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const ProfilePage(),
                   ),
                 );
               },
