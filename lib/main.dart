@@ -2,9 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'app_localizations.dart';
 import 'package:shared_preferences/shared_preferences.dart'; // Added import for SharedPreferences
-import 'dart:convert'; // Added import for jsonEncode
-import 'package:http/http.dart' as http; // Added import for http
 import 'dashboard_page.dart';
+import 'login_page.dart';
 
 const String apiBaseUrl =
     'http://10.0.2.2:8000'; // Created constant for API base URL
@@ -33,8 +32,8 @@ class _BaglaAppState extends State<BaglaApp> {
 
   void _checkLoginStatus() async {
     final prefs = await SharedPreferences.getInstance();
-    final token = prefs.getString('authToken');
-    if (token != null) {
+    final token = prefs.getString('bearer_token') ?? prefs.getString('authToken');
+    if (token != null && token.isNotEmpty) {
       setState(() {
         _isLoggedIn = true;
       });
@@ -258,207 +257,6 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               ),
             ),
             const SizedBox(height: 16),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class LoginPage extends StatefulWidget {
-  final void Function(Locale) onLocaleChange;
-
-  const LoginPage({super.key, required this.onLocaleChange});
-
-  @override
-  State<LoginPage> createState() => _LoginPageState();
-}
-
-class _LoginPageState extends State<LoginPage> {
-  final emailController = TextEditingController();
-  final passwordController = TextEditingController();
-
-  void login() async {
-    final email = emailController.text;
-    final password = passwordController.text;
-
-    final response = await http.post(
-      Uri.parse('$apiBaseUrl/api/login'),
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({'email': email, 'password': password}),
-    );
-
-    if (response.statusCode == 200) {
-      final data = jsonDecode(response.body);
-      final token = data['token'];
-
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString('authToken', token);
-
-      print('Bearer Token saved: $token');
-
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => const DashboardPage()),
-      );
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-              'Giriş başarısız: ${jsonDecode(response.body)['message'] ?? 'Hata oluştu.'}'),
-          backgroundColor: Colors.red,
-        ),
-      );
-      print('Giriş başarısız: ${response.body}');
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final turquoise = const Color(0xFF00C6AE);
-
-    return Scaffold(
-      body: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 48),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Text(
-                  'Already have an Account?',
-                  style: TextStyle(
-                    fontSize: 18,
-                    color: Colors.grey[700],
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Image.asset(
-                    'assets/logo.png',
-                    height: 80,
-                    fit: BoxFit.contain,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 48),
-            TextField(
-              controller: emailController,
-              style: const TextStyle(color: Colors.black87),
-              decoration: InputDecoration(
-                labelText: 'Email',
-                labelStyle: TextStyle(color: Colors.grey[600]),
-                enabledBorder: UnderlineInputBorder(
-                  borderSide: BorderSide(color: Colors.grey.shade400),
-                ),
-                focusedBorder: UnderlineInputBorder(
-                  borderSide: BorderSide(color: turquoise, width: 2),
-                ),
-              ),
-            ),
-            const SizedBox(height: 24),
-            TextField(
-              controller: passwordController,
-              obscureText: true,
-              style: const TextStyle(color: Colors.black87),
-              decoration: InputDecoration(
-                labelText: 'Password',
-                labelStyle: TextStyle(color: Colors.grey[600]),
-                enabledBorder: UnderlineInputBorder(
-                  borderSide: BorderSide(color: Colors.grey.shade400),
-                ),
-                focusedBorder: UnderlineInputBorder(
-                  borderSide: BorderSide(color: turquoise, width: 2),
-                ),
-              ),
-            ),
-            const SizedBox(height: 36),
-            SizedBox(
-              width: double.infinity,
-              height: 50,
-              child: ElevatedButton(
-                onPressed: login,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: turquoise,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(30),
-                  ),
-                ),
-                child: Text(
-                  AppLocalizations.of(context)!.loginButton,
-                  style: const TextStyle(fontSize: 18, color: Colors.white),
-                ),
-              ),
-            ),
-            const SizedBox(height: 16),
-            Center(
-              child: TextButton(
-                onPressed: () {
-                  // Kayıt sayfasına yönlendirme yapılabilir
-                },
-                child: const Text(
-                  'New user? Register Now',
-                  style: TextStyle(
-                    decoration: TextDecoration.underline,
-                    fontSize: 16,
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(height: 36),
-            Row(
-              children: [
-                Expanded(
-                  child: Divider(
-                    color: Colors.grey.shade400,
-                    thickness: 1,
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 12),
-                  child: Text(
-                    'Use other Methods',
-                    style: TextStyle(color: Colors.grey[600]),
-                  ),
-                ),
-                Expanded(
-                  child: Divider(
-                    color: Colors.grey.shade400,
-                    thickness: 1,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 24),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                IconButton(
-                  onPressed: () {
-                    // Facebook login fonksiyonu buraya eklenecek
-                    print('Facebook ile giriş yapılacak');
-                  },
-                  icon: Image.asset(
-                    'assets/facebook_icon.png',
-                    height: 32,
-                    width: 32,
-                  ),
-                ),
-                const SizedBox(width: 32),
-                IconButton(
-                  onPressed: () {
-                    // Google login fonksiyonu buraya eklenecek
-                    print('Google ile giriş yapılacak');
-                  },
-                  icon: Image.asset(
-                    'assets/google_icon.png',
-                    height: 32,
-                    width: 32,
-                  ),
-                ),
-              ],
-            ),
           ],
         ),
       ),

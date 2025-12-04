@@ -3,6 +3,8 @@ import 'app_localizations.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 import 'dashboard_page.dart';
 import 'config.dart';
 
@@ -18,72 +20,85 @@ class LoginPage extends StatefulWidget {
 class _LoginPageState extends State<LoginPage> {
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
+  final FlutterSecureStorage _secureStorage = const FlutterSecureStorage();
+  final GoogleSignIn _googleSignIn = GoogleSignIn(scopes: ['email']);
   Locale _locale = const Locale('tr');
   bool _isLoading = false;
+  bool _isGoogleLoading = false;
+  String? _error;
 
-  void login() async {
-    final email = emailController.text;
+  Future<void> _storeToken(String token) async {
+    try {
+      await _secureStorage.write(key: 'bearer_token', value: token);
+    } catch (e) {
+      debugPrint('Secure storage yazılamadı: $e');
+    }
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('bearer_token', token);
+  }
+
+  Future<void> _handleLoginSuccess(String token) async {
+    await _storeToken(token);
+    if (!mounted) return;
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(
+        builder: (context) => DashboardPage(),
+      ),
+    );
+  }
+
+  void _showError(String message) {
+    setState(() {
+      _error = message;
+    });
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.red,
+      ),
+    );
+  }
+
+  Future<void> _loginWithEmail() async {
+    final email = emailController.text.trim();
     final password = passwordController.text;
 
     setState(() {
       _isLoading = true;
+      _error = null;
     });
 
     try {
       final response = await http.post(
         Uri.parse('$apiBaseUrl/api/login'),
-        headers: {'Content-Type': 'application/json'},
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
         body: jsonEncode({'email': email, 'password': password}),
       );
-
-      debugPrint('Response status: ${response.statusCode}');
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         final token = data['token'] ??
             (data['data'] != null ? data['data']['token'] : null) ??
             data['access_token'];
-
         if (token != null) {
-          debugPrint('Token: $token');
-
-          final prefs = await SharedPreferences.getInstance();
-          await prefs.setString('bearer_token', token);
-          await prefs
-              .reload(); // wait for the preferences to be reloaded from disk
-          final check = prefs.getString('bearer_token');
-          debugPrint('🧪 Kaydedilen token kontrol: $check');
-          if (!mounted) return;
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(
-              builder: (context) => DashboardPage(),
-            ),
-          );
+          await _handleLoginSuccess(token);
         } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Token alınamadı.'),
-              backgroundColor: Colors.red,
-            ),
-          );
+          _showError('Token alınamadı.');
         }
+      } else if (response.statusCode == 401) {
+        final msg = _extractMessage(response.body) ?? 'Yetkisiz giriş.';
+        _showError(msg);
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-                'Giriş başarısız: ${jsonDecode(response.body)['message'] ?? 'Hata oluştu.'}'),
-            backgroundColor: Colors.red,
-          ),
-        );
+        final msg =
+            _extractMessage(response.body) ?? 'Giriş başarısız (HTTP ${response.statusCode}).';
+        _showError(msg);
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Sunucuya bağlanılamadı.'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      _showError('Sunucuya bağlanılamadı: $e');
     } finally {
       if (mounted) {
         setState(() {
@@ -91,6 +106,72 @@ class _LoginPageState extends State<LoginPage> {
         });
       }
     }
+  }
+
+  Future<void> _loginWithGoogle() async {
+    setState(() {
+      _isGoogleLoading = true;
+      _error = null;
+    });
+    try {
+      final account = await _googleSignIn.signIn();
+      if (account == null) {
+        _showError('Google giriş iptal edildi.');
+        return;
+      }
+      final auth = await account.authentication;
+      final idToken = auth.idToken;
+      if (idToken == null) {
+        _showError('Google idToken alınamadı.');
+        return;
+      }
+
+      final response = await http.post(
+        Uri.parse('$apiBaseUrl/api/login/google'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        body: jsonEncode({
+          'id_token': idToken,
+          'device_name': 'bagla_mobile',
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        final token = data['token'] ??
+            (data['data'] != null ? data['data']['token'] : null) ??
+            data['access_token'];
+        if (token != null) {
+          await _handleLoginSuccess(token);
+        } else {
+          _showError('Token alınamadı.');
+        }
+      } else {
+        final msg =
+            _extractMessage(response.body) ?? 'Google giriş başarısız (HTTP ${response.statusCode}).';
+        _showError(msg);
+      }
+    } catch (e) {
+      _showError('Google girişi başarısız: $e');
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isGoogleLoading = false;
+        });
+      }
+    }
+  }
+
+  String? _extractMessage(String body) {
+    try {
+      final decoded = jsonDecode(body);
+      if (decoded is Map && decoded['message'] != null) {
+        return decoded['message'].toString();
+      }
+    } catch (_) {}
+    return null;
   }
 
   void _onLocaleChanged(Locale? newLocale) {
@@ -190,7 +271,7 @@ class _LoginPageState extends State<LoginPage> {
                   width: double.infinity,
                   height: 50,
                   child: ElevatedButton(
-                    onPressed: _isLoading ? null : login,
+                    onPressed: _isLoading ? null : _loginWithEmail,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.white,
                       shape: RoundedRectangleBorder(
@@ -213,53 +294,45 @@ class _LoginPageState extends State<LoginPage> {
                           ),
                   ),
                 ),
-                const SizedBox(height: 30),
-                Row(
-                  children: [
-                    Expanded(
-                      child: ElevatedButton.icon(
-                        onPressed: () {
-                          // TODO: Implement Facebook login
-                        },
-                        icon: const Icon(Icons.facebook, color: Colors.white),
-                        label: Text(
-                          loc.facebookLogin,
-                          style: const TextStyle(color: Colors.white),
-                        ),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF3b5998),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          padding: const EdgeInsets.symmetric(vertical: 12),
-                        ),
-                      ),
+                const SizedBox(height: 20),
+                if (_error != null)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 12),
+                    child: Text(
+                      _error!,
+                      style: const TextStyle(color: Colors.yellowAccent),
                     ),
-                    const SizedBox(width: 20),
-                    Expanded(
-                      child: ElevatedButton.icon(
-                        onPressed: () {
-                          // TODO: Implement Google login
-                        },
-                        icon: Image.asset(
-                          'assets/google_logo.png',
-                          height: 24,
-                          width: 24,
-                        ),
-                        label: Text(
-                          loc.googleLogin,
-                          style: const TextStyle(color: Colors.black87),
-                        ),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.white,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
+                  ),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
+                    onPressed: _isGoogleLoading ? null : _loginWithGoogle,
+                    icon: _isGoogleLoading
+                        ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2.5,
+                              valueColor: AlwaysStoppedAnimation(Colors.black),
+                            ),
+                          )
+                        : Image.asset(
+                            'assets/google_icon.png',
+                            height: 24,
+                            width: 24,
                           ),
-                          padding: const EdgeInsets.symmetric(vertical: 12),
-                        ),
-                      ),
+                    label: Text(
+                      _isGoogleLoading ? 'Bağlanıyor...' : 'Google ile giriş',
+                      style: const TextStyle(color: Colors.black87),
                     ),
-                  ],
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                    ),
+                  ),
                 ),
                 const SizedBox(height: 40),
               ],
