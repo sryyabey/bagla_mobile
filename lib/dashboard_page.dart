@@ -8,6 +8,7 @@ import 'pages/profile.dart';
 import 'pages/support.dart';
 import 'pages/working_preferences.dart';
 import 'pages/appointments.dart';
+import 'pages/sms_templates.dart';
 
 class DashboardPage extends StatelessWidget {
   const DashboardPage({super.key});
@@ -107,6 +108,18 @@ class DashboardPage extends StatelessWidget {
                   context,
                   MaterialPageRoute(
                     builder: (context) => const AppointmentsPage(),
+                  ),
+                );
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.sms),
+              title: const Text('SMS Şablonları'),
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const SmsTemplatesPage(),
                   ),
                 );
               },
