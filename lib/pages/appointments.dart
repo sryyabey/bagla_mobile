@@ -28,8 +28,12 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
   bool _loadingList = true;
   bool _savingAppointment = false;
   bool _savingQuick = false;
+  bool _creatingRebook = false;
+  bool _loadingCustomerInfo = false;
   String? _error;
   bool _quickIsFirstAppointment = false;
+  bool _quickNoSms = false;
+  bool _quickNoReminder = false;
   bool _showQuickForm = false;
   bool _loadingSlots = false;
   String? _slotsError;
@@ -59,6 +63,8 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
   bool _showFilters = false;
   final List<String> _timeOptions =
       List.generate(24 * 12, (i) => '${(i ~/ 12).toString().padLeft(2, '0')}:${((i % 12) * 5).toString().padLeft(2, '0')}');
+  String _lastPhoneDigits = '';
+  int _lastPhoneTextLength = 0;
 
   Map<String, String> _buildValidFilters() {
     final Map<String, String> params = {};
@@ -292,6 +298,18 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
     }
   }
 
+  int? _defaultStatusId() {
+    if (_appointmentStatuses.isEmpty) return null;
+    try {
+      final pending = _appointmentStatuses.firstWhere(
+        (s) => (s['alias'] ?? '').toString().toLowerCase() == 'pending',
+      );
+      return pending['id'] as int?;
+    } catch (_) {
+      return _appointmentStatuses.first['id'] as int?;
+    }
+  }
+
   void _resetQuickForm() {
     setState(() {
       _quickNameController.clear();
@@ -302,10 +320,14 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
       _quickDateController.clear();
       _quickTimeController.clear();
       _quickNoteController.clear();
+      _lastPhoneDigits = '';
+      _lastPhoneTextLength = 0;
       _selectedSlotTime = null;
       _timeSlots = [];
       _slotsError = null;
       _quickIsFirstAppointment = false;
+      _quickNoSms = false;
+      _quickNoReminder = false;
       _showQuickForm = false;
     });
   }
@@ -397,6 +419,8 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
           'time': time,
           'note': note,
           'is_first_appointment': _quickIsFirstAppointment ? 1 : 0,
+          'no_sms': _quickNoSms,
+          'no_reminder': _quickNoReminder,
         }),
       );
 
@@ -602,9 +626,25 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
   void _formatPhoneInput() {
     if (_isFormattingPhone) return;
     _isFormattingPhone = true;
-    final formatted = _maskPhone(_quickPhoneController.text);
-    _quickPhoneController.value =
-        _quickPhoneController.value.copyWith(text: formatted, selection: TextSelection.collapsed(offset: formatted.length));
+    final currentRaw = _quickPhoneController.text;
+    final currentDigits = currentRaw.replaceAll(RegExp(r'\D'), '');
+
+    // Allow backspace on formatting chars by trimming a digit when only mask chars were removed.
+    String normalizedDigits = currentDigits;
+    if (currentRaw.length < _lastPhoneTextLength &&
+        currentDigits.length == _lastPhoneDigits.length &&
+        _lastPhoneDigits.isNotEmpty) {
+      normalizedDigits =
+          _lastPhoneDigits.substring(0, _lastPhoneDigits.length - 1);
+    }
+
+    final formatted = _maskPhone(normalizedDigits);
+    _quickPhoneController.value = _quickPhoneController.value.copyWith(
+      text: formatted,
+      selection: TextSelection.collapsed(offset: formatted.length),
+    );
+    _lastPhoneDigits = normalizedDigits;
+    _lastPhoneTextLength = formatted.length;
     _isFormattingPhone = false;
   }
 
@@ -751,6 +791,80 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
       if (mounted) {
         setState(() {
           _savingAppointment = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _createAppointmentForCustomer({
+    required int customerId,
+    required String date,
+    required String time,
+    required String notes,
+    required bool noSms,
+    required bool noReminder,
+    int? appointmentStatusId,
+  }) async {
+    if (_creatingRebook) return;
+
+    if (date.isEmpty || time.isEmpty) {
+      _showSnack('Tarih ve saat zorunludur.');
+      return;
+    }
+
+    final statusId = appointmentStatusId ?? _defaultStatusId();
+    if (statusId == null) {
+      _showSnack('Randevu durumu bulunamadı.');
+      return;
+    }
+
+    final token = await _getToken();
+    if (token == null || token.isEmpty) {
+      _showSnack('Oturum bulunamadı. Lütfen tekrar giriş yapın.');
+      return;
+    }
+
+    setState(() {
+      _creatingRebook = true;
+    });
+
+    try {
+      final response = await http.post(
+        Uri.parse('$apiBaseUrl/api/appointments'),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode({
+          'customer_id': customerId,
+          'appointment_status_id': statusId,
+          'date': date,
+          'time': time,
+          'notes': notes,
+          'no_sms': noSms,
+          'no_reminder': noReminder,
+        }),
+      );
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        _showSnack('Yeni randevu oluşturuldu.', success: true);
+        await _fetchAppointments();
+      } else {
+        String message =
+            'Randevu oluşturulamadı (HTTP ${response.statusCode}).';
+        try {
+          final decoded = jsonDecode(response.body);
+          message = decoded['message']?.toString() ?? message;
+        } catch (_) {}
+        _showSnack(message);
+      }
+    } catch (e) {
+      _showSnack('Randevu oluşturulamadı: $e');
+    } finally {
+      if (mounted) {
+        setState(() {
+          _creatingRebook = false;
         });
       }
     }
@@ -1098,6 +1212,626 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
     );
   }
 
+  void _showCustomerInfo(Map<String, dynamic> appt) {
+    final int? appointmentId = appt['id'] is int
+        ? appt['id'] as int
+        : int.tryParse(appt['id']?.toString() ?? '');
+    if (appointmentId == null) {
+      _showSnack('Randevu bilgisi bulunamadı.');
+      return;
+    }
+
+    Map<String, dynamic>? info;
+    String? loadError;
+
+    Future<void> fetchInfo(StateSetter setModalState) async {
+      final token = await _getToken();
+      if (token == null || token.isEmpty) {
+        setModalState(() {
+          loadError = 'Oturum bulunamadı.';
+        });
+        return;
+      }
+
+      setModalState(() {
+        _loadingCustomerInfo = true;
+        loadError = null;
+      });
+
+      try {
+        final response = await http.post(
+          Uri.parse('$apiBaseUrl/api/appointments/customer-info'),
+          headers: {
+            'Authorization': 'Bearer $token',
+            'Accept': 'application/json',
+            'Content-Type': 'application/json',
+          },
+          body: jsonEncode({'appointment_id': appointmentId}),
+        );
+
+        if (response.statusCode == 200) {
+          final decoded = jsonDecode(response.body);
+          final data = decoded['data'] ?? decoded;
+          setModalState(() {
+            info = Map<String, dynamic>.from(data);
+            _loadingCustomerInfo = false;
+          });
+        } else {
+          String message =
+              'Bilgiler alınamadı (HTTP ${response.statusCode}).';
+          try {
+            final decoded = jsonDecode(response.body);
+            message = decoded['message']?.toString() ?? message;
+          } catch (_) {}
+          setModalState(() {
+            loadError = message;
+            _loadingCustomerInfo = false;
+          });
+        }
+      } catch (e) {
+        setModalState(() {
+          loadError = 'Bilgiler alınamadı: $e';
+          _loadingCustomerInfo = false;
+        });
+      }
+    }
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (ctx, setModalState) {
+            if (info == null && loadError == null && !_loadingCustomerInfo) {
+              fetchInfo(setModalState);
+            }
+            final recent = (info?['recent_appointments'] is List)
+                ? List<Map<String, dynamic>>.from(
+                    (info!['recent_appointments'] as List)
+                        .map((e) => Map<String, dynamic>.from(e)))
+                : <Map<String, dynamic>>[];
+            return Padding(
+              padding: EdgeInsets.only(
+                bottom: MediaQuery.of(ctx).viewInsets.bottom,
+                left: 16,
+                right: 16,
+                top: 16,
+              ),
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text(
+                          'Müşteri Önizleme',
+                          style: TextStyle(
+                              fontSize: 16, fontWeight: FontWeight.bold),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.close),
+                          onPressed: () => Navigator.of(ctx).pop(),
+                        ),
+                      ],
+                    ),
+                    if (_loadingCustomerInfo)
+                      const LinearProgressIndicator(minHeight: 2),
+                    if (loadError != null)
+                      Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 8),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                loadError!,
+                                style: const TextStyle(color: Colors.red),
+                              ),
+                            ),
+                            IconButton(
+                              icon: const Icon(Icons.refresh),
+                              onPressed: () => fetchInfo(setModalState),
+                            ),
+                          ],
+                        ),
+                    ),
+                    if (info != null) ...[
+                      const SizedBox(height: 8),
+                      Card(
+                        elevation: 0,
+                        color: Colors.grey.shade100,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Padding(
+                          padding: const EdgeInsets.all(12),
+                          child: Row(
+                            children: [
+                              CircleAvatar(
+                                backgroundColor: Colors.blueGrey.shade50,
+                                child: const Icon(Icons.person,
+                                    color: Colors.blueGrey),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      '${info?['customer_name'] ?? ''} ${info?['customer_lastname'] ?? ''}'
+                                          .trim(),
+                                      style: const TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w700,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    if ((info?['customer_phone'] ?? '')
+                                        .toString()
+                                        .isNotEmpty)
+                                      Row(
+                                        children: [
+                                          const Icon(Icons.phone,
+                                              size: 16, color: Colors.grey),
+                                          const SizedBox(width: 6),
+                                          Text(info?['customer_phone'] ?? ''),
+                                        ],
+                                      ),
+                                    if ((info?['customer_email'] ?? '')
+                                        .toString()
+                                        .isNotEmpty)
+                                      Row(
+                                        children: [
+                                          const Icon(Icons.email,
+                                              size: 16, color: Colors.grey),
+                                          const SizedBox(width: 6),
+                                          Text(info?['customer_email'] ?? ''),
+                                        ],
+                                      ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: const [
+                          Text(
+                            'Son Randevular',
+                            style: TextStyle(
+                                fontSize: 14, fontWeight: FontWeight.bold),
+                          ),
+                          Icon(Icons.history, size: 18, color: Colors.grey),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      if (recent.isEmpty)
+                        const Text('Kayıt bulunamadı.')
+                      else
+                        ...recent.map((r) {
+                          final date = _formatDate(r['date']?.toString());
+                          final time = _formatTime(r['time']);
+                          final status = (r['status'] ?? '').toString();
+                          final notes = (r['notes'] ?? '').toString();
+                          return Card(
+                            elevation: 0,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
+                              side: BorderSide(
+                                color: Colors.grey.shade200,
+                              ),
+                            ),
+                            margin: const EdgeInsets.only(bottom: 8),
+                            child: Padding(
+                              padding: const EdgeInsets.all(12),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Text(
+                                        '$date • $time',
+                                        style: const TextStyle(
+                                            fontWeight: FontWeight.w600),
+                                      ),
+                                      if (status.isNotEmpty)
+                                        Chip(
+                                          label: Text(
+                                            status.toUpperCase(),
+                                            style: const TextStyle(
+                                                fontSize: 11,
+                                                fontWeight: FontWeight.bold),
+                                          ),
+                                          backgroundColor:
+                                              Colors.blueGrey.shade50,
+                                          materialTapTargetSize:
+                                              MaterialTapTargetSize.shrinkWrap,
+                                          padding: const EdgeInsets.symmetric(
+                                              horizontal: 8, vertical: 0),
+                                        ),
+                                    ],
+                                  ),
+                                  if (notes.isNotEmpty) ...[
+                                    const SizedBox(height: 6),
+                                    Text(
+                                      notes,
+                                      style:
+                                          const TextStyle(color: Colors.black87),
+                                    ),
+                                  ],
+                                ],
+                              ),
+                            ),
+                          );
+                        }),
+                    ],
+                    const SizedBox(height: 12),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  void _showRebookSheet(Map<String, dynamic> appt) {
+    final int? customerId = appt['customer_id'] is int
+        ? appt['customer_id'] as int
+        : int.tryParse(appt['customer_id']?.toString() ?? '');
+    final customer = appt['customer'] is Map ? appt['customer'] : null;
+    final String customerName =
+        (customer?['name'] ?? '').toString().isNotEmpty
+            ? customer['name'].toString()
+            : 'Müşteri #${appt["customer_id"] ?? ""}';
+
+    final TextEditingController dateCtrl = TextEditingController();
+    final TextEditingController timeCtrl = TextEditingController();
+    final TextEditingController notesCtrl = TextEditingController();
+
+    List<Map<String, dynamic>> localSlots = [];
+    String? localSlotsError;
+    bool localLoadingSlots = false;
+    String? localSelectedTime;
+    bool localNoSms = false;
+    bool localNoReminder = false;
+    int? localSelectedStatusId = _defaultStatusId();
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (ctx, setModalState) {
+            Future<void> loadSlots() async {
+              final dateInput = dateCtrl.text.trim();
+              if (dateInput.isEmpty) {
+                _showSnack('Önce tarih girin.');
+                return;
+              }
+
+              final token = await _getToken();
+              if (token == null || token.isEmpty) {
+                _showSnack('Oturum bulunamadı. Lütfen tekrar giriş yapın.');
+                return;
+              }
+
+              final formattedDate = _normalizeSlotDate(dateInput);
+              setModalState(() {
+                localLoadingSlots = true;
+                localSlotsError = null;
+                localSlots = [];
+                localSelectedTime = null;
+                timeCtrl.clear();
+              });
+
+              try {
+                final response = await http.get(
+                  Uri.parse(
+                      '$apiBaseUrl/api/appointments/time-slots?date=$formattedDate'),
+                  headers: {
+                    'Authorization': 'Bearer $token',
+                    'Accept': 'application/json',
+                  },
+                );
+
+                if (response.statusCode == 200) {
+                  final decoded = jsonDecode(response.body);
+                  final data = decoded['data'] ?? decoded;
+                  final slots = data is List
+                      ? List<Map<String, dynamic>>.from(
+                          data.map((e) => Map<String, dynamic>.from(e)))
+                      : <Map<String, dynamic>>[];
+                  setModalState(() {
+                    localSlots = slots;
+                    localSlotsError = null;
+                    localLoadingSlots = false;
+                  });
+                } else {
+                  setModalState(() {
+                    localSlotsError =
+                        'Saatler alınamadı (HTTP ${response.statusCode}).';
+                    localLoadingSlots = false;
+                  });
+                }
+              } catch (e) {
+                setModalState(() {
+                  localSlotsError = 'Saatler alınamadı: $e';
+                  localLoadingSlots = false;
+                });
+              }
+            }
+
+            Future<void> pickDate() async {
+              final today = DateTime.now();
+              final minDate = DateTime(today.year, today.month, today.day);
+              final maxDate = DateTime(today.year + 5, 12, 31);
+              DateTime initial = _clampDate(
+                _parseInputDateOrNow(dateCtrl.text),
+                minDate,
+                maxDate,
+              );
+              final picked = await showDatePicker(
+                context: ctx,
+                initialDate: initial,
+                firstDate: minDate,
+                lastDate: maxDate,
+              );
+              if (picked != null) {
+                setModalState(() {
+                  dateCtrl.text = _formatDateDisplay(picked);
+                  localSelectedTime = null;
+                  timeCtrl.clear();
+                  localSlots = [];
+                  localSlotsError = null;
+                });
+                await loadSlots();
+              }
+            }
+
+            return Padding(
+              padding: EdgeInsets.only(
+                bottom: MediaQuery.of(ctx).viewInsets.bottom,
+                left: 16,
+                right: 16,
+                top: 16,
+              ),
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'Yeniden Randevu Ver',
+                              style: TextStyle(
+                                  fontSize: 16, fontWeight: FontWeight.bold),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              customerName,
+                              style: const TextStyle(
+                                fontSize: 14,
+                                color: Colors.grey,
+                              ),
+                            ),
+                          ],
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.close),
+                          onPressed: () => Navigator.of(ctx).pop(),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: TextField(
+                            controller: dateCtrl,
+                            readOnly: true,
+                            decoration: const InputDecoration(
+                              labelText: 'Tarih',
+                              hintText: 'Takvimden seçin',
+                            ),
+                            onTap: pickDate,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: TextField(
+                            controller: timeCtrl,
+                            readOnly: true,
+                            decoration: const InputDecoration(
+                              labelText: 'Saat (seçim yapınız)',
+                              hintText: 'Slot seçin',
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        ElevatedButton.icon(
+                          onPressed: localLoadingSlots ? null : loadSlots,
+                          icon: localLoadingSlots
+                              ? const SizedBox(
+                                  width: 16,
+                                  height: 16,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    valueColor:
+                                        AlwaysStoppedAnimation(Colors.white),
+                                  ),
+                                )
+                              : const Icon(Icons.schedule),
+                          label: const Text('Saatleri Getir'),
+                        ),
+                        const SizedBox(width: 12),
+                        if (localSlotsError != null)
+                          Expanded(
+                            child: Text(
+                              localSlotsError!,
+                              style: const TextStyle(color: Colors.red),
+                            ),
+                          ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    if (localLoadingSlots)
+                      const LinearProgressIndicator(minHeight: 2),
+                    DropdownButtonFormField<int>(
+                      value: localSelectedStatusId,
+                      isExpanded: true,
+                      decoration: InputDecoration(
+                        labelText: 'Durum',
+                        hintText:
+                            _loadingStatuses ? 'Yükleniyor...' : 'Durum seçin',
+                        errorText: _statusesError,
+                      ),
+                      items: _appointmentStatuses
+                          .map(
+                            (s) => DropdownMenuItem<int>(
+                              value: s['id'] as int?,
+                              child: Text(_localizedStatusLabel(s)),
+                            ),
+                          )
+                          .toList(),
+                      onChanged: _loadingStatuses
+                          ? null
+                          : (val) {
+                              setModalState(() {
+                                localSelectedStatusId = val;
+                                _statusesError = null;
+                              });
+                            },
+                    ),
+                    const SizedBox(height: 8),
+                    if (localSlots.isNotEmpty)
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: localSlots.map((slot) {
+                          final time = slot['time']?.toString() ?? '';
+                          final booked = slot['booked'] == true;
+                          final selected = localSelectedTime == time;
+                          return ChoiceChip(
+                            label: Text(time),
+                            selected: selected,
+                            onSelected: booked
+                                ? null
+                                : (val) {
+                                    if (val) {
+                                      setModalState(() {
+                                        localSelectedTime = time;
+                                        timeCtrl.text = time;
+                                        localSlotsError = null;
+                                      });
+                                    }
+                                  },
+                            disabledColor: Colors.grey.shade300,
+                            selectedColor: Colors.green.shade200,
+                            labelStyle: TextStyle(
+                              color: booked
+                                  ? Colors.grey
+                                  : (selected ? Colors.black : Colors.black87),
+                            ),
+                          );
+                        }).toList(),
+                      ),
+                    const SizedBox(height: 8),
+                    TextField(
+                      controller: notesCtrl,
+                      maxLines: 2,
+                      decoration: const InputDecoration(labelText: 'Not'),
+                    ),
+                    SwitchListTile(
+                      contentPadding: EdgeInsets.zero,
+                      title: const Text('SMS gönderme'),
+                      subtitle:
+                          const Text('Bu randevu için SMS gönderimi kapalı'),
+                      value: localNoSms,
+                      onChanged: (val) {
+                        setModalState(() {
+                          localNoSms = val;
+                        });
+                      },
+                    ),
+                    SwitchListTile(
+                      contentPadding: EdgeInsets.zero,
+                      title: const Text('Hatırlatma gönderme'),
+                      subtitle: const Text(
+                          'Bu randevu için hatırlatma bildirimi kapalı'),
+                      value: localNoReminder,
+                      onChanged: (val) {
+                        setModalState(() {
+                          localNoReminder = val;
+                        });
+                      },
+                    ),
+                    const SizedBox(height: 12),
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton.icon(
+                        onPressed: (customerId == null || _creatingRebook)
+                            ? null
+                            : () async {
+                                Navigator.of(ctx).pop();
+                                await _createAppointmentForCustomer(
+                                  customerId: customerId,
+                                  date: dateCtrl.text.trim(),
+                                  time: (localSelectedTime ?? timeCtrl.text)
+                                      .trim(),
+                                  notes: notesCtrl.text.trim(),
+                                  noSms: localNoSms,
+                                  noReminder: localNoReminder,
+                                  appointmentStatusId: localSelectedStatusId,
+                                );
+                              },
+                        icon: _creatingRebook
+                            ? const SizedBox(
+                                width: 16,
+                                height: 16,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  valueColor:
+                                      AlwaysStoppedAnimation(Colors.white),
+                                ),
+                              )
+                            : const Icon(Icons.flash_on),
+                        label: const Text('Yeni Randevu Oluştur'),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
   Widget _buildAppointmentCard(Map<String, dynamic> appt) {
     final customer = appt['customer'] is Map ? appt['customer'] : null;
     final status =
@@ -1109,55 +1843,104 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
     final statusName =
         status == null ? '' : _localizedStatusLabel(Map<String, dynamic>.from(status));
     final statusColor = _statusColor(status?['color']?.toString());
+    final phone = (customer?['phone'] ??
+            customer?['formatted_phone'] ??
+            appt['phone'])
+        ?.toString();
 
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
-      child: ListTile(
+      child: InkWell(
         onTap: () => _showEditSheet(appt),
-        leading: CircleAvatar(
-          backgroundColor: statusColor.withOpacity(0.2),
-          child: Icon(Icons.event, color: statusColor),
-        ),
-        title: Text(customerName),
-        subtitle: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('${_formatDate(appt['date'])} • ${_formatTime(appt['time'])}'),
-            if (statusName.isNotEmpty) Text(statusName),
-            if ((appt['notes'] ?? '').toString().isNotEmpty)
-              Text(
-                appt['notes'].toString(),
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-              ),
-          ],
-        ),
-        trailing: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            if (statusName.isNotEmpty)
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: statusColor.withOpacity(0.15),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Text(
-                  statusName,
-                  style: TextStyle(
-                    color: statusColor,
-                    fontWeight: FontWeight.bold,
+        child: Padding(
+          padding: const EdgeInsets.all(12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  CircleAvatar(
+                    backgroundColor: statusColor.withOpacity(0.15),
+                    child: Icon(Icons.event, color: statusColor),
                   ),
+                  const SizedBox(width: 8),
+                  if (statusName.isNotEmpty)
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 10, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: statusColor.withOpacity(0.12),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Text(
+                        statusName,
+                        style: TextStyle(
+                          color: statusColor,
+                          fontWeight: FontWeight.w700,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ),
+                  const Spacer(),
+                  IconButton(
+                    icon: const Icon(Icons.visibility),
+                    tooltip: 'Müşteri önizleme',
+                    onPressed: () => _showCustomerInfo(appt),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.add_task),
+                    tooltip: 'Yeniden randevu ver',
+                    onPressed: () => _showRebookSheet(appt),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.edit),
+                    tooltip: 'Düzenle',
+                    onPressed: () => _showEditSheet(appt),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Text(
+                customerName,
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
                 ),
               ),
-            IconButton(
-              icon: const Icon(Icons.edit),
-              tooltip: 'Düzenle',
-              onPressed: () => _showEditSheet(appt),
-            ),
-          ],
+              const SizedBox(height: 4),
+              Row(
+                children: [
+                  const Icon(Icons.calendar_today,
+                      size: 14, color: Colors.grey),
+                  const SizedBox(width: 6),
+                  Text(
+                    '${_formatDate(appt['date'])} • ${_formatTime(appt['time'])}',
+                    style: const TextStyle(color: Colors.black87),
+                  ),
+                ],
+              ),
+              if (phone != null && phone.isNotEmpty) ...[
+                const SizedBox(height: 4),
+                Row(
+                  children: [
+                    const Icon(Icons.phone, size: 14, color: Colors.grey),
+                    const SizedBox(width: 6),
+                    Text(phone),
+                  ],
+                ),
+              ],
+              if ((appt['notes'] ?? '').toString().isNotEmpty) ...[
+                const SizedBox(height: 6),
+                Text(
+                  appt['notes'].toString(),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(color: Colors.black87),
+                ),
+              ],
+            ],
+          ),
         ),
-        isThreeLine: true,
       ),
     );
   }
@@ -1665,6 +2448,28 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
                           onChanged: (val) {
                             setState(() {
                               _quickIsFirstAppointment = val;
+                            });
+                          },
+                        ),
+                        SwitchListTile(
+                          contentPadding: EdgeInsets.zero,
+                          title: const Text('SMS gönderme'),
+                          subtitle: const Text('Bu randevu için SMS gönderimi kapalı'),
+                          value: _quickNoSms,
+                          onChanged: (val) {
+                            setState(() {
+                              _quickNoSms = val;
+                            });
+                          },
+                        ),
+                        SwitchListTile(
+                          contentPadding: EdgeInsets.zero,
+                          title: const Text('Hatırlatma gönderme'),
+                          subtitle: const Text('Bu randevu için hatırlatma bildirimi kapalı'),
+                          value: _quickNoReminder,
+                          onChanged: (val) {
+                            setState(() {
+                              _quickNoReminder = val;
                             });
                           },
                         ),
