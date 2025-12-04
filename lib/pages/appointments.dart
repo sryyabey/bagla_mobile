@@ -4,6 +4,7 @@ import 'package:bagla_mobile/config.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+import '../dashboard_page.dart';
 
 class AppointmentsPage extends StatefulWidget {
   const AppointmentsPage({super.key});
@@ -13,6 +14,12 @@ class AppointmentsPage extends StatefulWidget {
 }
 
 class _AppointmentsPageState extends State<AppointmentsPage> {
+  // Palette for consistent look
+  static const Color primaryColor = Color(0xFF6366F1);
+  static const Color secondaryColor = Color(0xFF8B5CF6);
+  static const Color accentColor = Color(0xFF10B981);
+  static const Color backgroundColor = Color(0xFFF8FAFC);
+
   final TextEditingController _quickNameController = TextEditingController();
   final TextEditingController _quickLastNameController =
       TextEditingController();
@@ -65,6 +72,14 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
       List.generate(24 * 12, (i) => '${(i ~/ 12).toString().padLeft(2, '0')}:${((i % 12) * 5).toString().padLeft(2, '0')}');
   String _lastPhoneDigits = '';
   int _lastPhoneTextLength = 0;
+
+  ButtonStyle _mainButtonStyle() => ElevatedButton.styleFrom(
+        backgroundColor: primaryColor,
+        foregroundColor: Colors.white,
+        elevation: 0,
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      );
 
   Map<String, String> _buildValidFilters() {
     final Map<String, String> params = {};
@@ -877,6 +892,12 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
         content: Text(message),
         backgroundColor: success ? Colors.green : Colors.red,
       ),
+    );
+  }
+
+  void _navigateToDashboard() {
+    Navigator.of(context).pushReplacement(
+      MaterialPageRoute(builder: (_) => const DashboardPage()),
     );
   }
 
@@ -1848,97 +1869,133 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
             appt['phone'])
         ?.toString();
 
-    return Card(
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 250),
       margin: const EdgeInsets.only(bottom: 12),
-      child: InkWell(
-        onTap: () => _showEditSheet(appt),
-        child: Padding(
-          padding: const EdgeInsets.all(12),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  CircleAvatar(
-                    backgroundColor: statusColor.withOpacity(0.15),
-                    child: Icon(Icons.event, color: statusColor),
-                  ),
-                  const SizedBox(width: 8),
-                  if (statusName.isNotEmpty)
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 10, vertical: 6),
-                      decoration: BoxDecoration(
-                        color: statusColor.withOpacity(0.12),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Text(
-                        statusName,
-                        style: TextStyle(
-                          color: statusColor,
-                          fontWeight: FontWeight.w700,
-                          fontSize: 12,
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [primaryColor.withOpacity(0.08), Colors.white],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+        border: Border.all(color: Colors.grey.shade200),
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(16),
+          onTap: () => _showEditSheet(appt),
+          child: Padding(
+            padding: const EdgeInsets.all(14),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    CircleAvatar(
+                      backgroundColor: statusColor.withOpacity(0.15),
+                      child: Icon(Icons.event, color: statusColor),
+                    ),
+                    const SizedBox(width: 8),
+                    if (statusName.isNotEmpty)
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 12, vertical: 6),
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [
+                              accentColor,
+                              accentColor.withOpacity(0.7),
+                            ],
+                          ),
+                          borderRadius: BorderRadius.circular(20),
+                          boxShadow: [
+                            BoxShadow(
+                              color: accentColor.withOpacity(0.2),
+                              blurRadius: 8,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: Text(
+                          statusName.toUpperCase(),
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w700,
+                            fontSize: 11,
+                          ),
                         ),
                       ),
+                    const Spacer(),
+                    IconButton(
+                      icon: const Icon(Icons.visibility),
+                      color: primaryColor,
+                      tooltip: 'Müşteri önizleme',
+                      onPressed: () => _showCustomerInfo(appt),
                     ),
-                  const Spacer(),
-                  IconButton(
-                    icon: const Icon(Icons.visibility),
-                    tooltip: 'Müşteri önizleme',
-                    onPressed: () => _showCustomerInfo(appt),
+                    IconButton(
+                      icon: const Icon(Icons.add_task),
+                      color: secondaryColor,
+                      tooltip: 'Yeniden randevu ver',
+                      onPressed: () => _showRebookSheet(appt),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.edit),
+                      color: Colors.black87,
+                      tooltip: 'Düzenle',
+                      onPressed: () => _showEditSheet(appt),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 10),
+                Text(
+                  customerName,
+                  style: const TextStyle(
+                    fontSize: 17,
+                    fontWeight: FontWeight.w700,
                   ),
-                  IconButton(
-                    icon: const Icon(Icons.add_task),
-                    tooltip: 'Yeniden randevu ver',
-                    onPressed: () => _showRebookSheet(appt),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.edit),
-                    tooltip: 'Düzenle',
-                    onPressed: () => _showEditSheet(appt),
+                ),
+                const SizedBox(height: 6),
+                Row(
+                  children: [
+                    const Icon(Icons.calendar_today,
+                        size: 14, color: Colors.grey),
+                    const SizedBox(width: 6),
+                    Text(
+                      '${_formatDate(appt['date'])} • ${_formatTime(appt['time'])}',
+                      style: const TextStyle(color: Colors.black87),
+                    ),
+                  ],
+                ),
+                if (phone != null && phone.isNotEmpty) ...[
+                  const SizedBox(height: 6),
+                  Row(
+                    children: [
+                      const Icon(Icons.phone, size: 14, color: Colors.grey),
+                      const SizedBox(width: 6),
+                      Text(phone),
+                    ],
                   ),
                 ],
-              ),
-              const SizedBox(height: 8),
-              Text(
-                customerName,
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-              const SizedBox(height: 4),
-              Row(
-                children: [
-                  const Icon(Icons.calendar_today,
-                      size: 14, color: Colors.grey),
-                  const SizedBox(width: 6),
+                if ((appt['notes'] ?? '').toString().isNotEmpty) ...[
+                  const SizedBox(height: 8),
                   Text(
-                    '${_formatDate(appt['date'])} • ${_formatTime(appt['time'])}',
+                    appt['notes'].toString(),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
                     style: const TextStyle(color: Colors.black87),
                   ),
                 ],
-              ),
-              if (phone != null && phone.isNotEmpty) ...[
-                const SizedBox(height: 4),
-                Row(
-                  children: [
-                    const Icon(Icons.phone, size: 14, color: Colors.grey),
-                    const SizedBox(width: 6),
-                    Text(phone),
-                  ],
-                ),
               ],
-              if ((appt['notes'] ?? '').toString().isNotEmpty) ...[
-                const SizedBox(height: 6),
-                Text(
-                  appt['notes'].toString(),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(color: Colors.black87),
-                ),
-              ],
-            ],
+            ),
           ),
         ),
       ),
@@ -2197,6 +2254,7 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
                               child: ElevatedButton.icon(
                                 onPressed: _applyFilters,
                                 icon: const Icon(Icons.search),
+                                style: _mainButtonStyle(),
                                 label: const Text('Filtrele'),
                               ),
                             ),
@@ -2239,6 +2297,7 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
                 _fetchTimeSlots();
               }
             },
+            style: _mainButtonStyle(),
             icon: Icon(_showQuickForm ? Icons.close : Icons.flash_on),
             label: Text(_showQuickForm
                 ? 'Quick Randevuyu Gizle'
@@ -2479,6 +2538,7 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
                           child: ElevatedButton.icon(
                             onPressed:
                                 _savingQuick ? null : _submitQuickAppointment,
+                            style: _mainButtonStyle(),
                             icon: _savingQuick
                                 ? const SizedBox(
                                     width: 16,
@@ -2507,9 +2567,32 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: backgroundColor,
       appBar: AppBar(
-        title: const Text('Randevular'),
+        titleSpacing: 0,
+        title: InkWell(
+          borderRadius: BorderRadius.circular(12),
+          onTap: _navigateToDashboard,
+          child: Row(
+            children: [
+              CircleAvatar(
+                backgroundColor: primaryColor.withOpacity(0.15),
+                child: Icon(Icons.dashboard, color: primaryColor),
+              ),
+              const SizedBox(width: 10),
+              const Text('Randevular'),
+            ],
+          ),
+        ),
         actions: [
+          TextButton.icon(
+            onPressed: _navigateToDashboard,
+            style: TextButton.styleFrom(
+              foregroundColor: Colors.white,
+            ),
+            icon: const Icon(Icons.home_outlined),
+            label: const Text('Dashboard'),
+          ),
           IconButton(
             onPressed: _fetchAppointments,
             icon: const Icon(Icons.refresh),
@@ -2522,6 +2605,7 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
         child: SingleChildScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
           padding: const EdgeInsets.all(16),
+          clipBehavior: Clip.none,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [

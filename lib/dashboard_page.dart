@@ -342,6 +342,117 @@ class _DashboardPageState extends State<DashboardPage> {
     );
   }
 
+  String _fmtDate(String? date) {
+    if (date == null || date.isEmpty) return '-';
+    try {
+      final d = DateTime.parse(date);
+      return '${d.day.toString().padLeft(2, '0')}.${d.month.toString().padLeft(2, '0')}.${d.year}';
+    } catch (_) {
+      return date;
+    }
+  }
+
+  String _fmtTime(String? time) {
+    if (time == null) return '-';
+    final parts = time.split(':');
+    if (parts.length >= 2) {
+      return '${parts[0].padLeft(2, '0')}:${parts[1].padLeft(2, '0')}';
+    }
+    return time;
+  }
+
+  Widget _buildTodayAppointments(
+      BuildContext context, Map<String, dynamic>? apptInfo) {
+    if (apptInfo == null) {
+      return const Text('Bugün için randevu verisi yok.');
+    }
+    final todayCount = apptInfo['todayAppointments'] ?? apptInfo['today_appointments'] ?? 0;
+    final list = apptInfo['appointments'] is List
+        ? List<Map<String, dynamic>>.from(
+            (apptInfo['appointments'] as List).map((e) => Map<String, dynamic>.from(e)),
+          )
+        : <Map<String, dynamic>>[];
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const Text(
+              'Bugünkü Randevular',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            ),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              decoration: BoxDecoration(
+                color: Colors.green.withOpacity(0.12),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Text(
+                '$todayCount bugün',
+                style: const TextStyle(
+                  color: Colors.green,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        if (list.isEmpty)
+          const Text('Bugün için randevu bulunamadı.')
+        else
+          Column(
+            children: list.map((appt) {
+              final customer = appt['customer'] is Map ? appt['customer'] as Map<String, dynamic> : null;
+              final status = appt['appointment_status'] is Map ? appt['appointment_status'] as Map<String, dynamic> : null;
+              final statusName = status?['name']?.toString() ?? status?['alias']?.toString() ?? '';
+              final name = customer?['name']?.toString();
+              final phone = customer?['phone']?.toString() ?? '';
+              return ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: const Icon(Icons.event_available, color: Colors.blueAccent),
+                title: Text(name?.isNotEmpty == true ? name! : 'Müşteri #${appt['customer_id'] ?? ''}'),
+                subtitle: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('${_fmtDate(appt['date']?.toString())} • ${_fmtTime(appt['time']?.toString())}'),
+                    if (phone.isNotEmpty) Text(phone),
+                  ],
+                ),
+                trailing: statusName.isNotEmpty
+                    ? Chip(
+                        label: Text(
+                          statusName,
+                          style: const TextStyle(fontWeight: FontWeight.w600),
+                        ),
+                        backgroundColor: Colors.blueGrey.shade50,
+                      )
+                    : null,
+              );
+            }).toList(),
+          ),
+        const SizedBox(height: 12),
+        Align(
+          alignment: Alignment.centerRight,
+          child: ElevatedButton.icon(
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => const AppointmentsPage(),
+                ),
+              );
+            },
+            icon: const Icon(Icons.open_in_new),
+            label: const Text('Tüm Randevular'),
+          ),
+        ),
+      ],
+    );
+  }
+
   Widget _buildDashboardBody() {
     final data = _dashboardData ?? {};
     final packInfo = data['pack_info'] is Map<String, dynamic>
@@ -350,6 +461,9 @@ class _DashboardPageState extends State<DashboardPage> {
     final totalClicks = data['total_clicks']?.toString() ?? '0';
     final remainingSms =
         packInfo != null ? (packInfo['remaining_sms'] ?? 0).toString() : '0';
+    final appointmentInfo = data['appointment_info'] is Map<String, dynamic>
+        ? data['appointment_info'] as Map<String, dynamic>
+        : null;
 
     return RefreshIndicator(
       onRefresh: _fetchDashboard,
@@ -368,6 +482,16 @@ class _DashboardPageState extends State<DashboardPage> {
           ),
           const SizedBox(height: 16),
           _buildPackInfo(packInfo),
+          const SizedBox(height: 16),
+          Card(
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            elevation: 1,
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: _buildTodayAppointments(context, appointmentInfo),
+            ),
+          ),
           const SizedBox(height: 16),
           Card(
             shape:
@@ -448,6 +572,18 @@ class _DashboardPageState extends State<DashboardPage> {
                   ),
                 ],
               ),
+            ),
+            ListTile(
+              leading: const Icon(Icons.home_outlined),
+              title: const Text('Anasayfa'),
+              onTap: () {
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const DashboardPage(),
+                  ),
+                );
+              },
             ),
             ListTile(
               leading: const Icon(Icons.person),
