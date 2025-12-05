@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:bagla_mobile/config.dart';
 import 'package:bagla_mobile/dashboard_page.dart';
+import 'package:bagla_mobile/pages/appointments.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -408,7 +409,16 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
           child: IconButton(
             icon: const Icon(Icons.add),
             onPressed: () {
-              _showSnack('Bu slota randevu ekleme burada henüz bağlı değil.');
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => AppointmentsPage(
+                    initialQuickDate: day.date,
+                    initialQuickTime: time,
+                    autoShowQuick: true,
+                  ),
+                ),
+              );
             },
           ),
         ),

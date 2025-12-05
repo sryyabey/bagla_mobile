@@ -7,7 +7,16 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../dashboard_page.dart';
 
 class AppointmentsPage extends StatefulWidget {
-  const AppointmentsPage({super.key});
+  final String? initialQuickDate;
+  final String? initialQuickTime;
+  final bool autoShowQuick;
+
+  const AppointmentsPage({
+    super.key,
+    this.initialQuickDate,
+    this.initialQuickTime,
+    this.autoShowQuick = false,
+  });
 
   @override
   State<AppointmentsPage> createState() => _AppointmentsPageState();
@@ -120,10 +129,25 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
   void initState() {
     super.initState();
     _quickPhoneController.addListener(_formatPhoneInput);
+    if (widget.initialQuickDate != null) {
+      _quickDateController.text = widget.initialQuickDate!;
+    }
+    if (widget.initialQuickTime != null) {
+      _quickTimeController.text = widget.initialQuickTime!;
+      _selectedSlotTime = widget.initialQuickTime;
+    }
+    if (widget.autoShowQuick ||
+        widget.initialQuickDate != null ||
+        widget.initialQuickTime != null) {
+      _showQuickForm = true;
+    }
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _fetchAppointments();
       _fetchCountries();
       _fetchStatuses();
+      if (_showQuickForm && _quickDateController.text.trim().isNotEmpty) {
+        _fetchTimeSlots();
+      }
     });
   }
 

@@ -367,10 +367,12 @@ class _DashboardPageState extends State<DashboardPage> {
     if (apptInfo == null) {
       return const Text('Bugün için randevu verisi yok.');
     }
-    final todayCount = apptInfo['todayAppointments'] ?? apptInfo['today_appointments'] ?? 0;
+    final todayCount =
+        apptInfo['todayAppointments'] ?? apptInfo['today_appointments'] ?? 0;
     final list = apptInfo['appointments'] is List
         ? List<Map<String, dynamic>>.from(
-            (apptInfo['appointments'] as List).map((e) => Map<String, dynamic>.from(e)),
+            (apptInfo['appointments'] as List)
+                .map((e) => Map<String, dynamic>.from(e)),
           )
         : <Map<String, dynamic>>[];
 
@@ -406,31 +408,75 @@ class _DashboardPageState extends State<DashboardPage> {
         else
           Column(
             children: list.map((appt) {
-              final customer = appt['customer'] is Map ? appt['customer'] as Map<String, dynamic> : null;
-              final status = appt['appointment_status'] is Map ? appt['appointment_status'] as Map<String, dynamic> : null;
-              final statusName = status?['name']?.toString() ?? status?['alias']?.toString() ?? '';
+              final customer = appt['customer'] is Map
+                  ? appt['customer'] as Map<String, dynamic>
+                  : null;
+              final status = appt['appointment_status'] is Map
+                  ? appt['appointment_status'] as Map<String, dynamic>
+                  : null;
+              final statusName = status?['name']?.toString() ??
+                  status?['alias']?.toString() ??
+                  '';
               final name = customer?['name']?.toString();
               final phone = customer?['phone']?.toString() ?? '';
-              return ListTile(
-                contentPadding: EdgeInsets.zero,
-                leading: const Icon(Icons.event_available, color: Colors.blueAccent),
-                title: Text(name?.isNotEmpty == true ? name! : 'Müşteri #${appt['customer_id'] ?? ''}'),
-                subtitle: Column(
+              return Container(
+                margin: const EdgeInsets.only(bottom: 8),
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  border: Border.all(color: Colors.grey.shade200),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('${_fmtDate(appt['date']?.toString())} • ${_fmtTime(appt['time']?.toString())}'),
-                    if (phone.isNotEmpty) Text(phone),
+                    const Padding(
+                      padding: EdgeInsets.only(top: 4),
+                      child: Icon(Icons.event_available,
+                          color: Colors.blueAccent, size: 24),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            name?.isNotEmpty == true
+                                ? name!
+                                : 'Müşteri #${appt['customer_id'] ?? ''}',
+                            style: const TextStyle(
+                                fontWeight: FontWeight.w600, fontSize: 15),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            '${_fmtDate(appt['date']?.toString())} • ${_fmtTime(appt['time']?.toString())}',
+                            style: const TextStyle(color: Colors.black54),
+                          ),
+                          if (phone.isNotEmpty)
+                            Text(
+                              phone,
+                              style: const TextStyle(
+                                  color: Colors.black87, fontSize: 12),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                        ],
+                      ),
+                    ),
+                    if (statusName.isNotEmpty)
+                      Padding(
+                        padding: const EdgeInsets.only(left: 8, top: 2),
+                        child: Chip(
+                          label: Text(
+                            statusName,
+                            style: const TextStyle(fontWeight: FontWeight.w600),
+                          ),
+                          backgroundColor: Colors.blueGrey.shade50,
+                          materialTapTargetSize:
+                              MaterialTapTargetSize.shrinkWrap,
+                        ),
+                      ),
                   ],
                 ),
-                trailing: statusName.isNotEmpty
-                    ? Chip(
-                        label: Text(
-                          statusName,
-                          style: const TextStyle(fontWeight: FontWeight.w600),
-                        ),
-                        backgroundColor: Colors.blueGrey.shade50,
-                      )
-                    : null,
               );
             }).toList(),
           ),
@@ -448,7 +494,7 @@ class _DashboardPageState extends State<DashboardPage> {
                 );
               },
               icon: const Icon(Icons.calendar_month),
-              label: const Text('Haftalık Takvim'),
+              label: const Text('Takvim'),
             ),
             const SizedBox(width: 8),
             ElevatedButton.icon(
@@ -461,7 +507,7 @@ class _DashboardPageState extends State<DashboardPage> {
                 );
               },
               icon: const Icon(Icons.open_in_new),
-              label: const Text('Tüm Randevular'),
+              label: const Text('Randevular'),
             ),
           ],
         ),
@@ -567,23 +613,53 @@ class _DashboardPageState extends State<DashboardPage> {
           padding: EdgeInsets.zero,
           children: [
             Container(
-              padding: const EdgeInsets.symmetric(vertical: 24),
-              color: Colors.blueAccent, // Drawer başlığı için arka plan rengi
+              padding: const EdgeInsets.symmetric(vertical: 28, horizontal: 16),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    Colors.indigo.shade900,
+                    Colors.indigo.shade600,
+                  ],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.2),
+                    blurRadius: 12,
+                    offset: const Offset(0, 6),
+                  ),
+                ],
+              ),
               child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Container(
-                    padding: const EdgeInsets.all(8),
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                     child: Image.asset(
                       'assets/logo.png',
                       height: 40,
                     ),
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 16),
                   Text(
-                    loc.menuTitle,
-                    style: const TextStyle(
-                      color: Colors.black,
-                      fontSize: 24,
+                    'Yönetim Paneli',
+                    style: TextStyle(
+                      color: Colors.white.withOpacity(0.9),
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    'Randevu ve iletişimlerinizi buradan yönetin',
+                    style: TextStyle(
+                      color: Colors.white.withOpacity(0.7),
+                      fontSize: 12,
                     ),
                   ),
                 ],
@@ -641,13 +717,13 @@ class _DashboardPageState extends State<DashboardPage> {
               },
             ),
             ListTile(
-              leading: const Icon(Icons.schedule),
-              title: const Text('Çalışma Saatleri'),
+              leading: const Icon(Icons.event),
+              title: const Text('Randevular'),
               onTap: () {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => const WorkingPreferencesPage(),
+                    builder: (context) => const AppointmentsPage(),
                   ),
                 );
               },
@@ -665,13 +741,13 @@ class _DashboardPageState extends State<DashboardPage> {
               },
             ),
             ListTile(
-              leading: const Icon(Icons.event),
-              title: const Text('Randevular'),
+              leading: const Icon(Icons.schedule),
+              title: const Text('Çalışma Saatleri'),
               onTap: () {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => const AppointmentsPage(),
+                    builder: (context) => const WorkingPreferencesPage(),
                   ),
                 );
               },
