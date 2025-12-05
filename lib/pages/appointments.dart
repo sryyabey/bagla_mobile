@@ -81,6 +81,14 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       );
 
+  bool _asBool(dynamic value) {
+    if (value == null) return false;
+    if (value is bool) return value;
+    if (value is num) return value != 0;
+    final str = value.toString().trim().toLowerCase();
+    return str == '1' || str == 'true' || str == 'yes';
+  }
+
   Map<String, String> _buildValidFilters() {
     final Map<String, String> params = {};
     final dateFrom = _normalizeDateToApi(_filterDateFromController.text);
@@ -753,6 +761,8 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
     required String date,
     required String time,
     required String notes,
+    required bool noSms,
+    required bool noReminder,
   }) async {
     if (_savingAppointment) return;
 
@@ -785,6 +795,8 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
           'date': date,
           'time': time,
           'notes': notes,
+          'no_sms': noSms,
+          'no_reminder': noReminder,
         }),
       );
 
@@ -923,6 +935,9 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
             ? appt['customer']['name'].toString()
             : 'Müşteri #${appt["customer_id"] ?? ""}';
 
+    bool localNoSms = _asBool(appt['no_sms']);
+    bool localNoReminder = _asBool(appt['no_reminder']);
+
     List<Map<String, dynamic>> localSlots = [];
     String? localSlotsError;
     bool localLoadingSlots = false;
@@ -939,6 +954,9 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
       builder: (ctx) {
         return StatefulBuilder(
           builder: (ctx, setModalState) {
+            final int? effectiveStatusId =
+                localSelectedStatusId ?? statusId ?? _defaultStatusId();
+
             Future<void> loadSlots() async {
               final dateInput = dateCtrl.text.trim();
               if (dateInput.isEmpty) {
@@ -1123,7 +1141,7 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
                     if (localLoadingSlots)
                       const LinearProgressIndicator(minHeight: 2),
                     DropdownButtonFormField<int>(
-                      value: localSelectedStatusId,
+                      value: effectiveStatusId,
                       isExpanded: true,
                       decoration: InputDecoration(
                         labelText: 'Durum',
@@ -1187,13 +1205,34 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
                       maxLines: 2,
                       decoration: const InputDecoration(labelText: 'Not'),
                     ),
+                    const SizedBox(height: 8),
+                    SwitchListTile(
+                      title: const Text('SMS Gönderilmesin'),
+                      value: localNoSms,
+                      onChanged: (val) {
+                        setModalState(() {
+                          localNoSms = val;
+                        });
+                      },
+                      contentPadding: EdgeInsets.zero,
+                    ),
+                    SwitchListTile(
+                      title: const Text('Hatırlatıcı Gönderilmesin'),
+                      value: localNoReminder,
+                      onChanged: (val) {
+                        setModalState(() {
+                          localNoReminder = val;
+                        });
+                      },
+                      contentPadding: EdgeInsets.zero,
+                    ),
                     const SizedBox(height: 12),
                     SizedBox(
                       width: double.infinity,
                       child: ElevatedButton.icon(
                         onPressed: (appointmentId == null ||
                                 customerId == null ||
-                                localSelectedStatusId == null ||
+                                effectiveStatusId == null ||
                                 _savingAppointment)
                             ? null
                             : () async {
@@ -1201,11 +1240,13 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
                                 await _updateAppointment(
                                   appointmentId: appointmentId,
                                   customerId: customerId,
-                                  statusId: localSelectedStatusId!,
+                                  statusId: effectiveStatusId!,
                                   date: dateCtrl.text.trim(),
                                   time: (localSelectedTime ?? timeCtrl.text)
                                       .trim(),
                                   notes: notesCtrl.text.trim(),
+                                  noSms: localNoSms,
+                                  noReminder: localNoReminder,
                                 );
                               },
                         icon: _savingAppointment
@@ -1524,8 +1565,8 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
     String? localSlotsError;
     bool localLoadingSlots = false;
     String? localSelectedTime;
-    bool localNoSms = false;
-    bool localNoReminder = false;
+    bool localNoSms = _asBool(appt['no_sms']);
+    bool localNoReminder = _asBool(appt['no_reminder']);
     int? localSelectedStatusId = _defaultStatusId();
 
     showModalBottomSheet(

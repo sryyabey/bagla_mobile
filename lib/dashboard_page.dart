@@ -15,6 +15,7 @@ import 'pages/support.dart';
 import 'pages/working_preferences.dart';
 import 'pages/appointments.dart';
 import 'pages/sms_templates.dart';
+import 'pages/calendar.dart';
 
 class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key});
@@ -434,20 +435,35 @@ class _DashboardPageState extends State<DashboardPage> {
             }).toList(),
           ),
         const SizedBox(height: 12),
-        Align(
-          alignment: Alignment.centerRight,
-          child: ElevatedButton.icon(
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => const AppointmentsPage(),
-                ),
-              );
-            },
-            icon: const Icon(Icons.open_in_new),
-            label: const Text('Tüm Randevular'),
-          ),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.end,
+          children: [
+            OutlinedButton.icon(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const CalendarPage(),
+                  ),
+                );
+              },
+              icon: const Icon(Icons.calendar_month),
+              label: const Text('Haftalık Takvim'),
+            ),
+            const SizedBox(width: 8),
+            ElevatedButton.icon(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const AppointmentsPage(),
+                  ),
+                );
+              },
+              icon: const Icon(Icons.open_in_new),
+              label: const Text('Tüm Randevular'),
+            ),
+          ],
         ),
       ],
     );
@@ -632,6 +648,18 @@ class _DashboardPageState extends State<DashboardPage> {
                   context,
                   MaterialPageRoute(
                     builder: (context) => const WorkingPreferencesPage(),
+                  ),
+                );
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.calendar_month),
+              title: const Text('Haftalık Takvim'),
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const CalendarPage(),
                   ),
                 );
               },

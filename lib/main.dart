@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'app_localizations.dart';
 import 'package:shared_preferences/shared_preferences.dart'; // Added import for SharedPreferences
 import 'dashboard_page.dart';
@@ -9,7 +10,7 @@ const String apiBaseUrl =
     'http://10.0.2.2:8000'; // Created constant for API base URL
 
 void main() {
-  runApp(const BaglaApp());
+  runApp(const ProviderScope(child: BaglaApp()));
 }
 
 class BaglaApp extends StatefulWidget {
