@@ -16,6 +16,7 @@ import 'pages/working_preferences.dart';
 import 'pages/appointments.dart';
 import 'pages/sms_templates.dart';
 import 'pages/calendar.dart';
+import 'pages/sms_packs.dart';
 
 class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key});
@@ -736,6 +737,18 @@ class _DashboardPageState extends State<DashboardPage> {
                   context,
                   MaterialPageRoute(
                     builder: (context) => const CalendarPage(),
+                  ),
+                );
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.shopping_bag_outlined),
+              title: const Text('SMS Paketleri'),
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const SmsPacksPage(),
                   ),
                 );
               },
