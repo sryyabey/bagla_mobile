@@ -23,10 +23,13 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
   Map<String, List<Map<String, dynamic>>> _packsByType = {};
   String? _selectedType;
   Map<String, dynamic>? _selectedPack;
-  int? _billingId;
   List<Map<String, dynamic>> _countries = [];
+  List<Map<String, dynamic>> _addresses = [];
   bool _loadingCountries = true;
+  bool _loadingAddresses = true;
   String? _countriesError;
+  String? _addressesError;
+  int? _selectedAddressId;
   int? _selectedCountryId;
   String? _selectedPhoneCode;
 
@@ -40,9 +43,9 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
   final TextEditingController _taxOfficeController = TextEditingController();
   final TextEditingController _identityController = TextEditingController();
   final TextEditingController _addressController = TextEditingController();
+  final TextEditingController _addressTitleController = TextEditingController();
   String _selectedPayment = 'credit_card';
   bool _agreementChecked = false;
-  bool _savingBilling = false;
 
   final List<Map<String, String>> _paymentOptions = const [
     {'value': 'credit_card', 'label': 'Kredi Kartı'},
@@ -56,7 +59,7 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _loadPacks();
       _loadCountries();
-      _loadBillingAddress();
+      _loadAddresses();
     });
   }
 
@@ -72,6 +75,7 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
     _taxOfficeController.dispose();
     _identityController.dispose();
     _addressController.dispose();
+    _addressTitleController.dispose();
     super.dispose();
   }
 
@@ -108,10 +112,8 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
         final decoded = jsonDecode(response.body);
         final data = decoded['data'] ?? decoded;
 
-        final List<String> types = (data['types'] as List?)
-                ?.map((e) => e.toString())
-                .toList() ??
-            [];
+        final List<String> types =
+            (data['types'] as List?)?.map((e) => e.toString()).toList() ?? [];
         final Map<String, dynamic> packMap =
             data['packs_by_type'] is Map<String, dynamic>
                 ? Map<String, dynamic>.from(data['packs_by_type'])
@@ -190,8 +192,7 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
         });
       } else {
         setState(() {
-          _countriesError =
-              'Ülkeler alınamadı (HTTP ${response.statusCode}).';
+          _countriesError = 'Ülkeler alınamadı (HTTP ${response.statusCode}).';
         });
       }
     } catch (e) {
@@ -207,50 +208,59 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
     }
   }
 
-  Future<void> _loadBillingAddress() async {
+  Future<void> _loadAddresses() async {
+    setState(() {
+      _loadingAddresses = true;
+      _addressesError = null;
+    });
+
     final token = await _getToken();
     if (token == null || token.isEmpty) {
+      setState(() {
+        _loadingAddresses = false;
+      });
       return;
     }
+
     try {
       final response = await http.get(
-        Uri.parse('$apiBaseUrl/api/billing-addresses'),
+        Uri.parse('$apiBaseUrl/api/packs/user-addresses'),
         headers: {
           'Authorization': 'Bearer $token',
           'Accept': 'application/json',
         },
       );
+
       if (response.statusCode == 200) {
         final decoded = jsonDecode(response.body);
         final data = decoded['data'] ?? decoded;
-        if (data is Map<String, dynamic> && data.isNotEmpty) {
-          _prefillBilling(data);
-        }
+        final List<dynamic> list = data is Map<String, dynamic>
+            ? (data['addresses'] as List? ?? [])
+            : <dynamic>[];
+        final parsed = list
+            .map((e) => Map<String, dynamic>.from(e as Map))
+            .toList(growable: false);
+        if (!mounted) return;
+        setState(() {
+          _addresses = parsed;
+        });
+      } else {
+        setState(() {
+          _addressesError =
+              'Adresler alınamadı (HTTP ${response.statusCode}).';
+        });
       }
-    } catch (_) {}
-  }
-
-  void _prefillBilling(Map<String, dynamic> data) {
-    setState(() {
-      _billingId = data['id'] is int ? data['id'] as int : null;
-      _nameController.text = data['name']?.toString() ?? '';
-      _lastNameController.text = data['last_name']?.toString() ?? '';
-      _companyController.text = data['company_name']?.toString() ?? '';
-      _emailController.text = data['email']?.toString() ?? '';
-      _phoneController.text = data['phone']?.toString() ?? '';
-      _identityController.text = data['identity_number']?.toString() ?? '';
-      _taxNumberController.text = data['tax_number']?.toString() ?? '';
-      _taxOfficeController.text = data['tax_office']?.toString() ?? '';
-      _addressController.text = data['address']?.toString() ?? '';
-      _noteController.text = data['note']?.toString() ?? '';
-      final countryId = data['country_id'];
-      if (countryId != null) {
-        _selectedCountryId = countryId is int ? countryId : int.tryParse(countryId.toString());
+    } catch (e) {
+      setState(() {
+        _addressesError = 'Adresler alınırken hata oluştu: $e';
+      });
+    } finally {
+      if (mounted) {
+        setState(() {
+          _loadingAddresses = false;
+        });
       }
-      if (data['phone_code'] != null) {
-        _selectedPhoneCode = _cleanPhoneCode(data['phone_code']?.toString());
-      }
-    });
+    }
   }
 
   Color? _parseColor(String? hex) {
@@ -348,80 +358,63 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
     });
   }
 
-  Future<bool> _saveBillingAddress() async {
-    final token = await _getToken();
-    if (token == null || token.isEmpty) {
-      _showSnack('Oturum bulunamadı.');
-      return false;
-    }
+  String _localizePlanLabel(String? raw) {
+    final value = raw?.toLowerCase().trim();
+    if (value == 'monthly') return 'Aylık';
+    if (value == 'annual' || value == 'yearly') return 'Yıllık';
+    return raw?.toUpperCase() ?? '';
+  }
+
+  void _clearAddressFields() {
+    _selectedAddressId = null;
+    _addressTitleController.clear();
+    _nameController.clear();
+    _lastNameController.clear();
+    _companyController.clear();
+    _emailController.clear();
+    _phoneController.clear();
+    _selectedPhoneCode = null;
+    _identityController.clear();
+    _taxNumberController.clear();
+    _taxOfficeController.clear();
+    _addressController.clear();
+    _noteController.clear();
+  }
+
+  void _applyAddress(Map<String, dynamic> address) {
     setState(() {
-      _savingBilling = true;
-    });
+      _selectedAddressId = address['id'] is int
+          ? address['id'] as int
+          : int.tryParse(address['id']?.toString() ?? '');
+      _nameController.text = address['name']?.toString() ?? '';
+      _lastNameController.text = address['last_name']?.toString() ?? '';
+      _companyController.text = address['company_name']?.toString() ?? '';
+      _emailController.text = address['email']?.toString() ?? '';
 
-    try {
-      final payload = {
-        'name': _nameController.text.trim(),
-        'last_name': _lastNameController.text.trim(),
-        'company_name': _companyController.text.trim(),
-        'email': _emailController.text.trim(),
-        'phone': _phoneController.text.trim(),
-        'country_id': _selectedCountryId?.toString() ?? '',
-        'phone_code': _selectedPhoneCode ?? '',
-        'identity_number': _identityController.text.trim(),
-        'tax_number': _taxNumberController.text.trim(),
-        'tax_office': _taxOfficeController.text.trim(),
-        'address': _addressController.text.trim(),
-        'note': _noteController.text.trim(),
-      };
-
-      final uri = _billingId != null
-          ? Uri.parse('$apiBaseUrl/api/billing-addresses/$_billingId')
-          : Uri.parse('$apiBaseUrl/api/billing-addresses');
-      final response = _billingId != null
-          ? await http.put(uri,
-              headers: {
-                'Authorization': 'Bearer $token',
-                'Accept': 'application/json',
-              },
-              body: payload)
-          : await http.post(uri,
-              headers: {
-                'Authorization': 'Bearer $token',
-                'Accept': 'application/json',
-              },
-              body: payload);
-
-      if (response.statusCode == 200 ||
-          response.statusCode == 201 ||
-          response.statusCode == 204) {
-        try {
-          final decoded = jsonDecode(response.body);
-          final data = decoded['data'] ?? decoded;
-          if (data is Map<String, dynamic>) {
-            _prefillBilling(data);
-          }
-        } catch (_) {}
-        _showSnack('Fatura adresi kaydedildi.', success: true);
-        return true;
+      final phone = address['phone']?.toString() ?? '';
+      if (phone.startsWith('+')) {
+        final cleaned = phone.replaceFirst('+', '');
+        final digits = cleaned.replaceAll(RegExp(r'\D'), '');
+        // heuristic: first 2-3 digits as code if available
+        if (digits.length > 9) {
+          _selectedPhoneCode = digits.substring(0, digits.length - 9);
+          _phoneController.text = digits.substring(digits.length - 9);
+        } else {
+          _selectedPhoneCode = null;
+          _phoneController.text = cleaned;
+        }
       } else {
-        String message = 'Fatura adresi kaydedilemedi (HTTP ${response.statusCode}).';
-        try {
-          final decoded = jsonDecode(response.body);
-          message = decoded['message']?.toString() ?? message;
-        } catch (_) {}
-        _showSnack(message);
-        return false;
-      }
-    } catch (e) {
-      _showSnack('Fatura adresi kaydedilemedi: $e');
-      return false;
-    } finally {
-      if (mounted) {
-        setState(() {
-          _savingBilling = false;
-        });
-      }
+        _selectedPhoneCode = null;
+      _phoneController.text = phone;
     }
+
+    _addressTitleController.text = address['title']?.toString() ?? '';
+    _identityController.text = address['identity_number']?.toString() ?? '';
+    _taxNumberController.text = address['tax_number']?.toString() ?? '';
+    _taxOfficeController.text = address['tax_office']?.toString() ?? '';
+    _addressController.text = address['address']?.toString() ?? '';
+    _noteController.text = address['note']?.toString() ?? '';
+    });
   }
 
   bool _validateStep(int step) {
@@ -471,39 +464,55 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
     });
 
     try {
+      final planType =
+          _selectedPack?['type']?.toString() ?? _selectedType ?? 'sms';
+      final countryNumber =
+          _selectedPhoneCode == null || _selectedPhoneCode!.isEmpty
+              ? ''
+              : '+${_selectedPhoneCode}';
       final body = {
-        'pack_id': _selectedPack!['id'].toString(),
-        'type': _selectedPack!['type']?.toString() ?? _selectedType ?? '',
-        'contact_name': _nameController.text.trim(),
-        'contact_last_name': _lastNameController.text.trim(),
-        'contact_email': _emailController.text.trim(),
-        'contact_phone': _phoneController.text.trim(),
+        'pack_id': _selectedPack!['id'],
+        'plan_type': planType,
+        'title': _addressTitleController.text.trim(),
+        if (_selectedAddressId != null) 'address_id': _selectedAddressId,
+        'name': _nameController.text.trim(),
+        'last_name': _lastNameController.text.trim(),
         'company_name': _companyController.text.trim(),
-        'country_id': _selectedCountryId?.toString() ?? '',
-        'phone_code': _selectedPhoneCode ?? '',
+        'email': _emailController.text.trim(),
+        'phone': _phoneController.text.trim(),
+        'country_number': countryNumber,
         'identity_number': _identityController.text.trim(),
         'tax_number': _taxNumberController.text.trim(),
         'tax_office': _taxOfficeController.text.trim(),
         'address': _addressController.text.trim(),
         'note': _noteController.text.trim(),
         'payment_method': _selectedPayment,
-        'agreement': _agreementChecked ? '1' : '0',
+        'terms_agreement': true,
       };
 
       final response = await http.post(
-        Uri.parse('$apiBaseUrl/api/packs/purchase'),
+        Uri.parse('$apiBaseUrl/api/packs/orders'),
         headers: {
           'Authorization': 'Bearer $token',
           'Accept': 'application/json',
+          'Content-Type': 'application/json',
         },
-        body: body,
+        body: jsonEncode(body),
       );
 
       if (response.statusCode == 200 || response.statusCode == 201) {
-        String message = 'Satın alma isteği iletildi.';
+        String message =
+            'Siparişiniz başarıyla oluşturuldu, ödeme ekranına yönlendiriliyorsunuz.';
         try {
           final decoded = jsonDecode(response.body);
-          message = decoded['message']?.toString() ?? message;
+          final data = decoded['data'] ?? decoded;
+          if (data is Map<String, dynamic>) {
+            message = data['message']?.toString() ??
+                decoded['message']?.toString() ??
+                message;
+          } else {
+            message = decoded['message']?.toString() ?? message;
+          }
         } catch (_) {}
         _showSnack(message, success: true);
       } else {
@@ -533,7 +542,7 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
       children: _types
           .map(
             (t) => ChoiceChip(
-              label: Text(t.toUpperCase()),
+              label: Text(_localizePlanLabel(t)),
               selected: _selectedType == t,
               onSelected: (_) => _selectType(t),
             ),
@@ -566,7 +575,7 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
           final packColor =
               _parseColor(pack['color']?.toString()) ?? Colors.indigo.shade50;
           final String price = pack['price']?.toString() ?? '-';
-          final String annualPrice = pack['annual_price']?.toString() ?? '';
+          final String priceWithTax = pack['price_with_tax']?.toString() ?? '';
           final String smsCount = pack['sms_count']?.toString() ?? '-';
           final List<dynamic> details =
               pack['details'] is List ? pack['details'] as List : const [];
@@ -650,35 +659,33 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
                                   fontWeight: FontWeight.w500,
                                 ),
                               ),
-                              const SizedBox(height: 6),
-                              Wrap(
-                                spacing: 8,
-                                runSpacing: 4,
-                                crossAxisAlignment: WrapCrossAlignment.center,
+                              const SizedBox(height: 10),
+                              Row(
+                                crossAxisAlignment: CrossAxisAlignment.center,
                                 children: [
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(
-                                        horizontal: 10, vertical: 6),
-                                    decoration: BoxDecoration(
-                                      color: packColor.withOpacity(0.16),
-                                      borderRadius: BorderRadius.circular(10),
-                                    ),
-                                    child: Text(
-                                      '₺$price',
-                                      style: const TextStyle(
-                                        fontWeight: FontWeight.bold,
+                                  Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        '₺$price',
+                                        style: TextStyle(
+                                          color: packColor,
+                                          fontWeight: FontWeight.w800,
+                                          fontSize: 22,
+                                        ),
                                       ),
-                                    ),
+                                      const SizedBox(height: 2),
+                                      Text(
+                                        priceWithTax.isNotEmpty
+                                            ? 'KDV Dahil ₺$priceWithTax'
+                                            : '',
+                                        style: const TextStyle(
+                                          color: Colors.black54,
+                                          fontSize: 12,
+                                        ),
+                                      ),
+                                    ],
                                   ),
-                                  if (annualPrice.isNotEmpty)
-                                    Text(
-                                      'Yıllık: ₺$annualPrice',
-                                      style: const TextStyle(
-                                        fontSize: 12,
-                                        color: Colors.black54,
-                                      ),
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
                                 ],
                               ),
                             ],
@@ -697,7 +704,8 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
                       Align(
                         alignment: Alignment.centerLeft,
                         child: TextButton.icon(
-                          onPressed: () => _showDetailsModal(details, packColor),
+                          onPressed: () =>
+                              _showDetailsModal(details, packColor),
                           icon: Icon(Icons.list_alt, color: packColor),
                           label: Text(
                             'Özellikleri Gör',
@@ -767,6 +775,75 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
   Widget _buildBuyerForm() {
     return Column(
       children: [
+        if (_loadingAddresses)
+          const LinearProgressIndicator(minHeight: 2)
+        else if (_addressesError != null)
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  _addressesError!,
+                  style: const TextStyle(color: Colors.red),
+                ),
+              ),
+              TextButton(
+                onPressed: _loadAddresses,
+                child: const Text('Yenile'),
+              ),
+            ],
+          )
+        else if (_addresses.isNotEmpty)
+          DropdownButtonFormField<int>(
+            decoration: const InputDecoration(
+              labelText: 'Kayıtlı Adresler',
+              border: OutlineInputBorder(),
+            ),
+            value: _selectedAddressId,
+            isExpanded: true,
+            onChanged: (val) {
+              if (val == null) return;
+              if (val == -1) {
+                setState(() {
+                  _clearAddressFields();
+                });
+                return;
+              }
+              final addr =
+                  _addresses.firstWhere((a) => a['id'] == val, orElse: () => {});
+              if (addr.isNotEmpty) {
+                _applyAddress(addr);
+              }
+            },
+            items: _addresses
+                .map(
+                  (a) => DropdownMenuItem<int>(
+                    value: a['id'] as int?,
+                    child: Text(
+                      a['title']?.toString().isNotEmpty == true
+                          ? a['title'].toString()
+                          : (a['name']?.toString() ?? 'Adres'),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                )
+                .toList()
+              ..insert(
+                0,
+                const DropdownMenuItem<int>(
+                  value: -1,
+                  child: Text('Yeni Adres'),
+                ),
+              ),
+          ),
+        if (_addresses.isNotEmpty) const SizedBox(height: 12),
+        TextField(
+          controller: _addressTitleController,
+          decoration: const InputDecoration(
+            labelText: 'Adres Başlığı',
+            border: OutlineInputBorder(),
+          ),
+        ),
+        const SizedBox(height: 12),
         TextField(
           controller: _nameController,
           decoration: const InputDecoration(
@@ -825,21 +902,21 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
             ),
             value: _selectedCountryId,
             onChanged: (val) {
-            if (val == null) return;
-            final selected = _countries
-                .firstWhere((c) => c['id'] == val, orElse: () => {});
-            setState(() {
-              _selectedCountryId = val;
-              _selectedPhoneCode =
-                  _cleanPhoneCode(selected['phone_code']?.toString());
-            });
-          },
+              if (val == null) return;
+              final selected = _countries.firstWhere((c) => c['id'] == val,
+                  orElse: () => {});
+              setState(() {
+                _selectedCountryId = val;
+                _selectedPhoneCode =
+                    _cleanPhoneCode(selected['phone_code']?.toString());
+              });
+            },
             items: _countries
                 .map(
                   (c) => DropdownMenuItem<int>(
                     value: c['id'] as int?,
-                    child: Text(
-                        '${c['name'] ?? ''} (+${c['phone_code'] ?? '-'})'),
+                    child:
+                        Text('${c['name'] ?? ''} (+${c['phone_code'] ?? '-'})'),
                   ),
                 )
                 .toList(),
@@ -949,7 +1026,7 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
 
     final smsCount = pack['sms_count']?.toString() ?? '-';
     final price = pack['price']?.toString() ?? '-';
-    final annualPrice = pack['annual_price']?.toString();
+    final priceWithTax = pack['price_with_tax']?.toString() ?? '';
     final paymentLabel = (_paymentOptions.firstWhere(
           (e) => e['value'] == _selectedPayment,
           orElse: () => _paymentOptions.first,
@@ -966,14 +1043,19 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
             style: const TextStyle(fontWeight: FontWeight.bold),
           ),
           subtitle: Text(
-              'Tip: ${pack['type']?.toString().toUpperCase() ?? (_selectedType?.toUpperCase() ?? '')}'),
+              'Tip: ${_localizePlanLabel(pack['type']?.toString() ?? _selectedType)}'),
           trailing: Column(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              Text('₺$price', style: const TextStyle(fontWeight: FontWeight.w700)),
-              if (annualPrice != null && annualPrice.isNotEmpty)
-                Text('Yıllık: ₺$annualPrice',
-                    style: const TextStyle(color: Colors.black54, fontSize: 12)),
+              Text(
+                  '₺$price',
+                  style: const TextStyle(
+                      fontWeight: FontWeight.w800, fontSize: 20)),
+              const SizedBox(height: 6),
+              if (priceWithTax.isNotEmpty)
+                Text('KDV Dahil ₺$priceWithTax',
+                    style: const TextStyle(
+                        fontWeight: FontWeight.w700, fontSize: 14)),
             ],
           ),
         ),
@@ -1067,22 +1149,19 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
   }
 
   void _onContinue() {
-    if (_savingBilling || _purchasing) return;
+    if (_purchasing) return;
     if (!_validateStep(_currentStep)) return;
-    if (_currentStep >= _buildSteps().length - 1) {
-      _purchasePack();
-    } else if (_currentStep == 1) {
-      _saveBillingAddress().then((ok) {
-        if (ok && mounted) {
-          setState(() {
-            _currentStep += 1;
-          });
-        }
-      });
-    } else {
+    if (_currentStep == 0) {
       setState(() {
-        _currentStep += 1;
+        _currentStep = 1;
       });
+    } else if (_currentStep == 1) {
+      setState(() {
+        _currentStep = 2;
+      });
+      _purchasePack();
+    } else {
+      _purchasePack();
     }
   }
 
@@ -1153,19 +1232,17 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
                               child: Wrap(
                                 spacing: 12,
                                 runSpacing: 8,
-                                  children: [
-                                    ElevatedButton(
-                                      onPressed: (_purchasing || _savingBilling)
-                                          ? null
-                                          : details.onStepContinue,
-                                      child: Text(
-                                        _purchasing
-                                            ? '...'
-                                            : _savingBilling
-                                                ? 'Kaydediliyor...'
-                                                : (isLast ? 'Satın Al' : 'Devam'),
-                                      ),
+                                children: [
+                                  ElevatedButton(
+                                    onPressed: _purchasing
+                                        ? null
+                                        : details.onStepContinue,
+                                    child: Text(
+                                      _purchasing
+                                          ? '...'
+                                          : (isLast ? 'Satın Al' : 'Devam'),
                                     ),
+                                  ),
                                   OutlinedButton(
                                     onPressed: details.onStepCancel,
                                     child: const Text('Geri'),
