@@ -16,6 +16,8 @@ class _SmsTemplatesPageState extends State<SmsTemplatesPage> {
   bool _loading = true;
   bool _saving = false;
   String? _error;
+  static const Color _backgroundColor = Color(0xFFF7F9FC);
+  static const Color _primaryColor = Color(0xFF6366F1);
 
   List<Map<String, dynamic>> _templates = [];
   int? _selectedMain;
@@ -200,6 +202,53 @@ class _SmsTemplatesPageState extends State<SmsTemplatesPage> {
     );
   }
 
+  Widget _sectionCard({
+    required Widget child,
+    String? title,
+    String? subtitle,
+    EdgeInsetsGeometry padding = const EdgeInsets.all(16),
+  }) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: Colors.grey.shade200),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.03),
+            blurRadius: 10,
+            offset: const Offset(0, 6),
+          )
+        ],
+      ),
+      padding: padding,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (title != null)
+            Text(
+              title,
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          if (subtitle != null)
+            Padding(
+              padding: const EdgeInsets.only(top: 4, bottom: 10),
+              child: Text(
+                subtitle,
+                style: const TextStyle(color: Colors.black54),
+              ),
+            )
+          else if (title != null)
+            const SizedBox(height: 10),
+          child,
+        ],
+      ),
+    );
+  }
+
   Widget _buildDropdown({
     required String label,
     required String category,
@@ -224,6 +273,9 @@ class _SmsTemplatesPageState extends State<SmsTemplatesPage> {
       decoration: InputDecoration(
         labelText: label,
         hintText: options.isEmpty ? 'Şablon bulunamadı' : 'Seçiniz',
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+        ),
       ),
       items: options
           .map(
@@ -251,8 +303,15 @@ class _SmsTemplatesPageState extends State<SmsTemplatesPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: _backgroundColor,
       appBar: AppBar(
-        title: const Text('SMS Şablonları'),
+        elevation: 0,
+        backgroundColor: Colors.white,
+        foregroundColor: Colors.black87,
+        title: const Text(
+          'SMS Şablonları',
+          style: TextStyle(fontWeight: FontWeight.w700),
+        ),
         actions: [
           IconButton(
             onPressed: _fetchTemplates,
@@ -278,89 +337,89 @@ class _SmsTemplatesPageState extends State<SmsTemplatesPage> {
                     ),
                   )
                 : SingleChildScrollView(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          'Müşteri SMS Şablonları',
-                          style: TextStyle(
-                              fontSize: 16, fontWeight: FontWeight.bold),
-                        ),
-                        if (_selectedTemplatesMeta != null)
-                          Padding(
-                            padding: const EdgeInsets.only(top: 4),
-                            child: Text(
-                              'Seçim ID: ${_selectedTemplatesMeta?['id'] ?? ''}',
-                              style: const TextStyle(
-                                  fontSize: 12, color: Colors.grey),
+                    child: _sectionCard(
+                      title: 'Müşteri SMS Şablonları',
+                      subtitle: _selectedTemplatesMeta != null
+                          ? 'Seçim ID: ${_selectedTemplatesMeta?['id'] ?? ''}'
+                          : null,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _buildDropdown(
+                            label: 'Ana Mesaj',
+                            category: 'appointment',
+                            selectedId: _selectedMain,
+                            onChanged: (val) {
+                              setState(() {
+                                _selectedMain = val;
+                              });
+                            },
+                          ),
+                          const SizedBox(height: 12),
+                          _buildDropdown(
+                            label: 'Hatırlatma',
+                            category: 'reminder',
+                            selectedId: _selectedReminder,
+                            onChanged: (val) {
+                              setState(() {
+                                _selectedReminder = val;
+                              });
+                            },
+                          ),
+                          const SizedBox(height: 12),
+                          _buildDropdown(
+                            label: 'İptal',
+                            category: 'cancel',
+                            selectedId: _selectedCancel,
+                            onChanged: (val) {
+                              setState(() {
+                                _selectedCancel = val;
+                              });
+                            },
+                          ),
+                          const SizedBox(height: 12),
+                          _buildDropdown(
+                            label: 'Güncelleme',
+                            category: 'update',
+                            selectedId: _selectedUpdate,
+                            onChanged: (val) {
+                              setState(() {
+                                _selectedUpdate = val;
+                              });
+                            },
+                          ),
+                          const SizedBox(height: 16),
+                          SizedBox(
+                            width: double.infinity,
+                            child: ElevatedButton.icon(
+                              onPressed: _saving ? null : _saveSelection,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: _primaryColor,
+                                foregroundColor: Colors.white,
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 18, vertical: 12),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                              ),
+                              icon: _saving
+                                  ? const SizedBox(
+                                      width: 16,
+                                      height: 16,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        valueColor:
+                                            AlwaysStoppedAnimation(Colors.white),
+                                      ),
+                                    )
+                                  : const Icon(Icons.save),
+                              label: Text(
+                                _saving ? 'Kaydediliyor...' : 'Kaydet',
+                              ),
                             ),
                           ),
-                        const SizedBox(height: 12),
-                        _buildDropdown(
-                          label: 'Ana Mesaj',
-                          category: 'appointment',
-                          selectedId: _selectedMain,
-                          onChanged: (val) {
-                            setState(() {
-                              _selectedMain = val;
-                            });
-                          },
-                        ),
-                        const SizedBox(height: 12),
-                        _buildDropdown(
-                          label: 'Hatırlatma',
-                          category: 'reminder',
-                          selectedId: _selectedReminder,
-                          onChanged: (val) {
-                            setState(() {
-                              _selectedReminder = val;
-                            });
-                          },
-                        ),
-                        const SizedBox(height: 12),
-                        _buildDropdown(
-                          label: 'İptal',
-                          category: 'cancel',
-                          selectedId: _selectedCancel,
-                          onChanged: (val) {
-                            setState(() {
-                              _selectedCancel = val;
-                            });
-                          },
-                        ),
-                        const SizedBox(height: 12),
-                        _buildDropdown(
-                          label: 'Güncelleme',
-                          category: 'update',
-                          selectedId: _selectedUpdate,
-                          onChanged: (val) {
-                            setState(() {
-                              _selectedUpdate = val;
-                            });
-                          },
-                        ),
-                        const SizedBox(height: 12),
-                        SizedBox(
-                          width: double.infinity,
-                          child: ElevatedButton.icon(
-                            onPressed: _saving ? null : _saveSelection,
-                            icon: _saving
-                                ? const SizedBox(
-                                    width: 16,
-                                    height: 16,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                      valueColor:
-                                          AlwaysStoppedAnimation(Colors.white),
-                                    ),
-                                  )
-                                : const Icon(Icons.save),
-                            label: Text(
-                              _saving ? 'Kaydediliyor...' : 'Kaydet',
-                            ),
-                          ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   ),
       ),

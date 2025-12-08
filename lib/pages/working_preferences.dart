@@ -15,6 +15,8 @@ class WorkingPreferencesPage extends StatefulWidget {
 class _WorkingPreferencesPageState extends State<WorkingPreferencesPage> {
   final TextEditingController _firstSessionCountController =
       TextEditingController(text: '1');
+  static const Color _backgroundColor = Color(0xFFF7F9FC);
+  static const Color _primaryColor = Color(0xFF6366F1);
 
   bool _loading = true;
   bool _saving = false;
@@ -219,6 +221,53 @@ class _WorkingPreferencesPageState extends State<WorkingPreferencesPage> {
     );
   }
 
+  Widget _sectionCard({
+    required Widget child,
+    String? title,
+    String? subtitle,
+    EdgeInsetsGeometry padding = const EdgeInsets.all(16),
+  }) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: Colors.grey.shade200),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.03),
+            blurRadius: 10,
+            offset: const Offset(0, 6),
+          )
+        ],
+      ),
+      padding: padding,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (title != null)
+            Text(
+              title,
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          if (subtitle != null)
+            Padding(
+              padding: const EdgeInsets.only(top: 4, bottom: 10),
+              child: Text(
+                subtitle,
+                style: const TextStyle(color: Colors.black54),
+              ),
+            )
+          else if (title != null)
+            const SizedBox(height: 10),
+          child,
+        ],
+      ),
+    );
+  }
+
   void _addSlot(_DayPreference pref) {
     setState(() {
       pref.timeSlots.add(
@@ -333,8 +382,15 @@ class _WorkingPreferencesPageState extends State<WorkingPreferencesPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: _backgroundColor,
       appBar: AppBar(
-        title: const Text('Çalışma Saatleri'),
+        elevation: 0,
+        backgroundColor: Colors.white,
+        foregroundColor: Colors.black87,
+        title: const Text(
+          'Çalışma Saatleri',
+          style: TextStyle(fontWeight: FontWeight.w700),
+        ),
       ),
       body: _buildBody(),
     );
@@ -358,6 +414,10 @@ class _WorkingPreferencesPageState extends State<WorkingPreferencesPage> {
             ),
             ElevatedButton(
               onPressed: _loadPreferences,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: _primaryColor,
+                foregroundColor: Colors.white,
+              ),
               child: const Text('Tekrar Dene'),
             ),
           ],
@@ -371,33 +431,28 @@ class _WorkingPreferencesPageState extends State<WorkingPreferencesPage> {
         padding: const EdgeInsets.all(16),
         physics: const AlwaysScrollableScrollPhysics(),
         children: [
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'İlk randevu için oturum sayısı',
-                    style: TextStyle(fontWeight: FontWeight.w600),
-                  ),
-                  const SizedBox(height: 8),
-                  TextField(
-                    controller: _firstSessionCountController,
-                    keyboardType: TextInputType.number,
-                    decoration: const InputDecoration(
-                      border: OutlineInputBorder(),
-                      hintText: 'Örn: 1',
+          _sectionCard(
+            title: 'İlk randevu oturum sayısı',
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                TextField(
+                  controller: _firstSessionCountController,
+                  keyboardType: TextInputType.number,
+                  decoration: InputDecoration(
+                    labelText: 'Örn: 1',
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10),
                     ),
-                    onChanged: (val) {
-                      final parsed = int.tryParse(val);
-                      if (parsed != null && parsed > 0) {
-                        _firstAppointmentSessionCount = parsed;
-                      }
-                    },
                   ),
-                ],
-              ),
+                  onChanged: (val) {
+                    final parsed = int.tryParse(val);
+                    if (parsed != null && parsed > 0) {
+                      _firstAppointmentSessionCount = parsed;
+                    }
+                  },
+                ),
+              ],
             ),
           ),
           const SizedBox(height: 12),
@@ -416,6 +471,8 @@ class _WorkingPreferencesPageState extends State<WorkingPreferencesPage> {
                 : const Icon(Icons.save),
             label: Text(_saving ? 'Kaydediliyor...' : 'Kaydet'),
             style: ElevatedButton.styleFrom(
+              backgroundColor: _primaryColor,
+              foregroundColor: Colors.white,
               padding: const EdgeInsets.symmetric(vertical: 14),
             ),
           ),
@@ -427,51 +484,42 @@ class _WorkingPreferencesPageState extends State<WorkingPreferencesPage> {
 
   Widget _buildDayCard(_DayPreference pref) {
     final dayName = _dayNames[pref.dayOfWeek - 1];
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Text(
-                  dayName,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                const Spacer(),
-                const Text('Çalışıyor'),
-                Switch(
-                  value: pref.isWorking,
-                  onChanged: (val) {
-                    setState(() {
-                      pref.isWorking = val;
-                    });
-                  },
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            Column(
-              children: pref.timeSlots
-                  .asMap()
-                  .entries
-                  .map((entry) => _buildSlotRow(pref, entry.key, entry.value))
-                  .toList(),
-            ),
-            Align(
-              alignment: Alignment.centerLeft,
-              child: TextButton.icon(
-                onPressed: () => _addSlot(pref),
-                icon: const Icon(Icons.add),
-                label: const Text('Saat aralığı ekle'),
+    return _sectionCard(
+      title: dayName,
+      subtitle: 'Çalışma durumu ve saat aralıkları',
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Text('Çalışıyor'),
+              Switch(
+                value: pref.isWorking,
+                onChanged: (val) {
+                  setState(() {
+                    pref.isWorking = val;
+                  });
+                },
               ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Column(
+            children: pref.timeSlots
+                .asMap()
+                .entries
+                .map((entry) => _buildSlotRow(pref, entry.key, entry.value))
+                .toList(),
+          ),
+          Align(
+            alignment: Alignment.centerLeft,
+            child: TextButton.icon(
+              onPressed: () => _addSlot(pref),
+              icon: const Icon(Icons.add),
+              label: const Text('Saat aralığı ekle'),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -503,7 +551,6 @@ class _WorkingPreferencesPageState extends State<WorkingPreferencesPage> {
                   .toList(),
               decoration: const InputDecoration(
                 labelText: 'Başlangıç',
-                border: OutlineInputBorder(),
               ),
               onChanged: (val) {
                 if (val == null) return;
@@ -531,7 +578,6 @@ class _WorkingPreferencesPageState extends State<WorkingPreferencesPage> {
                   .toList(),
               decoration: const InputDecoration(
                 labelText: 'Bitiş',
-                border: OutlineInputBorder(),
               ),
               onChanged: (val) {
                 if (val == null) return;
@@ -560,7 +606,6 @@ class _WorkingPreferencesPageState extends State<WorkingPreferencesPage> {
                   .toList(),
               decoration: const InputDecoration(
                 labelText: 'Periyot',
-                border: OutlineInputBorder(),
                 isDense: true,
                 contentPadding:
                     EdgeInsets.symmetric(horizontal: 8, vertical: 10),
@@ -592,98 +637,88 @@ class _WorkingPreferencesPageState extends State<WorkingPreferencesPage> {
   }
 
   Widget _buildHolidaysCard() {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Tatil Günleri',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-            ),
-            const SizedBox(height: 12),
-            if (_holidays.isEmpty)
-              const Text('Henüz tatil eklenmedi.'),
-            ..._holidays.asMap().entries.map((entry) {
-              final index = entry.key;
-              final holiday = entry.value;
-              return Padding(
-                padding: const EdgeInsets.only(bottom: 12),
-                child: Column(
-                  children: [
-                    Row(
-                      children: [
-                        Expanded(
-                          child: TextFormField(
-                            key: ValueKey('begin-$index-${holiday.holidayBegin}'),
-                            readOnly: true,
-                            initialValue: holiday.holidayBegin,
-                            decoration: const InputDecoration(
-                              labelText: 'Başlangıç',
-                              border: OutlineInputBorder(),
-                              isDense: true,
-                            ),
-                            onTap: () => _pickHolidayDate(index, true),
+    return _sectionCard(
+      title: 'Tatil Günleri',
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (_holidays.isEmpty)
+            const Text('Henüz tatil eklenmedi.'),
+          ..._holidays.asMap().entries.map((entry) {
+            final index = entry.key;
+            final holiday = entry.value;
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: Column(
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextFormField(
+                          key: ValueKey('begin-$index-${holiday.holidayBegin}'),
+                          readOnly: true,
+                          initialValue: holiday.holidayBegin,
+                          decoration: const InputDecoration(
+                            labelText: 'Başlangıç',
+                            isDense: true,
                           ),
+                          onTap: () => _pickHolidayDate(index, true),
                         ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: TextFormField(
-                            key: ValueKey('end-$index-${holiday.holidayEnd}'),
-                            readOnly: true,
-                            initialValue: holiday.holidayEnd,
-                            decoration: const InputDecoration(
-                              labelText: 'Bitiş',
-                              border: OutlineInputBorder(),
-                              isDense: true,
-                            ),
-                            onTap: () => _pickHolidayDate(index, false),
-                          ),
-                        ),
-                        SizedBox(
-                          width: 40,
-                          child: IconButton(
-                            tooltip: 'Sil',
-                            padding: EdgeInsets.zero,
-                            constraints:
-                                const BoxConstraints.tightFor(width: 36, height: 36),
-                            visualDensity: VisualDensity.compact,
-                            onPressed: () => _removeHoliday(index),
-                            icon: const Icon(Icons.delete),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    TextFormField(
-                      key: ValueKey('reason-$index-${holiday.reason}'),
-                      initialValue: holiday.reason,
-                      decoration: const InputDecoration(
-                        labelText: 'Açıklama (isteğe bağlı)',
-                        border: OutlineInputBorder(),
-                        isDense: true,
                       ),
-                      onChanged: (val) {
-                        setState(() {
-                          holiday.reason = val;
-                        });
-                      },
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: TextFormField(
+                          key: ValueKey('end-$index-${holiday.holidayEnd}'),
+                          readOnly: true,
+                          initialValue: holiday.holidayEnd,
+                          decoration: const InputDecoration(
+                            labelText: 'Bitiş',
+                            isDense: true,
+                          ),
+                          onTap: () => _pickHolidayDate(index, false),
+                        ),
+                      ),
+                      SizedBox(
+                        width: 40,
+                        child: IconButton(
+                          tooltip: 'Sil',
+                          padding: EdgeInsets.zero,
+                          constraints:
+                              const BoxConstraints.tightFor(width: 36, height: 36),
+                          visualDensity: VisualDensity.compact,
+                          onPressed: () => _removeHoliday(index),
+                          icon: const Icon(Icons.delete),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  TextFormField(
+                    key: ValueKey('reason-$index-${holiday.reason}'),
+                    initialValue: holiday.reason,
+                    decoration: const InputDecoration(
+                      labelText: 'Açıklama (isteğe bağlı)',
+                      isDense: true,
                     ),
-                  ],
-                ),
-              );
-            }),
-            Align(
-              alignment: Alignment.centerLeft,
-              child: TextButton.icon(
-                onPressed: _addHoliday,
-                icon: const Icon(Icons.add),
-                label: const Text('Tatil ekle'),
+                    onChanged: (val) {
+                      setState(() {
+                        holiday.reason = val;
+                      });
+                    },
+                  ),
+                ],
               ),
+            );
+          }),
+          Align(
+            alignment: Alignment.centerLeft,
+            child: TextButton.icon(
+              onPressed: _addHoliday,
+              icon: const Icon(Icons.add),
+              label: const Text('Tatil ekle'),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

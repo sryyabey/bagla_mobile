@@ -40,6 +40,8 @@ class _ProfilePageState extends State<ProfilePage> {
   Uint8List? _avatarBytes;
   String? _avatarFileName;
   Map<String, dynamic>? _packInfo;
+  static const Color _backgroundColor = Color(0xFFF7F9FC);
+  static const Color _primaryColor = Color(0xFF6366F1);
 
   @override
   void initState() {
@@ -289,6 +291,53 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
+  Widget _sectionCard({
+    required Widget child,
+    String? title,
+    String? subtitle,
+    EdgeInsetsGeometry padding = const EdgeInsets.all(16),
+  }) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: Colors.grey.shade200),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.03),
+            blurRadius: 10,
+            offset: const Offset(0, 6),
+          )
+        ],
+      ),
+      padding: padding,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (title != null)
+            Text(
+              title,
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          if (subtitle != null)
+            Padding(
+              padding: const EdgeInsets.only(top: 4, bottom: 10),
+              child: Text(
+                subtitle,
+                style: const TextStyle(color: Colors.black54),
+              ),
+            )
+          else if (title != null)
+            const SizedBox(height: 10),
+          child,
+        ],
+      ),
+    );
+  }
+
   Widget _buildAvatar() {
     Widget avatarChild;
     if (_avatarBytes != null) {
@@ -311,9 +360,19 @@ class _ProfilePageState extends State<ProfilePage> {
 
     return Column(
       children: [
-        SizedBox(
+        Container(
           width: 96,
           height: 96,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.08),
+                blurRadius: 12,
+                offset: const Offset(0, 6),
+              ),
+            ],
+          ),
           child: ClipOval(child: avatarChild),
         ),
         const SizedBox(height: 8),
@@ -327,199 +386,217 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   Widget _buildHeader() {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Row(
-          children: [
-            _buildAvatar(),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    _nameController.text.isEmpty
-                        ? 'İsim girilmemiş'
-                        : _nameController.text,
-                    style: const TextStyle(
-                        fontSize: 18, fontWeight: FontWeight.w600),
+    return _sectionCard(
+      padding: const EdgeInsets.all(16),
+      child: Row(
+        children: [
+          _buildAvatar(),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  _nameController.text.isEmpty
+                      ? 'İsim girilmemiş'
+                      : _nameController.text,
+                  style: const TextStyle(
+                      fontSize: 18, fontWeight: FontWeight.w700),
+                ),
+                Text(
+                  _usernameController.text.isEmpty
+                      ? '@kullanici'
+                      : '@${_usernameController.text}',
+                  style: const TextStyle(color: Colors.black54),
+                ),
+                const SizedBox(height: 8),
+                if (_packInfo != null)
+                  Wrap(
+                    spacing: 12,
+                    runSpacing: 4,
+                    children: [
+                      if (_packInfo?['active_pack'] != null)
+                        _infoChip(
+                          Icons.local_fire_department,
+                          _packInfo!['active_pack'].toString(),
+                        ),
+                      if (_packInfo?['expiry_date'] != null)
+                        _infoChip(
+                          Icons.schedule,
+                          _packInfo!['expiry_date'].toString(),
+                        ),
+                      if (_packInfo?['remaining_sms'] != null)
+                        _infoChip(
+                          Icons.sms,
+                          'SMS: ${_packInfo!['remaining_sms']}',
+                        ),
+                    ],
                   ),
-                  Text(
-                    _usernameController.text.isEmpty
-                        ? '@kullanici'
-                        : '@${_usernameController.text}',
-                    style: const TextStyle(color: Colors.grey),
-                  ),
-                  const SizedBox(height: 8),
-                  if (_packInfo != null)
-                    Wrap(
-                      spacing: 12,
-                      runSpacing: 4,
-                      children: [
-                        if (_packInfo?['active_pack'] != null)
-                          _infoChip(
-                            Icons.local_fire_department,
-                            _packInfo!['active_pack'].toString(),
-                          ),
-                        if (_packInfo?['expiry_date'] != null)
-                          _infoChip(
-                            Icons.schedule,
-                            _packInfo!['expiry_date'].toString(),
-                          ),
-                        if (_packInfo?['remaining_sms'] != null)
-                          _infoChip(
-                            Icons.sms,
-                            'SMS: ${_packInfo!['remaining_sms']}',
-                          ),
-                      ],
-                    ),
-                ],
-              ),
+              ],
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
 
   Widget _infoChip(IconData icon, String text) {
     return Chip(
-      avatar: Icon(icon, size: 16),
+      avatar: Icon(icon, size: 16, color: _primaryColor),
       label: Text(text),
       padding: const EdgeInsets.symmetric(horizontal: 4),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(10),
+        side: BorderSide(color: _primaryColor.withOpacity(0.2)),
+      ),
     );
   }
 
   InputDecoration _inputDecoration(String label) {
     return InputDecoration(
       labelText: label,
-      border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+      filled: true,
+      fillColor: Colors.grey.shade50,
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(10),
+        borderSide: BorderSide(color: Colors.grey.shade300),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(10),
+        borderSide: BorderSide(color: Colors.grey.shade300),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(10),
+        borderSide: const BorderSide(color: _primaryColor, width: 1.2),
+      ),
     );
   }
 
   Widget _buildProfileForm() {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Profil Bilgileri',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: _nameController,
-              decoration: _inputDecoration('İsim'),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: _usernameController,
-              decoration: _inputDecoration('Kullanıcı adı'),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: _descriptionController,
-              maxLines: 3,
-              decoration: _inputDecoration('Açıklama'),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: _footerController,
-              decoration: _inputDecoration('Footer'),
-            ),
-            const SizedBox(height: 12),
-            const Divider(),
-            const Text(
-              'SEO',
-              style: TextStyle(fontWeight: FontWeight.w600),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: _seoTitleController,
-              decoration: _inputDecoration('Başlık'),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: _seoDescriptionController,
-              maxLines: 2,
-              decoration: _inputDecoration('Açıklama'),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: _seoKeywordsController,
-              decoration: _inputDecoration('Anahtar kelimeler'),
-            ),
-            const SizedBox(height: 16),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton.icon(
-                onPressed: _savingProfile ? null : _saveProfile,
-                icon: _savingProfile
-                    ? const SizedBox(
-                        width: 16,
-                        height: 16,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : const Icon(Icons.save),
-                label: Text(_savingProfile ? 'Kaydediliyor...' : 'Kaydet'),
+    return _sectionCard(
+      title: 'Profil Bilgileri',
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          TextField(
+            controller: _nameController,
+            decoration: _inputDecoration('İsim'),
+          ),
+          const SizedBox(height: 12),
+          TextField(
+            controller: _usernameController,
+            decoration: _inputDecoration('Kullanıcı adı'),
+          ),
+          const SizedBox(height: 12),
+          TextField(
+            controller: _descriptionController,
+            maxLines: 3,
+            decoration: _inputDecoration('Açıklama'),
+          ),
+          const SizedBox(height: 12),
+          TextField(
+            controller: _footerController,
+            decoration: _inputDecoration('Footer'),
+          ),
+          const SizedBox(height: 16),
+          const Divider(),
+          const Text(
+            'SEO',
+            style: TextStyle(fontWeight: FontWeight.w600),
+          ),
+          const SizedBox(height: 12),
+          TextField(
+            controller: _seoTitleController,
+            decoration: _inputDecoration('Başlık'),
+          ),
+          const SizedBox(height: 12),
+          TextField(
+            controller: _seoDescriptionController,
+            maxLines: 2,
+            decoration: _inputDecoration('Açıklama'),
+          ),
+          const SizedBox(height: 12),
+          TextField(
+            controller: _seoKeywordsController,
+            decoration: _inputDecoration('Anahtar kelimeler'),
+          ),
+          const SizedBox(height: 16),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              onPressed: _savingProfile ? null : _saveProfile,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: _primaryColor,
+                foregroundColor: Colors.white,
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
               ),
+              icon: _savingProfile
+                  ? const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Icon(Icons.save),
+              label: Text(_savingProfile ? 'Kaydediliyor...' : 'Kaydet'),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
 
   Widget _buildPasswordForm() {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Parola Güncelle',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: _currentPasswordController,
-              obscureText: true,
-              decoration: _inputDecoration('Mevcut parola'),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: _newPasswordController,
-              obscureText: true,
-              decoration: _inputDecoration('Yeni parola'),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: _confirmPasswordController,
-              obscureText: true,
-              decoration: _inputDecoration('Yeni parola tekrar'),
-            ),
-            const SizedBox(height: 16),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton.icon(
-                onPressed: _savingPassword ? null : _changePassword,
-                icon: _savingPassword
-                    ? const SizedBox(
-                        width: 16,
-                        height: 16,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : const Icon(Icons.lock_reset),
-                label:
-                    Text(_savingPassword ? 'Gönderiliyor...' : 'Parolayı Güncelle'),
+    return _sectionCard(
+      title: 'Parola Güncelle',
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          TextField(
+            controller: _currentPasswordController,
+            obscureText: true,
+            decoration: _inputDecoration('Mevcut parola'),
+          ),
+          const SizedBox(height: 12),
+          TextField(
+            controller: _newPasswordController,
+            obscureText: true,
+            decoration: _inputDecoration('Yeni parola'),
+          ),
+          const SizedBox(height: 12),
+          TextField(
+            controller: _confirmPasswordController,
+            obscureText: true,
+            decoration: _inputDecoration('Yeni parola tekrar'),
+          ),
+          const SizedBox(height: 16),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              onPressed: _savingPassword ? null : _changePassword,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: _primaryColor,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
               ),
+              icon: _savingPassword
+                  ? const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Icon(Icons.lock_reset),
+              label:
+                  Text(_savingPassword ? 'Gönderiliyor...' : 'Parolayı Güncelle'),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -527,8 +604,15 @@ class _ProfilePageState extends State<ProfilePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: _backgroundColor,
       appBar: AppBar(
-        title: const Text('Profil'),
+        elevation: 0,
+        backgroundColor: Colors.white,
+        foregroundColor: Colors.black87,
+        title: const Text(
+          'Profil',
+          style: TextStyle(fontWeight: FontWeight.w700),
+        ),
       ),
       body: _loadingProfile
           ? const Center(child: CircularProgressIndicator())

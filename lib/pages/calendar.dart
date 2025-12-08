@@ -256,6 +256,8 @@ class CalendarPage extends ConsumerStatefulWidget {
 class _CalendarPageState extends ConsumerState<CalendarPage> {
   late DateTime _weekStart;
   String? _lastErrorMessage;
+  static const Color _backgroundColor = Color(0xFFF7F9FC);
+  static const Color _primaryColor = Color(0xFF6366F1);
 
   @override
   void initState() {
@@ -311,7 +313,11 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
                 ],
               ),
               backgroundColor:
-                  selected ? Colors.indigo.shade100 : Colors.grey.shade200,
+                  selected ? _primaryColor.withOpacity(0.18) : Colors.white,
+              side: BorderSide(
+                  color: selected
+                      ? _primaryColor.withOpacity(0.5)
+                      : Colors.grey.shade300),
             ),
           );
         }).toList(),
@@ -339,8 +345,9 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
         return Container(
           height: 64,
           decoration: BoxDecoration(
-            color: Colors.grey.shade100,
-            border: Border.all(color: Colors.grey.shade300),
+            color: Colors.grey.shade50,
+            border: Border.all(color: Colors.grey.shade200),
+            borderRadius: BorderRadius.circular(8),
           ),
           child: const Center(
             child: Text(
@@ -370,6 +377,7 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
           decoration: BoxDecoration(
             color: color.withOpacity(0.1),
             border: Border.all(color: color.withOpacity(0.4)),
+            borderRadius: BorderRadius.circular(8),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -404,6 +412,7 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
         decoration: BoxDecoration(
           color: Colors.white,
           border: Border.all(color: Colors.grey.shade300),
+          borderRadius: BorderRadius.circular(8),
         ),
         child: Center(
           child: IconButton(
@@ -434,94 +443,113 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
             width: (days.length + 1) * 140,
             child: Scrollbar(
               thumbVisibility: true,
-              child: ListView.builder(
-                itemCount: timeGrid.length + 1,
-                itemBuilder: (context, rowIndex) {
-                  if (rowIndex == 0) {
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: Colors.grey.shade200),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.03),
+                      blurRadius: 10,
+                      offset: const Offset(0, 6),
+                    )
+                  ],
+                ),
+                child: ListView.builder(
+                  itemCount: timeGrid.length + 1,
+                  itemBuilder: (context, rowIndex) {
+                    if (rowIndex == 0) {
+                      return Row(
+                        children: [
+                          Container(
+                            width: 120,
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: Colors.grey.shade100,
+                              borderRadius: const BorderRadius.only(
+                                topLeft: Radius.circular(14),
+                              ),
+                            ),
+                            child: const Text(
+                              'Saat',
+                              style: TextStyle(fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                          ...days.map((d) {
+                            return Container(
+                              width: 140,
+                              padding: const EdgeInsets.all(8),
+                              color: d.isToday
+                                  ? _primaryColor.withOpacity(0.08)
+                                  : Colors.grey.shade50,
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    d.label,
+                                    style: const TextStyle(
+                                        fontWeight: FontWeight.bold),
+                                  ),
+                                  Text(
+                                    d.displayDate,
+                                    style:
+                                        const TextStyle(color: Colors.black54),
+                                  ),
+                                ],
+                              ),
+                            );
+                          }),
+                        ],
+                      );
+                    }
+
+                    final time = timeGrid[rowIndex - 1];
                     return Row(
                       children: [
                         Container(
                           width: 120,
+                          height: 64,
                           padding: const EdgeInsets.all(8),
-                          color: Colors.grey.shade200,
-                          child: const Text(
-                            'Saat',
-                            style: TextStyle(fontWeight: FontWeight.bold),
+                          color: Colors.grey.shade100,
+                          child: Align(
+                            alignment: Alignment.centerLeft,
+                            child: Text(
+                              time,
+                              style: const TextStyle(
+                                  fontWeight: FontWeight.w600, fontSize: 13),
+                            ),
                           ),
                         ),
                         ...days.map((d) {
-                          return Container(
+                          final slots = data.timeSlotsByDay[d.date] ?? const [];
+                          final hasSlot = slots.any((s) => s.time == time);
+                          if (!hasSlot) {
+                            return Container(
+                              width: 140,
+                              height: 64,
+                              decoration: BoxDecoration(
+                                color: Colors.grey.shade50,
+                                border:
+                                    Border.all(color: Colors.grey.shade200),
+                              ),
+                              child: const Center(
+                                child: Text(
+                                  '-',
+                                  style: TextStyle(color: Colors.grey),
+                                ),
+                              ),
+                            );
+                          }
+                          return SizedBox(
                             width: 140,
-                            padding: const EdgeInsets.all(8),
-                            color: d.isToday
-                                ? Colors.indigo.shade50
-                                : Colors.grey.shade100,
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  d.label,
-                                  style: const TextStyle(
-                                      fontWeight: FontWeight.bold),
-                                ),
-                                Text(
-                                  d.displayDate,
-                                  style:
-                                      const TextStyle(color: Colors.black54),
-                                ),
-                              ],
-                            ),
+                            child: buildCell(d, time),
                           );
-                        }),
+                        }).toList(),
                       ],
                     );
-                  }
-
-                  final time = timeGrid[rowIndex - 1];
-                  return Row(
-                    children: [
-                      Container(
-                        width: 120,
-                        height: 64,
-                        padding: const EdgeInsets.all(8),
-                        color: Colors.grey.shade100,
-                        child: Align(
-                          alignment: Alignment.centerLeft,
-                          child: Text(
-                            time,
-                            style: const TextStyle(
-                                fontWeight: FontWeight.w600, fontSize: 13),
-                          ),
-                        ),
-                      ),
-                      ...days.map((d) {
-                        final slots = data.timeSlotsByDay[d.date] ?? const [];
-                        final hasSlot = slots.any((s) => s.time == time);
-                        if (!hasSlot) {
-                          return Container(
-                            width: 140,
-                            height: 64,
-                            decoration: BoxDecoration(
-                              color: Colors.grey.shade50,
-                              border:
-                                  Border.all(color: Colors.grey.shade300),
-                            ),
-                            child: const Center(
-                              child: Text(
-                                '-',
-                                style: TextStyle(color: Colors.grey),
-                              ),
-                            ),
-                          );
-                        }
-                        return SizedBox(
-                          width: 140,
-                          child: buildCell(d, time),
-                        );
-                      }),
-                    ],
-                  );
-                },
+                  },
+                ),
               ),
             ),
           ),

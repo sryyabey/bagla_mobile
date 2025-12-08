@@ -146,14 +146,14 @@ class _DashboardPageState extends State<DashboardPage> {
     return Expanded(
       child: Container(
         decoration: BoxDecoration(
-          color: color ?? Colors.white,
-          borderRadius: BorderRadius.circular(12),
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(14),
           border: Border.all(color: Colors.grey.shade200),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.04),
-              blurRadius: 8,
-              offset: const Offset(0, 4),
+              color: Colors.black.withOpacity(0.03),
+              blurRadius: 10,
+              offset: const Offset(0, 6),
             )
           ],
         ),
@@ -163,10 +163,10 @@ class _DashboardPageState extends State<DashboardPage> {
             Container(
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
-                color: Colors.blueAccent.withOpacity(0.1),
+                color: (color ?? Colors.blueAccent).withOpacity(0.1),
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: Icon(icon, color: Colors.blueAccent),
+              child: Icon(icon, color: color ?? Colors.blueAccent),
             ),
             const SizedBox(width: 12),
             Expanded(
@@ -176,9 +176,9 @@ class _DashboardPageState extends State<DashboardPage> {
                   Text(
                     title,
                     style: const TextStyle(
-                      fontSize: 14,
+                      fontSize: 13,
                       color: Colors.black54,
-                      fontWeight: FontWeight.w500,
+                      fontWeight: FontWeight.w600,
                     ),
                   ),
                   const SizedBox(height: 6),
@@ -186,7 +186,7 @@ class _DashboardPageState extends State<DashboardPage> {
                     value,
                     style: const TextStyle(
                       fontSize: 20,
-                      fontWeight: FontWeight.bold,
+                      fontWeight: FontWeight.w800,
                     ),
                   ),
                 ],
@@ -198,103 +198,210 @@ class _DashboardPageState extends State<DashboardPage> {
     );
   }
 
-  Widget _buildBioCard(String? link) {
-    if (link == null || link.isEmpty) {
-      return const SizedBox.shrink();
-    }
-    return Card(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      elevation: 1,
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Bio Sayfanız',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+  Widget _heroSection(Map<String, dynamic>? packInfo, String totalClicks) {
+    final remainingSms =
+        packInfo != null ? (packInfo['remaining_sms'] ?? 0).toString() : '0';
+    return Container(
+      margin: const EdgeInsets.only(bottom: 14),
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [Colors.indigo.shade900, Colors.indigo.shade500],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.indigo.withOpacity(0.25),
+            blurRadius: 18,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Yönetim Paneli',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 22,
+              fontWeight: FontWeight.w800,
             ),
-            const SizedBox(height: 8),
-            Row(
+          ),
+          const SizedBox(height: 6),
+          const Text(
+            'Linklerini ve randevularını tek yerden yönet.',
+            style: TextStyle(color: Colors.white70),
+          ),
+          const SizedBox(height: 14),
+          Row(
+            children: [
+              _miniPill('Toplam Tıklama', totalClicks, Icons.visibility),
+              const SizedBox(width: 10),
+              _miniPill('Kalan SMS', remainingSms, Icons.sms),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _miniPill(String label, String value, IconData icon) {
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        decoration: BoxDecoration(
+          color: Colors.white.withOpacity(0.14),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Row(
+          children: [
+            Icon(icon, color: Colors.white, size: 18),
+            const SizedBox(width: 8),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Expanded(
-                  child: Text(
-                    link,
-                    style: const TextStyle(color: Colors.blue),
-                    overflow: TextOverflow.ellipsis,
+                Text(
+                  label,
+                  style: const TextStyle(
+                    color: Colors.white70,
+                    fontSize: 12,
                   ),
                 ),
-                IconButton(
-                  icon: const Icon(Icons.copy),
-                  onPressed: () async {
-                    await Clipboard.setData(ClipboardData(text: link));
-                    _showSnack('Bağlantı kopyalandı.', success: true);
-                  },
+                Text(
+                  value,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
               ],
-            ),
-            const SizedBox(height: 8),
-            Wrap(
-              spacing: 8,
-              children: [
-                ElevatedButton.icon(
-                  onPressed: () => _shareBio('sms', link),
-                  icon: const Icon(Icons.sms),
-                  label: const Text('SMS'),
-                ),
-                ElevatedButton.icon(
-                  onPressed: () => _shareBio('whatsapp', link),
-                  icon: const Icon(Icons.chat),
-                  label: const Text('WhatsApp'),
-                ),
-                ElevatedButton.icon(
-                  onPressed: () => _shareBio('telegram', link),
-                  icon: const Icon(Icons.send),
-                  label: const Text('Telegram'),
-                ),
-              ],
-            ),
+            )
           ],
         ),
       ),
     );
   }
 
+  Widget _buildBioCard(String? link) {
+    if (link == null || link.isEmpty) {
+      return const SizedBox.shrink();
+    }
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey.shade200),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.03),
+            blurRadius: 8,
+            offset: const Offset(0, 4),
+          )
+        ],
+      ),
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Bio Sayfanız',
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  link,
+                  style: const TextStyle(color: Colors.blue),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              IconButton(
+                icon: const Icon(Icons.copy),
+                onPressed: () async {
+                  await Clipboard.setData(ClipboardData(text: link));
+                  _showSnack('Bağlantı kopyalandı.', success: true);
+                },
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Wrap(
+            spacing: 8,
+            children: [
+              ElevatedButton.icon(
+                onPressed: () => _shareBio('sms', link),
+                icon: const Icon(Icons.sms),
+                label: const Text('SMS'),
+              ),
+              ElevatedButton.icon(
+                onPressed: () => _shareBio('whatsapp', link),
+                icon: const Icon(Icons.chat),
+                label: const Text('WhatsApp'),
+              ),
+              ElevatedButton.icon(
+                onPressed: () => _shareBio('telegram', link),
+                icon: const Icon(Icons.send),
+                label: const Text('Telegram'),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildPackInfo(Map<String, dynamic>? packInfo) {
     if (packInfo == null) return const SizedBox.shrink();
-    return Card(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      elevation: 1,
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Paket Bilgisi',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 12),
-            ListTile(
-              dense: true,
-              leading: const Icon(Icons.bolt, color: Colors.orange),
-              title: Text(packInfo['pack_name']?.toString() ?? '-'),
-              subtitle: const Text('Paket adı'),
-            ),
-            ListTile(
-              dense: true,
-              leading: const Icon(Icons.play_circle_outline),
-              title: Text(packInfo['activated_at']?.toString() ?? '-'),
-              subtitle: const Text('Başlangıç'),
-            ),
-            ListTile(
-              dense: true,
-              leading: const Icon(Icons.timer_off_outlined),
-              title: Text(packInfo['expired_at']?.toString() ?? '-'),
-              subtitle: const Text('Bitiş'),
-            ),
-          ],
-        ),
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey.shade200),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.03),
+            blurRadius: 8,
+            offset: const Offset(0, 4),
+          )
+        ],
+      ),
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Paket Bilgisi',
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 12),
+          ListTile(
+            dense: true,
+            contentPadding: EdgeInsets.zero,
+            leading: const Icon(Icons.bolt, color: Colors.orange),
+            title: Text(packInfo['pack_name']?.toString() ?? '-'),
+            subtitle: const Text('Paket adı'),
+          ),
+          ListTile(
+            dense: true,
+            contentPadding: EdgeInsets.zero,
+            leading: const Icon(Icons.play_circle_outline),
+            title: Text(packInfo['activated_at']?.toString() ?? '-'),
+            subtitle: const Text('Başlangıç'),
+          ),
+          ListTile(
+            dense: true,
+            contentPadding: EdgeInsets.zero,
+            leading: const Icon(Icons.timer_off_outlined),
+            title: Text(packInfo['expired_at']?.toString() ?? '-'),
+            subtitle: const Text('Bitiş'),
+          ),
+        ],
       ),
     );
   }
@@ -314,9 +421,10 @@ class _DashboardPageState extends State<DashboardPage> {
       return const Text('Henüz tıklama verisi yok.');
     }
 
+    final limitedLabels = labels.take(5).toList();
     return Column(
-      children: List.generate(labels.length, (index) {
-        final label = labels[index];
+      children: List.generate(limitedLabels.length, (index) {
+        final label = limitedLabels[index];
         final value = index < values.length ? values[index] : '-';
         return ListTile(
           dense: true,
@@ -534,6 +642,7 @@ class _DashboardPageState extends State<DashboardPage> {
         physics: const AlwaysScrollableScrollPhysics(),
         padding: const EdgeInsets.all(16),
         children: [
+          _heroSection(packInfo, totalClicks),
           _buildBioCard(data['bio_page']?.toString()),
           const SizedBox(height: 12),
           Row(
@@ -550,6 +659,7 @@ class _DashboardPageState extends State<DashboardPage> {
             shape:
                 RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             elevation: 1,
+            color: Colors.white,
             child: Padding(
               padding: const EdgeInsets.all(16),
               child: _buildTodayAppointments(context, appointmentInfo),
@@ -560,6 +670,7 @@ class _DashboardPageState extends State<DashboardPage> {
             shape:
                 RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             elevation: 1,
+            color: Colors.white,
             child: Padding(
               padding: const EdgeInsets.all(16),
               child: Column(
@@ -580,6 +691,7 @@ class _DashboardPageState extends State<DashboardPage> {
             shape:
                 RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             elevation: 1,
+            color: Colors.white,
             child: Padding(
               padding: const EdgeInsets.all(16),
               child: Column(
@@ -604,10 +716,16 @@ class _DashboardPageState extends State<DashboardPage> {
   Widget build(BuildContext context) {
     final loc = AppLocalizations.of(context)!;
     return Scaffold(
+      backgroundColor: const Color(0xFFF7F9FC),
       appBar: AppBar(
-        title: const Text('Yonetim Paneli'),
-        automaticallyImplyLeading:
-            true, // bu satırı da ekleyebilirsin ama default true
+        elevation: 0,
+        backgroundColor: Colors.white,
+        foregroundColor: Colors.black87,
+        title: const Text(
+          'Yönetim Paneli',
+          style: TextStyle(fontWeight: FontWeight.w700),
+        ),
+        automaticallyImplyLeading: true,
       ),
       drawer: Drawer(
         child: ListView(

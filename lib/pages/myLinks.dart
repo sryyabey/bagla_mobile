@@ -12,6 +12,9 @@ class MyLinksPage extends StatefulWidget {
 }
 
 class _MyLinksPageState extends State<MyLinksPage> {
+  static const Color _backgroundColor = Color(0xFFF7F9FC);
+  static const Color _primaryColor = Color(0xFF6366F1);
+
   TextEditingController linkTitleController = TextEditingController();
   TextEditingController linkUrlController = TextEditingController();
   List<Map<String, dynamic>> links = [];
@@ -236,6 +239,53 @@ class _MyLinksPageState extends State<MyLinksPage> {
       default:
         return 'https://example.com';
     }
+  }
+
+  Widget _sectionCard({
+    required Widget child,
+    String? title,
+    String? subtitle,
+    EdgeInsetsGeometry padding = const EdgeInsets.all(16),
+  }) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: Colors.grey.shade200),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.03),
+            blurRadius: 10,
+            offset: const Offset(0, 6),
+          )
+        ],
+      ),
+      padding: padding,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (title != null)
+            Text(
+              title,
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          if (subtitle != null)
+            Padding(
+              padding: const EdgeInsets.only(top: 4, bottom: 10),
+              child: Text(
+                subtitle,
+                style: const TextStyle(color: Colors.black54),
+              ),
+            )
+          else if (title != null)
+            const SizedBox(height: 10),
+          child,
+        ],
+      ),
+    );
   }
 
   Future<void> createLink() async {
@@ -664,11 +714,8 @@ class _MyLinksPageState extends State<MyLinksPage> {
 
   Widget _buildLinkForm() {
     if (settingsLoading) {
-      return const Card(
-        child: Padding(
-          padding: EdgeInsets.all(16),
-          child: Center(child: CircularProgressIndicator()),
-        ),
+      return _sectionCard(
+        child: const Center(child: CircularProgressIndicator()),
       );
     }
 
@@ -684,126 +731,128 @@ class _MyLinksPageState extends State<MyLinksPage> {
             ? selectedLinkTypeId
             : null;
 
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Yeni Link',
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+    return _sectionCard(
+      title: 'Yeni Link',
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          TextField(
+            decoration: const InputDecoration(
+              labelText: 'Link tipi ara',
+              prefixIcon: Icon(Icons.search),
             ),
-            const SizedBox(height: 12),
-            TextField(
-              decoration: const InputDecoration(
-                labelText: 'Link tipi ara',
-                prefixIcon: Icon(Icons.search),
-              ),
-              onChanged: (value) {
-                setState(() {
-                  typeSearchQuery = value.toLowerCase();
-                });
-              },
-            ),
-            const SizedBox(height: 8),
-            DropdownButtonFormField<int>(
-              value: effectiveTypeValue,
-              items: filteredTypes.isNotEmpty
-                  ? filteredTypes
-                      .map(
-                        (type) => DropdownMenuItem<int>(
-                          value: type['id'],
-                          child: Text(
-                              type['name'] ?? type['title'] ?? 'Link Tipi'),
-                        ),
-                      )
-                      .toList()
-                  : const [
-                      DropdownMenuItem<int>(
-                        value: null,
-                        child: Text('Sonuç bulunamadı'),
+            onChanged: (value) {
+              setState(() {
+                typeSearchQuery = value.toLowerCase();
+              });
+            },
+          ),
+          const SizedBox(height: 8),
+          DropdownButtonFormField<int>(
+            value: effectiveTypeValue,
+            items: filteredTypes.isNotEmpty
+                ? filteredTypes
+                    .map(
+                      (type) => DropdownMenuItem<int>(
+                        value: type['id'],
+                        child:
+                            Text(type['name'] ?? type['title'] ?? 'Link Tipi'),
                       ),
-                    ],
-              onChanged: filteredTypes.isEmpty
-                  ? null
-                  : (value) {
-                      setState(() {
-                        selectedLinkTypeId = value;
-                      });
-                    },
-              decoration: const InputDecoration(labelText: 'Link Tipi'),
-            ),
-            if (linkTypes.isEmpty)
-              const Padding(
-                padding: EdgeInsets.only(top: 8),
-                child: Text(
-                  'Link tipi bulunamadı, lütfen ayarları kontrol edin.',
-                  style: TextStyle(fontSize: 12, color: Colors.redAccent),
-                ),
-              ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: linkTitleController,
-              decoration: const InputDecoration(labelText: 'Başlık'),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: linkUrlController,
-              decoration: InputDecoration(
-                labelText: 'URL',
-                hintText: getPlaceholderForType(
-                  _resolveTypeValue(selectedLinkTypeId) ?? 'link',
-                ),
-              ),
-            ),
-            const SizedBox(height: 12),
-            DropdownButtonFormField<int>(
-              value: selectedColorId,
-              items: colors
-                  .map(
-                    (color) => DropdownMenuItem<int>(
-                      value: color['id'],
-                      child: _buildColorDropdownItem(color),
+                    )
+                    .toList()
+                : const [
+                    DropdownMenuItem<int>(
+                      value: null,
+                      child: Text('Sonuç bulunamadı'),
                     ),
-                  )
-                  .toList(),
-              onChanged: (value) {
-                setState(() {
-                  selectedColorId = value;
-                });
-              },
-              decoration: const InputDecoration(labelText: 'Renk'),
+                  ],
+            onChanged: filteredTypes.isEmpty
+                ? null
+                : (value) {
+                    setState(() {
+                      selectedLinkTypeId = value;
+                    });
+                  },
+            decoration: const InputDecoration(labelText: 'Link Tipi'),
+          ),
+          if (linkTypes.isEmpty)
+            const Padding(
+              padding: EdgeInsets.only(top: 8),
+              child: Text(
+                'Link tipi bulunamadı, lütfen ayarları kontrol edin.',
+                style: TextStyle(fontSize: 12, color: Colors.redAccent),
+              ),
             ),
-            if (colors.isEmpty)
-              const Padding(
-                padding: EdgeInsets.only(top: 8),
-                child: Text(
-                  'Renk listesi bulunamadı.',
-                  style: TextStyle(fontSize: 12, color: Colors.redAccent),
+          const SizedBox(height: 12),
+          TextField(
+            controller: linkTitleController,
+            decoration: const InputDecoration(labelText: 'Başlık'),
+          ),
+          const SizedBox(height: 12),
+          TextField(
+            controller: linkUrlController,
+            decoration: InputDecoration(
+              labelText: 'URL',
+              hintText: getPlaceholderForType(
+                _resolveTypeValue(selectedLinkTypeId) ?? 'link',
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
+          DropdownButtonFormField<int>(
+            value: selectedColorId,
+            items: colors
+                .map(
+                  (color) => DropdownMenuItem<int>(
+                    value: color['id'],
+                    child: _buildColorDropdownItem(color),
+                  ),
+                )
+                .toList(),
+            onChanged: (value) {
+              setState(() {
+                selectedColorId = value;
+              });
+            },
+            decoration: const InputDecoration(labelText: 'Renk'),
+          ),
+          if (colors.isEmpty)
+            const Padding(
+              padding: EdgeInsets.only(top: 8),
+              child: Text(
+                'Renk listesi bulunamadı.',
+                style: TextStyle(fontSize: 12, color: Colors.redAccent),
+              ),
+            ),
+          const SizedBox(height: 16),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              onPressed: (isSubmitting ||
+                      selectedLinkTypeId == null ||
+                      selectedColorId == null)
+                  ? null
+                  : createLink,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: _primaryColor,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 18, vertical: 12),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
                 ),
               ),
-            const SizedBox(height: 16),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton.icon(
-                onPressed: (isSubmitting ||
-                        selectedLinkTypeId == null ||
-                        selectedColorId == null)
-                    ? null
-                    : createLink,
-                icon: isSubmitting
-                    ? const SizedBox(
-                        height: 16,
-                        width: 16,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : const Icon(Icons.add),
-                label: Text(isSubmitting ? 'Kaydediliyor...' : 'Link Ekle'),
-              ),
+              icon: isSubmitting
+                  ? const SizedBox(
+                      height: 16,
+                      width: 16,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Icon(Icons.add),
+              label: Text(isSubmitting ? 'Kaydediliyor...' : 'Link Ekle'),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -820,62 +869,111 @@ class _MyLinksPageState extends State<MyLinksPage> {
           (link['color'] != null ? link['color']['id'] : null),
     );
 
-    return Card(
-      margin: const EdgeInsets.only(bottom: 16),
-      child: ListTile(
-        leading: const Icon(Icons.link),
-        title: Text(link['title'] ?? ''),
-        subtitle: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(link['url'] ?? ''),
-            if (typeName.isNotEmpty || colorName.isNotEmpty)
-              Text(
-                '${typeName.isNotEmpty ? 'Tip: $typeName' : ''}'
-                '${typeName.isNotEmpty && colorName.isNotEmpty ? ' • ' : ''}'
-                '${colorName.isNotEmpty ? 'Renk: $colorName' : ''}',
-                style: const TextStyle(fontSize: 12),
-              ),
-          ],
-        ),
-        trailing: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            IconButton(
-              icon: const Icon(Icons.edit),
-              onPressed: () => _openEditSheet(link),
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey.shade200),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.03),
+            blurRadius: 8,
+            offset: const Offset(0, 4),
+          )
+        ],
+      ),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: _primaryColor.withOpacity(0.08),
+              borderRadius: BorderRadius.circular(10),
             ),
-            deletingIds.contains(link['id'])
-                ? const SizedBox(
-                    height: 20,
-                    width: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : IconButton(
-                    icon: const Icon(Icons.delete, color: Colors.redAccent),
-                    onPressed: link['id'] == null
-                        ? null
-                        : () => deleteLink(link['id']),
+            child: const Icon(Icons.link, color: _primaryColor),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  link['title'] ?? '',
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w700,
                   ),
-            const SizedBox(width: 4),
-            ReorderableDragStartListener(
-              index: index,
-              child: const Icon(Icons.drag_handle),
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  link['url'] ?? '',
+                  style: const TextStyle(color: Colors.black54),
+                  overflow: TextOverflow.ellipsis,
+                ),
+                if (typeName.isNotEmpty || colorName.isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 4),
+                    child: Wrap(
+                      spacing: 6,
+                      runSpacing: 4,
+                      children: [
+                        if (typeName.isNotEmpty)
+                          Chip(
+                            label: Text(typeName),
+                            visualDensity: VisualDensity.compact,
+                            padding: EdgeInsets.zero,
+                          ),
+                        if (colorName.isNotEmpty)
+                          Chip(
+                            label: Text(colorName),
+                            visualDensity: VisualDensity.compact,
+                            padding: EdgeInsets.zero,
+                          ),
+                      ],
+                    ),
+                  ),
+              ],
             ),
-          ],
-        ),
+          ),
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              IconButton(
+                icon: const Icon(Icons.edit),
+                onPressed: () => _openEditSheet(link),
+              ),
+              deletingIds.contains(link['id'])
+                  ? const SizedBox(
+                      height: 20,
+                      width: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : IconButton(
+                      icon: const Icon(Icons.delete, color: Colors.redAccent),
+                      onPressed: link['id'] == null
+                          ? null
+                          : () => deleteLink(link['id']),
+                    ),
+              const SizedBox(width: 4),
+              ReorderableDragStartListener(
+                index: index,
+                child: const Icon(Icons.drag_handle),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
 
   Widget _buildReorderableList() {
     if (links.isEmpty) {
-      return const Center(
-        child: Card(
-          child: Padding(
-            padding: EdgeInsets.all(16),
-            child: Text('Henüz link yok.'),
-          ),
+      return Center(
+        child: _sectionCard(
+          title: 'Henüz link yok',
+          subtitle: 'Yeni link ekleyerek başla',
+          child: const SizedBox.shrink(),
         ),
       );
     }
@@ -920,28 +1018,26 @@ class _MyLinksPageState extends State<MyLinksPage> {
 
     if (errors.isEmpty) return const SizedBox.shrink();
 
-    return Card(
-      color: Colors.orangeAccent.withOpacity(0.15),
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: errors
-              .map(
-                (e) => Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 4),
-                  child: Text(
-                    e,
-                    style: const TextStyle(
-                      color: Colors.red,
-                      fontSize: 13,
-                      fontWeight: FontWeight.bold,
-                    ),
+    return _sectionCard(
+      title: 'Eksik veriler',
+      subtitle: 'API’den beklenen listeler gelmedi',
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: errors
+            .map(
+              (e) => Padding(
+                padding: const EdgeInsets.symmetric(vertical: 4),
+                child: Text(
+                  e,
+                  style: const TextStyle(
+                    color: Colors.red,
+                    fontSize: 13,
+                    fontWeight: FontWeight.bold,
                   ),
                 ),
-              )
-              .toList(),
-        ),
+              ),
+            )
+            .toList(),
       ),
     );
   }
@@ -949,8 +1045,15 @@ class _MyLinksPageState extends State<MyLinksPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: _backgroundColor,
       appBar: AppBar(
-        title: const Text('Linklerim'),
+        elevation: 0,
+        backgroundColor: Colors.white,
+        foregroundColor: Colors.black87,
+        title: const Text(
+          'Linklerim',
+          style: TextStyle(fontWeight: FontWeight.w700),
+        ),
       ),
       body: isLoading
           ? const Center(child: CircularProgressIndicator())
@@ -976,6 +1079,15 @@ class _MyLinksPageState extends State<MyLinksPage> {
                         showForm = !showForm;
                       });
                     },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: _primaryColor,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 18, vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
                     icon: Icon(showForm ? Icons.close : Icons.add),
                     label: Text(showForm ? 'Formu Gizle' : 'Yeni Link Ekle'),
                   ),

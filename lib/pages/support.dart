@@ -15,6 +15,8 @@ class SupportPage extends StatefulWidget {
 class _SupportPageState extends State<SupportPage> {
   final TextEditingController _titleController = TextEditingController();
   final TextEditingController _messageController = TextEditingController();
+  static const Color _backgroundColor = Color(0xFFF7F9FC);
+  static const Color _primaryColor = Color(0xFF6366F1);
 
   List<Map<String, dynamic>> _tickets = [];
   bool _loading = true;
@@ -158,6 +160,53 @@ class _SupportPageState extends State<SupportPage> {
     );
   }
 
+  Widget _sectionCard({
+    required Widget child,
+    String? title,
+    String? subtitle,
+    EdgeInsetsGeometry padding = const EdgeInsets.all(16),
+  }) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: Colors.grey.shade200),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.03),
+            blurRadius: 10,
+            offset: const Offset(0, 6),
+          )
+        ],
+      ),
+      padding: padding,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (title != null)
+            Text(
+              title,
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          if (subtitle != null)
+            Padding(
+              padding: const EdgeInsets.only(top: 4, bottom: 10),
+              child: Text(
+                subtitle,
+                style: const TextStyle(color: Colors.black54),
+              ),
+            )
+          else if (title != null)
+            const SizedBox(height: 10),
+          child,
+        ],
+      ),
+    );
+  }
+
   Color _statusColor(String? status) {
     switch (status) {
       case 'open':
@@ -203,8 +252,15 @@ class _SupportPageState extends State<SupportPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: _backgroundColor,
       appBar: AppBar(
-        title: const Text('Destek'),
+        elevation: 0,
+        backgroundColor: Colors.white,
+        foregroundColor: Colors.black87,
+        title: const Text(
+          'Destek',
+          style: TextStyle(fontWeight: FontWeight.w700),
+        ),
       ),
       body: RefreshIndicator(
         onRefresh: _fetchTickets,
@@ -241,17 +297,26 @@ class _SupportPageState extends State<SupportPage> {
                 ),
               )
             else if (_tickets.isEmpty)
-              const Padding(
-                padding: EdgeInsets.symmetric(vertical: 32),
-                child: Center(
-                  child: Text('Henüz destek talebiniz yok.'),
-                ),
+              _sectionCard(
+                title: 'Henüz destek talebiniz yok.',
+                child: const SizedBox.shrink(),
               )
             else
               ..._tickets.map(
-                (ticket) => Card(
-                  elevation: 1,
+                (ticket) => Container(
                   margin: const EdgeInsets.only(bottom: 12),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Colors.grey.shade200),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.03),
+                        blurRadius: 8,
+                        offset: const Offset(0, 4),
+                      )
+                    ],
+                  ),
                   child: ListTile(
                     onTap: () => _openTicketDetail(ticket['id'] as int),
                     title: Text(
@@ -317,53 +382,57 @@ class _SupportPageState extends State<SupportPage> {
   }
 
   Widget _buildCreateCard() {
-    return Card(
-      elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Yeni Destek Talebi',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: _titleController,
-              decoration: const InputDecoration(
-                labelText: 'Başlık',
-                border: OutlineInputBorder(),
+    return _sectionCard(
+      title: 'Yeni Destek Talebi',
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          TextField(
+            controller: _titleController,
+            decoration: InputDecoration(
+              labelText: 'Başlık',
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(10),
               ),
             ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: _messageController,
-              minLines: 3,
-              maxLines: 4,
-              decoration: const InputDecoration(
-                labelText: 'Mesajınız',
-                border: OutlineInputBorder(),
+          ),
+          const SizedBox(height: 12),
+          TextField(
+            controller: _messageController,
+            minLines: 3,
+            maxLines: 4,
+            decoration: InputDecoration(
+              labelText: 'Mesajınız',
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(10),
               ),
             ),
-            const SizedBox(height: 12),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton.icon(
-                onPressed: _creating ? null : _createTicket,
-                icon: _creating
-                    ? const SizedBox(
-                        width: 16,
-                        height: 16,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : const Icon(Icons.send),
-                label: Text(_creating ? 'Gönderiliyor...' : 'Gönder'),
+          ),
+          const SizedBox(height: 12),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              onPressed: _creating ? null : _createTicket,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: _primaryColor,
+                foregroundColor: Colors.white,
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
               ),
+              icon: _creating
+                  ? const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Icon(Icons.send),
+              label: Text(_creating ? 'Gönderiliyor...' : 'Gönder'),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
