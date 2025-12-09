@@ -1,8 +1,10 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:webview_flutter/webview_flutter.dart';
 
 import '../config.dart';
 
@@ -46,6 +48,7 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
   final TextEditingController _addressTitleController = TextEditingController();
   String _selectedPayment = 'credit_card';
   bool _agreementChecked = false;
+  Timer? _paymentTimer;
 
   final List<Map<String, String>> _paymentOptions = const [
     {'value': 'credit_card', 'label': 'Kredi Kartı'},
@@ -65,6 +68,7 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
 
   @override
   void dispose() {
+    _paymentTimer?.cancel();
     _nameController.dispose();
     _lastNameController.dispose();
     _emailController.dispose();
@@ -503,6 +507,7 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
       if (response.statusCode == 200 || response.statusCode == 201) {
         String message =
             'Siparişiniz başarıyla oluşturuldu, ödeme ekranına yönlendiriliyorsunuz.';
+        String? transactionId;
         try {
           final decoded = jsonDecode(response.body);
           final data = decoded['data'] ?? decoded;
@@ -510,11 +515,20 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
             message = data['message']?.toString() ??
                 decoded['message']?.toString() ??
                 message;
+            final order = data['order'];
+            if (order is Map<String, dynamic>) {
+              transactionId = order['transaction_id']?.toString();
+            } else if (data['transaction_id'] != null) {
+              transactionId = data['transaction_id']?.toString();
+            }
           } else {
             message = decoded['message']?.toString() ?? message;
           }
         } catch (_) {}
         _showSnack(message, success: true);
+        if (transactionId != null && transactionId!.isNotEmpty) {
+          await _startPaytrPayment(token, transactionId!);
+        }
       } else {
         String message = 'Satın alma başarısız (HTTP ${response.statusCode}).';
         try {
@@ -532,6 +546,191 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
         });
       }
     }
+  }
+
+  Future<void> _startPaytrPayment(String token, String transactionId) async {
+    try {
+      final res = await http.post(
+        Uri.parse('$apiBaseUrl/api/payment/paytr/token'),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode({'transaction_id': transactionId}),
+      );
+      if (res.statusCode == 200 || res.statusCode == 201) {
+        String? iframeUrl;
+        try {
+          final decoded = jsonDecode(res.body);
+          final data = decoded['data'] ?? decoded;
+          final tokenVal = data['token']?.toString();
+          iframeUrl = data['iframe_url']?.toString();
+          if ((iframeUrl == null || iframeUrl.isEmpty) &&
+              tokenVal != null &&
+              tokenVal.isNotEmpty) {
+            iframeUrl = 'https://www.paytr.com/odeme/guvenli/$tokenVal';
+          }
+        } catch (_) {}
+        if (iframeUrl != null && iframeUrl.isNotEmpty && mounted) {
+          _startPaymentPolling(transactionId);
+          await _openPaymentWebView(iframeUrl);
+        } else {
+          _showSnack('Ödeme sayfası açılamadı, geçersiz yanıt.');
+        }
+      } else {
+        _showSnack('Ödeme başlatılamadı (HTTP ${res.statusCode}).');
+      }
+    } catch (e) {
+      _showSnack('Ödeme başlatılırken hata oluştu: $e');
+    }
+  }
+
+  Future<void> _openPaymentWebView(String url) async {
+    final controller = WebViewController()
+      ..setJavaScriptMode(JavaScriptMode.unrestricted)
+      ..loadRequest(Uri.parse(url));
+
+    await showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) {
+        return WillPopScope(
+          onWillPop: () async {
+            _paymentTimer?.cancel();
+            return true;
+          },
+          child: Scaffold(
+            appBar: AppBar(
+              title: const Text('Ödeme'),
+              actions: [
+                IconButton(
+                  icon: const Icon(Icons.close),
+                  onPressed: () {
+                    _paymentTimer?.cancel();
+                    Navigator.of(context).pop();
+                  },
+                )
+              ],
+            ),
+            body: SafeArea(
+              child: WebViewWidget(controller: controller),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  void _startPaymentPolling(String transactionId) {
+    _paymentTimer?.cancel();
+    _paymentTimer = Timer.periodic(const Duration(seconds: 3), (_) {
+      _checkOrderStatus(transactionId);
+    });
+  }
+
+  Future<void> _checkOrderStatus(String transactionId) async {
+    final token = await _getToken();
+    if (token == null || token.isEmpty) return;
+
+    try {
+      final res = await http.get(
+        Uri.parse('$apiBaseUrl/api/payment/success/paytr?transaction_id=$transactionId'),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Accept': 'application/json',
+        },
+      );
+      if (res.statusCode == 200) {
+        String status = 'pending';
+        Map<String, dynamic> order = {};
+        try {
+          final decoded = jsonDecode(res.body);
+          status = decoded['status']?.toString() ?? status;
+          final data = decoded['data'] ?? decoded;
+          final orderMap = data is Map<String, dynamic> ? data['order'] : null;
+          if (orderMap is Map<String, dynamic>) {
+            order = orderMap;
+          }
+        } catch (_) {}
+
+        final normalized = status.toLowerCase();
+        if (normalized == 'paid') {
+          _paymentTimer?.cancel();
+          if (Navigator.canPop(context)) {
+            Navigator.of(context, rootNavigator: true).pop();
+          }
+          _showPaymentResultDialog(status, order);
+        } else if (normalized == 'failed') {
+          _paymentTimer?.cancel();
+          if (Navigator.canPop(context)) {
+            Navigator.of(context, rootNavigator: true).pop();
+          }
+          _showPaymentResultDialog(status, order);
+        }
+      } else if (res.statusCode == 403) {
+        _paymentTimer?.cancel();
+        _showSnack('Ödeme doğrulanamadı (403).');
+      }
+    } catch (_) {}
+  }
+
+  Future<void> _showPaymentResultDialog(
+      String status, Map<String, dynamic> order) async {
+    final normalized = status.toLowerCase();
+    final isSuccess = normalized == 'paid';
+    final isPending = normalized == 'pending';
+
+    final packName = order['pack_name']?.toString() ?? 'Paket';
+    final packType = order['pack_type']?.toString() ?? '';
+    final total = order['total_price']?.toString() ??
+        order['price']?.toString() ??
+        '-';
+    final invoice = order['invoice_number']?.toString() ?? '';
+    if (!mounted) return;
+
+    await showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text(isSuccess
+              ? 'Ödeme Başarılı'
+              : isPending
+                  ? 'Ödeme Bekliyor'
+                  : 'Ödeme Başarısız'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Paket: $packName'),
+              if (packType.isNotEmpty) Text('Tip: $packType'),
+              Text('Tutar: ₺$total'),
+              if (invoice.isNotEmpty) Text('Fatura No: $invoice'),
+              if (isPending)
+                const Padding(
+                  padding: EdgeInsets.only(top: 8.0),
+                  child: Text('Ödeme doğrulanıyor...'),
+                ),
+            ],
+          ),
+          actions: [
+            if (isPending)
+              TextButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                  _startPaymentPolling(
+                      order['transaction_id']?.toString() ?? '');
+                },
+                child: const Text('Yenile'),
+              ),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Kapat'),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   Widget _buildTypeSelector() {

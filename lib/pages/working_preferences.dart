@@ -13,8 +13,6 @@ class WorkingPreferencesPage extends StatefulWidget {
 }
 
 class _WorkingPreferencesPageState extends State<WorkingPreferencesPage> {
-  final TextEditingController _firstSessionCountController =
-      TextEditingController(text: '1');
   static const Color _backgroundColor = Color(0xFFF7F9FC);
   static const Color _primaryColor = Color(0xFF6366F1);
 
@@ -62,7 +60,6 @@ class _WorkingPreferencesPageState extends State<WorkingPreferencesPage> {
 
   @override
   void dispose() {
-    _firstSessionCountController.dispose();
     super.dispose();
   }
 
@@ -123,17 +120,17 @@ class _WorkingPreferencesPageState extends State<WorkingPreferencesPage> {
             .toList();
 
         final rawFirst = data['first_appointment_session_count'];
-        final firstSession = rawFirst is int
+        final parsedFirst = rawFirst is int
             ? rawFirst
             : int.tryParse(rawFirst?.toString() ?? '') ?? 1;
+        final firstSession =
+            (parsedFirst >= 1 && parsedFirst <= 3) ? parsedFirst : 1;
 
         if (!mounted) return;
         setState(() {
           _preferences = merged;
           _holidays = holidays;
           _firstAppointmentSessionCount = firstSession;
-          _firstSessionCountController.text =
-              _firstAppointmentSessionCount.toString();
           _loading = false;
         });
       } else {
@@ -153,10 +150,6 @@ class _WorkingPreferencesPageState extends State<WorkingPreferencesPage> {
 
   Future<void> _savePreferences() async {
     if (_saving) return;
-
-    final parsedCount = int.tryParse(_firstSessionCountController.text);
-    _firstAppointmentSessionCount =
-        parsedCount != null && parsedCount > 0 ? parsedCount : 1;
 
     final token = await _getToken();
     if (token == null || token.isEmpty) {
@@ -436,20 +429,24 @@ class _WorkingPreferencesPageState extends State<WorkingPreferencesPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                TextField(
-                  controller: _firstSessionCountController,
-                  keyboardType: TextInputType.number,
+                DropdownButtonFormField<int>(
+                  value: _firstAppointmentSessionCount,
                   decoration: InputDecoration(
-                    labelText: 'Örn: 1',
+                    labelText: 'Seçiniz',
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(10),
                     ),
                   ),
+                  items: const [
+                    DropdownMenuItem(value: 1, child: Text('1 Oturum')),
+                    DropdownMenuItem(value: 2, child: Text('2 Oturum')),
+                    DropdownMenuItem(value: 3, child: Text('3 Oturum')),
+                  ],
                   onChanged: (val) {
-                    final parsed = int.tryParse(val);
-                    if (parsed != null && parsed > 0) {
-                      _firstAppointmentSessionCount = parsed;
-                    }
+                    if (val == null) return;
+                    setState(() {
+                      _firstAppointmentSessionCount = val;
+                    });
                   },
                 ),
               ],
