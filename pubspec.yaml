@@ -13,6 +13,7 @@ dependencies:
   shared_preferences: ^2.2.2
   flutter_secure_storage: ^9.2.2
   google_sign_in: ^6.2.1
+  flutter_dotenv: ^5.1.0
   flutter_localizations:
     sdk: flutter
   intl: ^0.20.2
@@ -33,8 +34,10 @@ dev_dependencies:
 flutter_launcher_icons:
   android: true
   ios: true
-  image_path: "assets/mobile_logo.png"
-  adaptive_icon_background: "#FFFFFF"
+  image_path_ios: assets/mobile_logo.png
+  image_path_android: assets/icon_foreground.png
+  adaptive_icon_background: "#FFFFFF" # or a custom color/image
+  adaptive_icon_foreground: "assets/icon_foreground.png"
 
 flutter:
   uses-material-design: true
@@ -47,3 +50,6 @@ flutter:
     - assets/follow_clicks.png
     - assets/use_for_free.png
     - assets/mobile_logo.png
+    - assets/onboarding_biolink.png
+    - assets/onboarding_sms.png
+    - assets/onboarding_free.png

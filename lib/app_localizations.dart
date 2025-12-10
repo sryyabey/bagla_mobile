@@ -26,12 +26,15 @@ class AppLocalizations {
       'passwordLabel': 'Password',
       'facebookLogin': 'Continue with Facebook',
       'googleLogin': 'Continue with Google',
-      'onboardTitle1': 'Create all your links',
-      'onboardDesc1': 'Collect your social links and share easily.',
-      'onboardTitle2': 'Track the clicks',
-      'onboardDesc2': 'Follow your link performance in one place.',
-      'onboardTitle3': 'Use it for free',
-      'onboardDesc3': 'Start now, share your profile instantly.',
+      'onboardTitle1': 'Build your bio link & share',
+      'onboardDesc1':
+          'Launch a single bio link, add socials and share it everywhere with QR or one tap.',
+      'onboardTitle2': 'Appointments + SMS alerts',
+      'onboardDesc2':
+          'Book appointments, send confirmations by SMS, and keep the whole schedule in one place.',
+      'onboardTitle3': 'Bio link is free to start',
+      'onboardDesc3':
+          'Begin free, publish your bio link instantly, upgrade only when you need extras.',
       'menuTitle': 'Menu',
       'myLinks': 'My Links',
       'themes': 'Themes',
@@ -46,12 +49,15 @@ class AppLocalizations {
       'passwordLabel': 'Şifre',
       'facebookLogin': 'Facebook ile devam et',
       'googleLogin': 'Google ile devam et',
-      'onboardTitle1': 'Tüm linklerini oluştur',
-      'onboardDesc1': 'Sosyal linklerini topla ve kolayca paylaş.',
-      'onboardTitle2': 'Tıklamaları takip et',
-      'onboardDesc2': 'Link performansını tek yerden izle.',
-      'onboardTitle3': 'Ücretsiz kullan',
-      'onboardDesc3': 'Hemen başla, profilini anında paylaş.',
+      'onboardTitle1': 'Biyolinkini hazırla ve paylaş',
+      'onboardDesc1':
+          'Tüm sosyal linklerini tek biyolinkte topla, QR ile paylaş ve her yerde görün.',
+      'onboardTitle2': 'Randevu + SMS ile takip et',
+      'onboardDesc2':
+          'Randevu al, otomatik SMS gönder; takvimini ve bildirimleri tek ekrandan yönet.',
+      'onboardTitle3': 'Biyolink ücretsiz başlar',
+      'onboardDesc3':
+          'Ücretsiz başla, biyolinkini anında yayınla; ihtiyaç oldukça paketleri aç.',
       'menuTitle': 'Menü',
       'myLinks': 'Linklerim',
       'themes': 'Temalar',
