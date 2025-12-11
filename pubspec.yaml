@@ -46,9 +46,6 @@ flutter:
     - assets/logo.png
     - assets/google_icon.png
     - assets/facebook_icon.png
-    - assets/count_links.png
-    - assets/follow_clicks.png
-    - assets/use_for_free.png
     - assets/mobile_logo.png
     - assets/onboarding_biolink.png
     - assets/onboarding_sms.png
