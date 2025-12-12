@@ -188,13 +188,21 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
   }
 
   Widget _statPill(String label, String value, IconData icon, Color color) {
+    final bool isLight = color.computeLuminance() > 0.7;
+    final Color iconColor = isLight ? primaryColor : color;
+    final Color bgColor =
+        isLight ? Colors.white.withOpacity(0.16) : color.withOpacity(0.08);
+    final Color borderColor =
+        isLight ? Colors.white.withOpacity(0.3) : color.withOpacity(0.2);
+    final Color labelColor = isLight ? Colors.white70 : Colors.black54;
+    final Color valueColor = isLight ? Colors.white : Colors.black87;
     return Expanded(
       child: Container(
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
-          color: color.withOpacity(0.08),
+          color: bgColor,
           borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: color.withOpacity(0.2)),
+          border: Border.all(color: borderColor),
         ),
         child: Row(
           children: [
@@ -211,7 +219,7 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
                   ),
                 ],
               ),
-              child: Icon(icon, color: color),
+              child: Icon(icon, color: iconColor),
             ),
             const SizedBox(width: 12),
             Expanded(
@@ -220,18 +228,19 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
                 children: [
                   Text(
                     label,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 13,
-                      color: Colors.black54,
                       fontWeight: FontWeight.w600,
+                      color: labelColor,
                     ),
                   ),
                   const SizedBox(height: 4),
                   Text(
                     value,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.w800,
+                      color: valueColor,
                     ),
                   ),
                 ],
@@ -246,37 +255,79 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
   Widget _buildHeaderHero() {
     final todayCount = _countToday();
     final totalCount = _appointments.length;
-    return _sectionCard(
+    final buttonStyleOnLight = ElevatedButton.styleFrom(
+      backgroundColor: Colors.white,
+      foregroundColor: primaryColor,
+      elevation: 0,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+    );
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 14),
       padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.08),
+            blurRadius: 18,
+            offset: const Offset(0, 10),
+          )
+        ],
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'Randevu Yönetimi',
-            style: TextStyle(
-              fontSize: 22,
-              fontWeight: FontWeight.w800,
-            ),
-          ),
-          const SizedBox(height: 6),
-          const Text(
-            'Günlük randevularını takip et, hızlıca yeni randevu oluştur.',
-            style: TextStyle(color: Colors.black54),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: const [
+                    Text(
+                      'Randevu Yönetimi',
+                      style: TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.w800,
+                        color: Colors.white,
+                      ),
+                    ),
+                    SizedBox(height: 6),
+                    Text(
+                      'Günlük randevularını takip et, hızlıca yeni randevu oluştur.',
+                      style: TextStyle(color: Colors.white70),
+                    ),
+                  ],
+                ),
+              ),
+              IconButton(
+                onPressed: _fetchAppointments,
+                tooltip: 'Yenile',
+                icon: const Icon(Icons.refresh, color: Colors.white),
+              ),
+            ],
           ),
           const SizedBox(height: 14),
           Row(
             children: [
-              _statPill(
-                  'Bugün', '$todayCount', Icons.event_available, primaryColor),
+              _statPill('Bugün', '$todayCount', Icons.event_available,
+                  Colors.white70.withOpacity(0.95)),
               const SizedBox(width: 12),
               _statPill('Toplam', '$totalCount', Icons.calendar_today,
-                  secondaryColor),
+                  Colors.white70),
             ],
           ),
           const SizedBox(height: 12),
           Wrap(
             spacing: 10,
-            runSpacing: 8,
+            runSpacing: 10,
             children: [
               ElevatedButton.icon(
                 onPressed: () {
@@ -292,24 +343,50 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
                     _showQuickForm = true;
                   });
                 },
-                style: _mainButtonStyle(),
+                style: buttonStyleOnLight,
                 icon: const Icon(Icons.flash_on),
                 label: const Text('Hızlı Randevu'),
               ),
               OutlinedButton.icon(
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: Colors.white,
+                  side: const BorderSide(color: Colors.white54),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
                 onPressed: () {
                   setState(() {
                     _showFilters = !_showFilters;
                   });
                 },
                 icon: Icon(
-                    _showFilters ? Icons.filter_alt_off : Icons.filter_alt),
-                label: Text(_showFilters ? 'Filtreyi Gizle' : 'Filtrele'),
+                  _showFilters ? Icons.filter_alt_off : Icons.filter_alt,
+                  color: Colors.white,
+                ),
+                label: Text(
+                  _showFilters ? 'Filtreyi Gizle' : 'Filtrele',
+                  style: const TextStyle(color: Colors.white),
+                ),
               ),
               OutlinedButton.icon(
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: Colors.white,
+                  side: const BorderSide(color: Colors.white54),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
                 onPressed: _fetchAppointments,
-                icon: const Icon(Icons.refresh),
-                label: const Text('Yenile'),
+                icon: const Icon(Icons.sync, color: Colors.white),
+                label: const Text(
+                  'Listeyi Yenile',
+                  style: TextStyle(color: Colors.white),
+                ),
               ),
             ],
           ),
@@ -2350,206 +2427,188 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
 
   Widget _buildFilterForm() {
     final activeCount = _activeFilters.length;
+    if (!_showFilters) return const SizedBox.shrink();
+
     return _sectionCard(
-      title: 'Filtreler',
-      subtitle:
-          activeCount > 0 ? '$activeCount aktif filtre' : 'Aradığını hızla bul',
-      actions: [
-        IconButton(
-          icon: Icon(_showFilters ? Icons.expand_less : Icons.expand_more),
-          onPressed: () {
-            setState(() {
-              _showFilters = !_showFilters;
-            });
-          },
-          tooltip: _showFilters ? 'Filtreleri gizle' : 'Filtreleri aç',
-        ),
-      ],
-      child: AnimatedSwitcher(
-        duration: const Duration(milliseconds: 200),
-        child: !_showFilters
-            ? const SizedBox.shrink()
-            : Column(
-                children: [
-                  Row(
-                    children: [
-                      Expanded(
-                        child: TextField(
-                          controller: _filterNameController,
-                          decoration: const InputDecoration(
-                            labelText: 'Ad',
-                            hintText: 'Müşteri adı',
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: TextField(
-                          controller: _filterLastNameController,
-                          decoration: const InputDecoration(
-                            labelText: 'Soyad',
-                            hintText: 'Müşteri soyadı',
-                          ),
-                        ),
-                      ),
-                    ],
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  controller: _filterNameController,
+                  decoration: const InputDecoration(
+                    labelText: 'Ad',
+                    hintText: 'Müşteri adı',
                   ),
-                  const SizedBox(height: 8),
-                  TextField(
-                    controller: _filterPhoneController,
-                    decoration: const InputDecoration(
-                      labelText: 'Telefon',
-                      hintText: 'Telefon',
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: TextField(
-                          controller: _filterDateFromController,
-                          readOnly: true,
-                          decoration: const InputDecoration(
-                            labelText: 'Başlangıç Tarihi',
-                            hintText: 'Takvimden seçin',
-                          ),
-                          onTap: () async {
-                            final today = DateTime.now();
-                            final minDate = DateTime(today.year - 1, 1, 1);
-                            final maxDate = DateTime(today.year + 5, 12, 31);
-                            final initial = _clampDate(
-                                _parseInputDateOrNow(
-                                    _filterDateFromController.text),
-                                minDate,
-                                maxDate);
-                            final picked = await showDatePicker(
-                              context: context,
-                              initialDate: initial,
-                              firstDate: minDate,
-                              lastDate: maxDate,
-                            );
-                            if (picked != null) {
-                              setState(() {
-                                _filterDateFromController.text =
-                                    _formatDateDisplay(picked);
-                              });
-                            }
-                          },
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: TextField(
-                          controller: _filterDateToController,
-                          readOnly: true,
-                          decoration: const InputDecoration(
-                            labelText: 'Bitiş Tarihi',
-                            hintText: 'Takvimden seçin',
-                          ),
-                          onTap: () async {
-                            final today = DateTime.now();
-                            final minDate = DateTime(today.year - 1, 1, 1);
-                            final maxDate = DateTime(today.year + 5, 12, 31);
-                            final initial = _clampDate(
-                                _parseInputDateOrNow(
-                                    _filterDateToController.text),
-                                minDate,
-                                maxDate);
-                            final picked = await showDatePicker(
-                              context: context,
-                              initialDate: initial,
-                              firstDate: minDate,
-                              lastDate: maxDate,
-                            );
-                            if (picked != null) {
-                              setState(() {
-                                _filterDateToController.text =
-                                    _formatDateDisplay(picked);
-                              });
-                            }
-                          },
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: DropdownButtonFormField<String>(
-                          value: _filterTimeFromController.text.isNotEmpty
-                              ? _filterTimeFromController.text
-                              : null,
-                          decoration: const InputDecoration(
-                            labelText: 'Başlangıç Saati',
-                            hintText: 'HH:MM',
-                          ),
-                          items: _timeOptions
-                              .map(
-                                (t) => DropdownMenuItem<String>(
-                                  value: t,
-                                  child: Text(t),
-                                ),
-                              )
-                              .toList(),
-                          onChanged: (val) {
-                            setState(() {
-                              _filterTimeFromController.text = val ?? '';
-                            });
-                          },
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: DropdownButtonFormField<String>(
-                          value: _filterTimeToController.text.isNotEmpty
-                              ? _filterTimeToController.text
-                              : null,
-                          decoration: const InputDecoration(
-                            labelText: 'Bitiş Saati',
-                            hintText: 'HH:MM',
-                          ),
-                          items: _timeOptions
-                              .map(
-                                (t) => DropdownMenuItem<String>(
-                                  value: t,
-                                  child: Text(t),
-                                ),
-                              )
-                              .toList(),
-                          onChanged: (val) {
-                            setState(() {
-                              _filterTimeToController.text = val ?? '';
-                            });
-                          },
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: ElevatedButton.icon(
-                          onPressed: _applyFilters,
-                          icon: const Icon(Icons.search),
-                          style: _mainButtonStyle(),
-                          label: const Text('Filtrele'),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      ElevatedButton(
-                        onPressed: _clearFilters,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.grey.shade200,
-                          foregroundColor: Colors.black87,
-                        ),
-                        child: const Text('Temizle'),
-                      ),
-                    ],
-                  ),
-                ],
+                ),
               ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: TextField(
+                  controller: _filterLastNameController,
+                  decoration: const InputDecoration(
+                    labelText: 'Soyad',
+                    hintText: 'Müşteri soyadı',
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          TextField(
+            controller: _filterPhoneController,
+            decoration: const InputDecoration(
+              labelText: 'Telefon',
+              hintText: 'Telefon',
+            ),
+          ),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  controller: _filterDateFromController,
+                  readOnly: true,
+                  decoration: const InputDecoration(
+                    labelText: 'Başlangıç Tarihi',
+                    hintText: 'Takvimden seçin',
+                  ),
+                  onTap: () async {
+                    final today = DateTime.now();
+                    final minDate = DateTime(today.year - 1, 1, 1);
+                    final maxDate = DateTime(today.year + 5, 12, 31);
+                    final initial = _clampDate(
+                        _parseInputDateOrNow(_filterDateFromController.text),
+                        minDate,
+                        maxDate);
+                    final picked = await showDatePicker(
+                      context: context,
+                      initialDate: initial,
+                      firstDate: minDate,
+                      lastDate: maxDate,
+                    );
+                    if (picked != null) {
+                      setState(() {
+                        _filterDateFromController.text =
+                            _formatDateDisplay(picked);
+                      });
+                    }
+                  },
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: TextField(
+                  controller: _filterDateToController,
+                  readOnly: true,
+                  decoration: const InputDecoration(
+                    labelText: 'Bitiş Tarihi',
+                    hintText: 'Takvimden seçin',
+                  ),
+                  onTap: () async {
+                    final today = DateTime.now();
+                    final minDate = DateTime(today.year - 1, 1, 1);
+                    final maxDate = DateTime(today.year + 5, 12, 31);
+                    final initial = _clampDate(
+                        _parseInputDateOrNow(_filterDateToController.text),
+                        minDate,
+                        maxDate);
+                    final picked = await showDatePicker(
+                      context: context,
+                      initialDate: initial,
+                      firstDate: minDate,
+                      lastDate: maxDate,
+                    );
+                    if (picked != null) {
+                      setState(() {
+                        _filterDateToController.text =
+                            _formatDateDisplay(picked);
+                      });
+                    }
+                  },
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              Expanded(
+                child: DropdownButtonFormField<String>(
+                  value: _filterTimeFromController.text.isNotEmpty
+                      ? _filterTimeFromController.text
+                      : null,
+                  decoration: const InputDecoration(
+                    labelText: 'Başlangıç Saati',
+                    hintText: 'HH:MM',
+                  ),
+                  items: _timeOptions
+                      .map(
+                        (t) => DropdownMenuItem<String>(
+                          value: t,
+                          child: Text(t),
+                        ),
+                      )
+                      .toList(),
+                  onChanged: (val) {
+                    setState(() {
+                      _filterTimeFromController.text = val ?? '';
+                    });
+                  },
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: DropdownButtonFormField<String>(
+                  value: _filterTimeToController.text.isNotEmpty
+                      ? _filterTimeToController.text
+                      : null,
+                  decoration: const InputDecoration(
+                    labelText: 'Bitiş Saati',
+                    hintText: 'HH:MM',
+                  ),
+                  items: _timeOptions
+                      .map(
+                        (t) => DropdownMenuItem<String>(
+                          value: t,
+                          child: Text(t),
+                        ),
+                      )
+                      .toList(),
+                  onChanged: (val) {
+                    setState(() {
+                      _filterTimeToController.text = val ?? '';
+                    });
+                  },
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: ElevatedButton.icon(
+                  onPressed: _applyFilters,
+                  icon: const Icon(Icons.search),
+                  style: _mainButtonStyle(),
+                  label: const Text('Filtrele'),
+                ),
+              ),
+              const SizedBox(width: 12),
+              ElevatedButton(
+                onPressed: _clearFilters,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.grey.shade200,
+                  foregroundColor: Colors.black87,
+                ),
+                child: const Text('Temizle'),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
@@ -2576,246 +2635,194 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
       );
     }
 
+    if (!_showQuickForm) return const SizedBox.shrink();
+
     return _sectionCard(
-      title: 'Hızlı Randevu',
-      actions: [
-        TextButton.icon(
-          onPressed: () {
-            setState(() {
-              _showQuickForm = !_showQuickForm;
-            });
-            if (!_showQuickForm) return;
-            if (_countries.isEmpty && !_loadingCountries) {
-              _fetchCountries();
-            }
-            if (_quickDateController.text.trim().isNotEmpty) {
-              _fetchTimeSlots();
-            }
-          },
-          icon: Icon(_showQuickForm ? Icons.close : Icons.flash_on),
-          label: Text(_showQuickForm ? 'Kapat' : 'Aç'),
-        ),
-      ],
-      child: AnimatedSwitcher(
-        duration: const Duration(milliseconds: 200),
-        child: !_showQuickForm
-            ? const SizedBox.shrink()
-            : Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Expanded(
-                        child: TextField(
-                          controller: _quickNameController,
-                          decoration: const InputDecoration(
-                            labelText: 'Ad',
-                            hintText: 'Örn: Ali',
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: TextField(
-                          controller: _quickLastNameController,
-                          decoration: const InputDecoration(
-                            labelText: 'Soyad',
-                            hintText: 'Örn: Kara',
-                          ),
-                        ),
-                      ),
-                    ],
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                'Hızlı Randevu',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+              ),
+              IconButton(
+                tooltip: 'Kapat',
+                icon: const Icon(Icons.close),
+                onPressed: () {
+                  setState(() {
+                    _showQuickForm = false;
+                  });
+                },
+              ),
+            ],
+          ),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            decoration: BoxDecoration(
+              color: Colors.blueGrey.withOpacity(0.04),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Row(
+              children: const [
+                Icon(Icons.tips_and_updates, color: Colors.blueGrey),
+                SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    'Müşteri ve randevu bilgilerini tek ekrandan doldurup kaydedin.',
+                    style: TextStyle(color: Colors.black87),
                   ),
-                  const SizedBox(height: 8),
-                  DropdownButtonFormField<int>(
-                    value: _selectedCountryId,
-                    isExpanded: true,
-                    decoration: InputDecoration(
-                      labelText: 'Ülke',
-                      hintText:
-                          _loadingCountries ? 'Yükleniyor...' : 'Ülke seçin',
-                      errorText: _countriesError,
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 12),
+          const Text(
+            'Müşteri Bilgisi',
+            style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
+          ),
+          const SizedBox(height: 8),
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.grey.shade50,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Colors.grey.shade200),
+            ),
+            child: Column(
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: _quickNameController,
+                        decoration: const InputDecoration(
+                          labelText: 'Ad',
+                          hintText: 'Örn: Ali',
+                        ),
+                      ),
                     ),
-                    items: _countries
-                        .map(
-                          (c) => DropdownMenuItem<int>(
-                            value: c['id'] as int?,
-                            child: Text(
-                              '${c['name'] ?? ''} (${c['phone_code'] ?? ''})',
-                            ),
-                          ),
-                        )
-                        .toList(),
-                    onChanged: _loadingCountries
-                        ? null
-                        : (val) {
-                            setState(() {
-                              _selectedCountryId = val;
-                              _quickCountryIdController.text =
-                                  val != null ? '$val' : '';
-                              _countriesError = null;
-                            });
-                          },
-                  ),
-                  const SizedBox(height: 8),
-                  TextField(
-                    controller: _quickPhoneController,
-                    keyboardType: TextInputType.phone,
-                    decoration: const InputDecoration(
-                      labelText: 'Telefon',
-                      hintText: 'Örn: 5554443322',
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  TextField(
-                    controller: _quickEmailController,
-                    keyboardType: TextInputType.emailAddress,
-                    decoration: const InputDecoration(
-                      labelText: 'Email',
-                      hintText: 'Opsiyonel',
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: TextField(
-                          controller: _quickDateController,
-                          readOnly: true,
-                          decoration: const InputDecoration(
-                            labelText: 'Tarih',
-                            hintText: 'Takvimden seçin',
-                          ),
-                          onTap: _pickQuickDate,
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: TextField(
+                        controller: _quickLastNameController,
+                        decoration: const InputDecoration(
+                          labelText: 'Soyad',
+                          hintText: 'Örn: Kara',
                         ),
                       ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: TextField(
-                          controller: _quickTimeController,
-                          readOnly: true,
-                          decoration: const InputDecoration(
-                            labelText: 'Saat',
-                            hintText: 'Slot seçin',
-                          ),
-                        ),
-                      ),
-                    ],
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 10),
+                DropdownButtonFormField<int>(
+                  value: _selectedCountryId,
+                  isExpanded: true,
+                  decoration: InputDecoration(
+                    labelText: 'Ülke',
+                    hintText:
+                        _loadingCountries ? 'Yükleniyor...' : 'Ülke seçin',
+                    errorText: _countriesError,
                   ),
-                  const SizedBox(height: 8),
-                  Row(
-                    children: [
-                      ElevatedButton.icon(
-                        onPressed: _loadingSlots ? null : _fetchTimeSlots,
-                        icon: _loadingSlots
-                            ? const SizedBox(
-                                width: 16,
-                                height: 16,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  valueColor:
-                                      AlwaysStoppedAnimation(Colors.white),
-                                ),
-                              )
-                            : const Icon(Icons.schedule),
-                        label: const Text('Saatleri Getir'),
-                      ),
-                      const SizedBox(width: 12),
-                      if (_slotsError != null)
-                        Expanded(
+                  items: _countries
+                      .map(
+                        (c) => DropdownMenuItem<int>(
+                          value: c['id'] as int?,
                           child: Text(
-                            _slotsError!,
-                            style: const TextStyle(color: Colors.red),
+                            '${c['name'] ?? ''} (${c['phone_code'] ?? ''})',
                           ),
                         ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  if (_loadingSlots)
-                    const LinearProgressIndicator(minHeight: 2),
-                  if (_timeSlots.isNotEmpty)
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      children: _timeSlots.map((slot) {
-                        final time = slot['time']?.toString() ?? '';
-                        final booked = slot['booked'] == true;
-                        final selected = _selectedSlotTime == time;
-                        return ChoiceChip(
-                          label: Text(time),
-                          selected: selected,
-                          onSelected: booked
-                              ? null
-                              : (val) {
-                                  if (val) {
-                                    setState(() {
-                                      _selectedSlotTime = time;
-                                      _quickTimeController.text = time;
-                                      _slotsError = null;
-                                    });
-                                  }
-                                },
-                          disabledColor: Colors.grey.shade300,
-                          selectedColor: Colors.green.shade200,
-                          labelStyle: TextStyle(
-                            color: booked
-                                ? Colors.grey
-                                : (selected ? Colors.black : Colors.black87),
-                          ),
-                        );
-                      }).toList(),
+                      )
+                      .toList(),
+                  onChanged: _loadingCountries
+                      ? null
+                      : (val) {
+                          setState(() {
+                            _selectedCountryId = val;
+                            _quickCountryIdController.text =
+                                val != null ? '$val' : '';
+                            _countriesError = null;
+                          });
+                        },
+                ),
+                const SizedBox(height: 10),
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: _quickPhoneController,
+                        keyboardType: TextInputType.phone,
+                        decoration: const InputDecoration(
+                          labelText: 'Telefon',
+                          hintText: 'Örn: 5554443322',
+                        ),
+                      ),
                     ),
-                  const SizedBox(height: 8),
-                  TextField(
-                    controller: _quickNoteController,
-                    maxLines: 2,
-                    decoration: const InputDecoration(
-                      labelText: 'Not',
-                      hintText: 'Opsiyonel',
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: TextField(
+                        controller: _quickEmailController,
+                        keyboardType: TextInputType.emailAddress,
+                        decoration: const InputDecoration(
+                          labelText: 'Email',
+                          hintText: 'Opsiyonel',
+                        ),
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 8),
-                  SwitchListTile(
-                    contentPadding: EdgeInsets.zero,
-                    title: const Text('İlk randevu mu?'),
-                    value: _quickIsFirstAppointment,
-                    onChanged: (val) {
-                      setState(() {
-                        _quickIsFirstAppointment = val;
-                      });
-                    },
-                  ),
-                  SwitchListTile(
-                    contentPadding: EdgeInsets.zero,
-                    title: const Text('SMS gönderme'),
-                    subtitle:
-                        const Text('Bu randevu için SMS gönderimi kapalı'),
-                    value: _quickNoSms,
-                    onChanged: (val) {
-                      setState(() {
-                        _quickNoSms = val;
-                      });
-                    },
-                  ),
-                  SwitchListTile(
-                    contentPadding: EdgeInsets.zero,
-                    title: const Text('Hatırlatma gönderme'),
-                    subtitle: const Text(
-                        'Bu randevu için hatırlatma bildirimi kapalı'),
-                    value: _quickNoReminder,
-                    onChanged: (val) {
-                      setState(() {
-                        _quickNoReminder = val;
-                      });
-                    },
-                  ),
-                  const SizedBox(height: 8),
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton.icon(
-                      onPressed: _savingQuick ? null : _submitQuickAppointment,
-                      style: _mainButtonStyle(),
-                      icon: _savingQuick
+                  ],
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 14),
+          const Text(
+            'Randevu Bilgisi',
+            style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
+          ),
+          const SizedBox(height: 8),
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.grey.shade50,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Colors.grey.shade200),
+            ),
+            child: Column(
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: _quickDateController,
+                        readOnly: true,
+                        decoration: const InputDecoration(
+                          labelText: 'Tarih',
+                          hintText: 'Takvimden seçin',
+                        ),
+                        onTap: _pickQuickDate,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: TextField(
+                        controller: _quickTimeController,
+                        readOnly: true,
+                        decoration: const InputDecoration(
+                          labelText: 'Saat',
+                          hintText: 'Slot seçin',
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 10),
+                Row(
+                  children: [
+                    ElevatedButton.icon(
+                      onPressed: _loadingSlots ? null : _fetchTimeSlots,
+                      icon: _loadingSlots
                           ? const SizedBox(
                               width: 16,
                               height: 16,
@@ -2825,14 +2832,120 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
                                     AlwaysStoppedAnimation(Colors.white),
                               ),
                             )
-                          : const Icon(Icons.flash_on),
-                      label: Text(_savingQuick
-                          ? 'Gönderiliyor...'
-                          : 'Quick Randevu Oluştur'),
+                          : const Icon(Icons.schedule),
+                      label: const Text('Uygun Saatleri Getir'),
                     ),
+                    const SizedBox(width: 12),
+                    if (_slotsError != null)
+                      Expanded(
+                        child: Text(
+                          _slotsError!,
+                          style: const TextStyle(color: Colors.red),
+                        ),
+                      ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                if (_loadingSlots) const LinearProgressIndicator(minHeight: 2),
+                if (_timeSlots.isNotEmpty)
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: _timeSlots.map((slot) {
+                      final time = slot['time']?.toString() ?? '';
+                      final booked = slot['booked'] == true;
+                      final selected = _selectedSlotTime == time;
+                      return ChoiceChip(
+                        label: Text(time),
+                        selected: selected,
+                        onSelected: booked
+                            ? null
+                            : (val) {
+                                if (val) {
+                                  setState(() {
+                                    _selectedSlotTime = time;
+                                    _quickTimeController.text = time;
+                                    _slotsError = null;
+                                  });
+                                }
+                              },
+                        disabledColor: Colors.grey.shade300,
+                        selectedColor: Colors.green.shade200,
+                        labelStyle: TextStyle(
+                          color: booked
+                              ? Colors.grey
+                              : (selected ? Colors.black : Colors.black87),
+                        ),
+                      );
+                    }).toList(),
                   ),
-                ],
-              ),
+                const SizedBox(height: 10),
+                TextField(
+                  controller: _quickNoteController,
+                  maxLines: 2,
+                  decoration: const InputDecoration(
+                    labelText: 'Not',
+                    hintText: 'Opsiyonel',
+                  ),
+                ),
+                const SizedBox(height: 4),
+                SwitchListTile(
+                  contentPadding: EdgeInsets.zero,
+                  title: const Text('İlk randevu mu?'),
+                  value: _quickIsFirstAppointment,
+                  onChanged: (val) {
+                    setState(() {
+                      _quickIsFirstAppointment = val;
+                    });
+                  },
+                ),
+                SwitchListTile(
+                  contentPadding: EdgeInsets.zero,
+                  title: const Text('SMS gönderme'),
+                  subtitle: const Text('Bu randevu için SMS gönderimi kapalı'),
+                  value: _quickNoSms,
+                  onChanged: (val) {
+                    setState(() {
+                      _quickNoSms = val;
+                    });
+                  },
+                ),
+                SwitchListTile(
+                  contentPadding: EdgeInsets.zero,
+                  title: const Text('Hatırlatma gönderme'),
+                  subtitle:
+                      const Text('Bu randevu için hatırlatma bildirimi kapalı'),
+                  value: _quickNoReminder,
+                  onChanged: (val) {
+                    setState(() {
+                      _quickNoReminder = val;
+                    });
+                  },
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 12),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              onPressed: _savingQuick ? null : _submitQuickAppointment,
+              style: _mainButtonStyle(),
+              icon: _savingQuick
+                  ? const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        valueColor: AlwaysStoppedAnimation(Colors.white),
+                      ),
+                    )
+                  : const Icon(Icons.flash_on),
+              label: Text(
+                  _savingQuick ? 'Gönderiliyor...' : 'Quick Randevu Oluştur'),
+            ),
+          ),
+        ],
       ),
     );
   }
