@@ -1385,78 +1385,217 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
               }
             }
 
-            return Padding(
-              padding: EdgeInsets.only(
-                bottom: MediaQuery.of(ctx).viewInsets.bottom,
-                left: 16,
-                right: 16,
-                top: 16,
-              ),
-              child: SingleChildScrollView(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Text(
-                              'Randevu Düzenle',
-                              style: TextStyle(
-                                  fontSize: 16, fontWeight: FontWeight.bold),
+            return SafeArea(
+              child: Padding(
+                padding: EdgeInsets.only(
+                  bottom: MediaQuery.of(ctx).viewInsets.bottom + 24,
+                  left: 16,
+                  right: 16,
+                  top: 16,
+                ),
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text(
+                                'Randevu Düzenle',
+                                style: TextStyle(
+                                    fontSize: 16, fontWeight: FontWeight.bold),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                customerName,
+                                style: const TextStyle(
+                                  fontSize: 14,
+                                  color: Colors.grey,
+                                ),
+                              ),
+                            ],
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.close),
+                            onPressed: () => Navigator.of(ctx).pop(),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: TextField(
+                              controller: dateCtrl,
+                              readOnly: true,
+                              decoration: const InputDecoration(
+                                labelText: 'Tarih',
+                                hintText: 'Takvimden seçin',
+                              ),
+                              onTap: pickDate,
                             ),
-                            const SizedBox(height: 4),
-                            Text(
-                              customerName,
-                              style: const TextStyle(
-                                fontSize: 14,
-                                color: Colors.grey,
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: TextField(
+                              controller: timeCtrl,
+                              readOnly: true,
+                              decoration: const InputDecoration(
+                                labelText: 'Saat (seçim yapınız)',
+                                hintText: 'Slot seçin',
                               ),
                             ),
-                          ],
-                        ),
-                        IconButton(
-                          icon: const Icon(Icons.close),
-                          onPressed: () => Navigator.of(ctx).pop(),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: TextField(
-                            controller: dateCtrl,
-                            readOnly: true,
-                            decoration: const InputDecoration(
-                              labelText: 'Tarih',
-                              hintText: 'Takvimden seçin',
-                            ),
-                            onTap: pickDate,
                           ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: TextField(
-                            controller: timeCtrl,
-                            readOnly: true,
-                            decoration: const InputDecoration(
-                              labelText: 'Saat (seçim yapınız)',
-                              hintText: 'Slot seçin',
-                            ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      Row(
+                        children: [
+                          ElevatedButton.icon(
+                            onPressed: localLoadingSlots ? null : loadSlots,
+                            icon: localLoadingSlots
+                                ? const SizedBox(
+                                    width: 16,
+                                    height: 16,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      valueColor:
+                                          AlwaysStoppedAnimation(Colors.white),
+                                    ),
+                                  )
+                                : const Icon(Icons.schedule),
+                            label: const Text('Saatleri Getir'),
                           ),
+                          const SizedBox(width: 12),
+                          if (localSlotsError != null)
+                            Expanded(
+                              child: Text(
+                                localSlotsError!,
+                                style: const TextStyle(color: Colors.red),
+                              ),
+                            ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      if (localLoadingSlots)
+                        const LinearProgressIndicator(minHeight: 2),
+                      DropdownButtonFormField<int>(
+                        value: effectiveStatusId,
+                        isExpanded: true,
+                        decoration: InputDecoration(
+                          labelText: 'Durum',
+                          hintText: _loadingStatuses
+                              ? 'Yükleniyor...'
+                              : 'Durum seçin',
+                          errorText: _statusesError,
                         ),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    Row(
-                      children: [
-                        ElevatedButton.icon(
-                          onPressed: localLoadingSlots ? null : loadSlots,
-                          icon: localLoadingSlots
+                        items: _appointmentStatuses
+                            .map(
+                              (s) => DropdownMenuItem<int>(
+                                value: s['id'] as int?,
+                                child: Text(_localizedStatusLabel(s)),
+                              ),
+                            )
+                            .toList(),
+                        onChanged: _loadingStatuses
+                            ? null
+                            : (val) {
+                                setModalState(() {
+                                  localSelectedStatusId = val;
+                                  _statusesError = null;
+                                });
+                              },
+                      ),
+                      const SizedBox(height: 8),
+                      if (localSlots.isNotEmpty)
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: localSlots.map((slot) {
+                            final time = slot['time']?.toString() ?? '';
+                            final booked = slot['booked'] == true;
+                            final selected = localSelectedTime == time;
+                            return ChoiceChip(
+                              label: Text(time),
+                              selected: selected,
+                              onSelected: booked
+                                  ? null
+                                  : (val) {
+                                      if (val) {
+                                        setModalState(() {
+                                          localSelectedTime = time;
+                                          timeCtrl.text = time;
+                                          localSlotsError = null;
+                                        });
+                                      }
+                                    },
+                              disabledColor: Colors.grey.shade300,
+                              selectedColor: Colors.green.shade200,
+                              labelStyle: TextStyle(
+                                color: booked
+                                    ? Colors.grey
+                                    : (selected
+                                        ? Colors.black
+                                        : Colors.black87),
+                              ),
+                            );
+                          }).toList(),
+                        ),
+                      const SizedBox(height: 8),
+                      TextField(
+                        controller: notesCtrl,
+                        maxLines: 2,
+                        decoration: const InputDecoration(labelText: 'Not'),
+                      ),
+                      const SizedBox(height: 8),
+                      SwitchListTile(
+                        title: const Text('SMS Gönderilmesin'),
+                        value: localNoSms,
+                        onChanged: (val) {
+                          setModalState(() {
+                            localNoSms = val;
+                          });
+                        },
+                        contentPadding: EdgeInsets.zero,
+                      ),
+                      SwitchListTile(
+                        title: const Text('Hatırlatıcı Gönderilmesin'),
+                        value: localNoReminder,
+                        onChanged: (val) {
+                          setModalState(() {
+                            localNoReminder = val;
+                          });
+                        },
+                        contentPadding: EdgeInsets.zero,
+                      ),
+                      const SizedBox(height: 12),
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton.icon(
+                          onPressed: (appointmentId == null ||
+                                  customerId == null ||
+                                  effectiveStatusId == null ||
+                                  _savingAppointment)
+                              ? null
+                              : () async {
+                                  Navigator.of(ctx).pop();
+                                  await _updateAppointment(
+                                    appointmentId: appointmentId,
+                                    customerId: customerId,
+                                    statusId: effectiveStatusId!,
+                                    date: dateCtrl.text.trim(),
+                                    time: (localSelectedTime ?? timeCtrl.text)
+                                        .trim(),
+                                    notes: notesCtrl.text.trim(),
+                                    noSms: localNoSms,
+                                    noReminder: localNoReminder,
+                                  );
+                                },
+                          icon: _savingAppointment
                               ? const SizedBox(
                                   width: 16,
                                   height: 16,
@@ -1466,147 +1605,13 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
                                         AlwaysStoppedAnimation(Colors.white),
                                   ),
                                 )
-                              : const Icon(Icons.schedule),
-                          label: const Text('Saatleri Getir'),
+                              : const Icon(Icons.save),
+                          label: const Text('Kaydet'),
                         ),
-                        const SizedBox(width: 12),
-                        if (localSlotsError != null)
-                          Expanded(
-                            child: Text(
-                              localSlotsError!,
-                              style: const TextStyle(color: Colors.red),
-                            ),
-                          ),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    if (localLoadingSlots)
-                      const LinearProgressIndicator(minHeight: 2),
-                    DropdownButtonFormField<int>(
-                      value: effectiveStatusId,
-                      isExpanded: true,
-                      decoration: InputDecoration(
-                        labelText: 'Durum',
-                        hintText:
-                            _loadingStatuses ? 'Yükleniyor...' : 'Durum seçin',
-                        errorText: _statusesError,
                       ),
-                      items: _appointmentStatuses
-                          .map(
-                            (s) => DropdownMenuItem<int>(
-                              value: s['id'] as int?,
-                              child: Text(_localizedStatusLabel(s)),
-                            ),
-                          )
-                          .toList(),
-                      onChanged: _loadingStatuses
-                          ? null
-                          : (val) {
-                              setModalState(() {
-                                localSelectedStatusId = val;
-                                _statusesError = null;
-                              });
-                            },
-                    ),
-                    const SizedBox(height: 8),
-                    if (localSlots.isNotEmpty)
-                      Wrap(
-                        spacing: 8,
-                        runSpacing: 8,
-                        children: localSlots.map((slot) {
-                          final time = slot['time']?.toString() ?? '';
-                          final booked = slot['booked'] == true;
-                          final selected = localSelectedTime == time;
-                          return ChoiceChip(
-                            label: Text(time),
-                            selected: selected,
-                            onSelected: booked
-                                ? null
-                                : (val) {
-                                    if (val) {
-                                      setModalState(() {
-                                        localSelectedTime = time;
-                                        timeCtrl.text = time;
-                                        localSlotsError = null;
-                                      });
-                                    }
-                                  },
-                            disabledColor: Colors.grey.shade300,
-                            selectedColor: Colors.green.shade200,
-                            labelStyle: TextStyle(
-                              color: booked
-                                  ? Colors.grey
-                                  : (selected ? Colors.black : Colors.black87),
-                            ),
-                          );
-                        }).toList(),
-                      ),
-                    const SizedBox(height: 8),
-                    TextField(
-                      controller: notesCtrl,
-                      maxLines: 2,
-                      decoration: const InputDecoration(labelText: 'Not'),
-                    ),
-                    const SizedBox(height: 8),
-                    SwitchListTile(
-                      title: const Text('SMS Gönderilmesin'),
-                      value: localNoSms,
-                      onChanged: (val) {
-                        setModalState(() {
-                          localNoSms = val;
-                        });
-                      },
-                      contentPadding: EdgeInsets.zero,
-                    ),
-                    SwitchListTile(
-                      title: const Text('Hatırlatıcı Gönderilmesin'),
-                      value: localNoReminder,
-                      onChanged: (val) {
-                        setModalState(() {
-                          localNoReminder = val;
-                        });
-                      },
-                      contentPadding: EdgeInsets.zero,
-                    ),
-                    const SizedBox(height: 12),
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton.icon(
-                        onPressed: (appointmentId == null ||
-                                customerId == null ||
-                                effectiveStatusId == null ||
-                                _savingAppointment)
-                            ? null
-                            : () async {
-                                Navigator.of(ctx).pop();
-                                await _updateAppointment(
-                                  appointmentId: appointmentId,
-                                  customerId: customerId,
-                                  statusId: effectiveStatusId!,
-                                  date: dateCtrl.text.trim(),
-                                  time: (localSelectedTime ?? timeCtrl.text)
-                                      .trim(),
-                                  notes: notesCtrl.text.trim(),
-                                  noSms: localNoSms,
-                                  noReminder: localNoReminder,
-                                );
-                              },
-                        icon: _savingAppointment
-                            ? const SizedBox(
-                                width: 16,
-                                height: 16,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  valueColor:
-                                      AlwaysStoppedAnimation(Colors.white),
-                                ),
-                              )
-                            : const Icon(Icons.save),
-                        label: const Text('Kaydet'),
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                  ],
+                      const SizedBox(height: 12),
+                    ],
+                  ),
                 ),
               ),
             );
@@ -1696,189 +1701,193 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
                     (info!['recent_appointments'] as List)
                         .map((e) => Map<String, dynamic>.from(e)))
                 : <Map<String, dynamic>>[];
-            return Padding(
-              padding: EdgeInsets.only(
-                bottom: MediaQuery.of(ctx).viewInsets.bottom,
-                left: 16,
-                right: 16,
-                top: 16,
-              ),
-              child: SingleChildScrollView(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const Text(
-                          'Müşteri Önizleme',
-                          style: TextStyle(
-                              fontSize: 16, fontWeight: FontWeight.bold),
-                        ),
-                        IconButton(
-                          icon: const Icon(Icons.close),
-                          onPressed: () => Navigator.of(ctx).pop(),
-                        ),
-                      ],
-                    ),
-                    if (_loadingCustomerInfo)
-                      const LinearProgressIndicator(minHeight: 2),
-                    if (loadError != null)
-                      Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 8),
-                        child: Row(
-                          children: [
-                            Expanded(
-                              child: Text(
-                                loadError!,
-                                style: const TextStyle(color: Colors.red),
-                              ),
-                            ),
-                            IconButton(
-                              icon: const Icon(Icons.refresh),
-                              onPressed: () => fetchInfo(setModalState),
-                            ),
-                          ],
-                        ),
+            return SafeArea(
+              child: Padding(
+                padding: EdgeInsets.only(
+                  bottom: MediaQuery.of(ctx).viewInsets.bottom + 24,
+                  left: 16,
+                  right: 16,
+                  top: 16,
+                ),
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text(
+                            'Müşteri Önizleme',
+                            style: TextStyle(
+                                fontSize: 16, fontWeight: FontWeight.bold),
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.close),
+                            onPressed: () => Navigator.of(ctx).pop(),
+                          ),
+                        ],
                       ),
-                    if (info != null) ...[
-                      const SizedBox(height: 8),
-                      Card(
-                        elevation: 0,
-                        color: Colors.grey.shade100,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Padding(
-                          padding: const EdgeInsets.all(12),
+                      if (_loadingCustomerInfo)
+                        const LinearProgressIndicator(minHeight: 2),
+                      if (loadError != null)
+                        Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 8),
                           child: Row(
                             children: [
-                              CircleAvatar(
-                                backgroundColor: Colors.blueGrey.shade50,
-                                child: const Icon(Icons.person,
-                                    color: Colors.blueGrey),
-                              ),
-                              const SizedBox(width: 12),
                               Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      '${info?['customer_name'] ?? ''} ${info?['customer_lastname'] ?? ''}'
-                                          .trim(),
-                                      style: const TextStyle(
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.w700,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 4),
-                                    if ((info?['customer_phone'] ?? '')
-                                        .toString()
-                                        .isNotEmpty)
-                                      Row(
-                                        children: [
-                                          const Icon(Icons.phone,
-                                              size: 16, color: Colors.grey),
-                                          const SizedBox(width: 6),
-                                          Text(info?['customer_phone'] ?? ''),
-                                        ],
-                                      ),
-                                    if ((info?['customer_email'] ?? '')
-                                        .toString()
-                                        .isNotEmpty)
-                                      Row(
-                                        children: [
-                                          const Icon(Icons.email,
-                                              size: 16, color: Colors.grey),
-                                          const SizedBox(width: 6),
-                                          Text(info?['customer_email'] ?? ''),
-                                        ],
-                                      ),
-                                  ],
+                                child: Text(
+                                  loadError!,
+                                  style: const TextStyle(color: Colors.red),
                                 ),
+                              ),
+                              IconButton(
+                                icon: const Icon(Icons.refresh),
+                                onPressed: () => fetchInfo(setModalState),
                               ),
                             ],
                           ),
                         ),
-                      ),
-                      const SizedBox(height: 12),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: const [
-                          Text(
-                            'Son Randevular',
-                            style: TextStyle(
-                                fontSize: 14, fontWeight: FontWeight.bold),
+                      if (info != null) ...[
+                        const SizedBox(height: 8),
+                        Card(
+                          elevation: 0,
+                          color: Colors.grey.shade100,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
                           ),
-                          Icon(Icons.history, size: 18, color: Colors.grey),
-                        ],
-                      ),
-                      const SizedBox(height: 8),
-                      if (recent.isEmpty)
-                        const Text('Kayıt bulunamadı.')
-                      else
-                        ...recent.map((r) {
-                          final date = _formatDate(r['date']?.toString());
-                          final time = _formatTime(r['time']);
-                          final status = (r['status'] ?? '').toString();
-                          final notes = (r['notes'] ?? '').toString();
-                          return Card(
-                            elevation: 0,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(10),
-                              side: BorderSide(
-                                color: Colors.grey.shade200,
-                              ),
-                            ),
-                            margin: const EdgeInsets.only(bottom: 8),
-                            child: Padding(
-                              padding: const EdgeInsets.all(12),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Row(
-                                    mainAxisAlignment:
-                                        MainAxisAlignment.spaceBetween,
+                          child: Padding(
+                            padding: const EdgeInsets.all(12),
+                            child: Row(
+                              children: [
+                                CircleAvatar(
+                                  backgroundColor: Colors.blueGrey.shade50,
+                                  child: const Icon(Icons.person,
+                                      color: Colors.blueGrey),
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
                                       Text(
-                                        '$date • $time',
+                                        '${info?['customer_name'] ?? ''} ${info?['customer_lastname'] ?? ''}'
+                                            .trim(),
                                         style: const TextStyle(
-                                            fontWeight: FontWeight.w600),
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.w700,
+                                        ),
                                       ),
-                                      if (status.isNotEmpty)
-                                        Chip(
-                                          label: Text(
-                                            status.toUpperCase(),
-                                            style: const TextStyle(
-                                                fontSize: 11,
-                                                fontWeight: FontWeight.bold),
-                                          ),
-                                          backgroundColor:
-                                              Colors.blueGrey.shade50,
-                                          materialTapTargetSize:
-                                              MaterialTapTargetSize.shrinkWrap,
-                                          padding: const EdgeInsets.symmetric(
-                                              horizontal: 8, vertical: 0),
+                                      const SizedBox(height: 4),
+                                      if ((info?['customer_phone'] ?? '')
+                                          .toString()
+                                          .isNotEmpty)
+                                        Row(
+                                          children: [
+                                            const Icon(Icons.phone,
+                                                size: 16, color: Colors.grey),
+                                            const SizedBox(width: 6),
+                                            Text(info?['customer_phone'] ?? ''),
+                                          ],
+                                        ),
+                                      if ((info?['customer_email'] ?? '')
+                                          .toString()
+                                          .isNotEmpty)
+                                        Row(
+                                          children: [
+                                            const Icon(Icons.email,
+                                                size: 16, color: Colors.grey),
+                                            const SizedBox(width: 6),
+                                            Text(info?['customer_email'] ?? ''),
+                                          ],
                                         ),
                                     ],
                                   ),
-                                  if (notes.isNotEmpty) ...[
-                                    const SizedBox(height: 6),
-                                    Text(
-                                      notes,
-                                      style: const TextStyle(
-                                          color: Colors.black87),
-                                    ),
-                                  ],
-                                ],
-                              ),
+                                ),
+                              ],
                             ),
-                          );
-                        }),
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: const [
+                            Text(
+                              'Son Randevular',
+                              style: TextStyle(
+                                  fontSize: 14, fontWeight: FontWeight.bold),
+                            ),
+                            Icon(Icons.history, size: 18, color: Colors.grey),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        if (recent.isEmpty)
+                          const Text('Kayıt bulunamadı.')
+                        else
+                          ...recent.map((r) {
+                            final date = _formatDate(r['date']?.toString());
+                            final time = _formatTime(r['time']);
+                            final status = (r['status'] ?? '').toString();
+                            final notes = (r['notes'] ?? '').toString();
+                            return Card(
+                              elevation: 0,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10),
+                                side: BorderSide(
+                                  color: Colors.grey.shade200,
+                                ),
+                              ),
+                              margin: const EdgeInsets.only(bottom: 8),
+                              child: Padding(
+                                padding: const EdgeInsets.all(12),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        Text(
+                                          '$date • $time',
+                                          style: const TextStyle(
+                                              fontWeight: FontWeight.w600),
+                                        ),
+                                        if (status.isNotEmpty)
+                                          Chip(
+                                            label: Text(
+                                              status.toUpperCase(),
+                                              style: const TextStyle(
+                                                  fontSize: 11,
+                                                  fontWeight: FontWeight.bold),
+                                            ),
+                                            backgroundColor:
+                                                Colors.blueGrey.shade50,
+                                            materialTapTargetSize:
+                                                MaterialTapTargetSize
+                                                    .shrinkWrap,
+                                            padding: const EdgeInsets.symmetric(
+                                                horizontal: 8, vertical: 0),
+                                          ),
+                                      ],
+                                    ),
+                                    if (notes.isNotEmpty) ...[
+                                      const SizedBox(height: 6),
+                                      Text(
+                                        notes,
+                                        style: const TextStyle(
+                                            color: Colors.black87),
+                                      ),
+                                    ],
+                                  ],
+                                ),
+                              ),
+                            );
+                          }),
+                      ],
+                      const SizedBox(height: 12),
                     ],
-                    const SizedBox(height: 12),
-                  ],
+                  ),
                 ),
               ),
             );
@@ -2191,7 +2200,8 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
                       },
                     ),
                     const SizedBox(height: 12),
-                    SizedBox(
+                    Container(
+                      padding: const EdgeInsets.symmetric(vertical: 10),
                       width: double.infinity,
                       child: ElevatedButton.icon(
                         onPressed: (customerId == null || _creatingRebook)
@@ -2223,7 +2233,7 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
                         label: const Text('Yeni Randevu Oluştur'),
                       ),
                     ),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: 8),
                   ],
                 ),
               ),
