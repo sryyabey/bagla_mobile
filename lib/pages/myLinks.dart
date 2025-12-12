@@ -583,132 +583,130 @@ class _MyLinksPageState extends State<MyLinksPage> {
             left: 16,
             right: 16,
             top: 16,
-        ),
-        child: StatefulBuilder(
-          builder: (context, setModalState) {
-            final modalFilteredTypes = linkTypes
-                .where((type) {
-                  final name = (type['name'] ?? type['title'] ?? '')
-                      .toString()
-                      .toLowerCase();
-                  return name.contains(typeSearchQuery);
-                })
-                .toList();
-            final modalEffectiveTypeValue =
-                modalFilteredTypes.any((t) => t['id'] == typeId)
-                    ? typeId
-                    : null;
+          ),
+          child: StatefulBuilder(
+            builder: (context, setModalState) {
+              final modalFilteredTypes = linkTypes.where((type) {
+                final name = (type['name'] ?? type['title'] ?? '')
+                    .toString()
+                    .toLowerCase();
+                return name.contains(typeSearchQuery);
+              }).toList();
+              final modalEffectiveTypeValue =
+                  modalFilteredTypes.any((t) => t['id'] == typeId)
+                      ? typeId
+                      : null;
 
-            return SingleChildScrollView(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'Link Düzenle',
-                    style:
-                        TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                  ),
-                  const SizedBox(height: 12),
-                  TextField(
-                    decoration: const InputDecoration(
-                      labelText: 'Link tipi ara',
-                      prefixIcon: Icon(Icons.search),
+              return SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Link Düzenle',
+                      style:
+                          TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                     ),
-                    onChanged: (value) {
-                      setModalState(() {
-                        typeSearchQuery = value.toLowerCase();
-                      });
-                    },
-                  ),
-                  const SizedBox(height: 8),
-                  DropdownButtonFormField<int>(
-                    value: modalEffectiveTypeValue,
-                    items: modalFilteredTypes.isNotEmpty
-                        ? modalFilteredTypes
-                            .map(
-                              (type) => DropdownMenuItem<int>(
-                                value: type['id'],
-                                child: Text(
-                                    type['name'] ?? type['title'] ?? 'Tip'),
+                    const SizedBox(height: 12),
+                    TextField(
+                      decoration: const InputDecoration(
+                        labelText: 'Link tipi ara',
+                        prefixIcon: Icon(Icons.search),
+                      ),
+                      onChanged: (value) {
+                        setModalState(() {
+                          typeSearchQuery = value.toLowerCase();
+                        });
+                      },
+                    ),
+                    const SizedBox(height: 8),
+                    DropdownButtonFormField<int>(
+                      value: modalEffectiveTypeValue,
+                      items: modalFilteredTypes.isNotEmpty
+                          ? modalFilteredTypes
+                              .map(
+                                (type) => DropdownMenuItem<int>(
+                                  value: type['id'],
+                                  child: Text(
+                                      type['name'] ?? type['title'] ?? 'Tip'),
+                                ),
+                              )
+                              .toList()
+                          : const [
+                              DropdownMenuItem<int>(
+                                value: null,
+                                child: Text('Sonuç bulunamadı'),
                               ),
-                            )
-                            .toList()
-                        : const [
-                            DropdownMenuItem<int>(
-                              value: null,
-                              child: Text('Sonuç bulunamadı'),
-                            ),
-                          ],
-                    onChanged: modalFilteredTypes.isEmpty
-                        ? null
-                        : (value) {
-                            setModalState(() {
-                              typeId = value;
-                            });
-                          },
-                    decoration: const InputDecoration(labelText: 'Link Tipi'),
-                  ),
-                  const SizedBox(height: 12),
-                  TextField(
-                    controller: titleController,
-                    decoration: const InputDecoration(labelText: 'Başlık'),
-                  ),
-                  const SizedBox(height: 12),
-                  TextField(
-                    controller: urlController,
-                    decoration: InputDecoration(
-                      labelText: 'URL',
-                      hintText: getPlaceholderForType(
-                        _resolveTypeValue(typeId) ?? 'link',
+                            ],
+                      onChanged: modalFilteredTypes.isEmpty
+                          ? null
+                          : (value) {
+                              setModalState(() {
+                                typeId = value;
+                              });
+                            },
+                      decoration: const InputDecoration(labelText: 'Link Tipi'),
+                    ),
+                    const SizedBox(height: 12),
+                    TextField(
+                      controller: titleController,
+                      decoration: const InputDecoration(labelText: 'Başlık'),
+                    ),
+                    const SizedBox(height: 12),
+                    TextField(
+                      controller: urlController,
+                      decoration: InputDecoration(
+                        labelText: 'URL',
+                        hintText: getPlaceholderForType(
+                          _resolveTypeValue(typeId) ?? 'link',
+                        ),
                       ),
                     ),
-                  ),
-                  const SizedBox(height: 12),
-                  DropdownButtonFormField<int>(
-                    value: colorId,
-                    items: colors
-                        .map(
-                          (color) => DropdownMenuItem<int>(
-                            value: color['id'],
-                            child: _buildColorDropdownItem(color),
-                          ),
-                        )
-                        .toList(),
-                    onChanged: (value) {
-                      setModalState(() {
-                        colorId = value;
-                      });
-                    },
-                    decoration: const InputDecoration(labelText: 'Renk'),
-                  ),
-                  const SizedBox(height: 16),
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      onPressed: (typeId == null || colorId == null)
-                          ? null
-                          : () {
-                              Navigator.pop(context);
-                              updateLink(
-                                id: id,
-                                title: titleController.text,
-                                url: urlController.text,
-                                typeId: typeId!,
-                                colorId: colorId!,
-                              );
-                            },
-                      child: const Text('Güncelle'),
+                    const SizedBox(height: 12),
+                    DropdownButtonFormField<int>(
+                      value: colorId,
+                      items: colors
+                          .map(
+                            (color) => DropdownMenuItem<int>(
+                              value: color['id'],
+                              child: _buildColorDropdownItem(color),
+                            ),
+                          )
+                          .toList(),
+                      onChanged: (value) {
+                        setModalState(() {
+                          colorId = value;
+                        });
+                      },
+                      decoration: const InputDecoration(labelText: 'Renk'),
                     ),
-                  ),
-                  const SizedBox(height: 8),
-                ],
-              ),
-            );
-          },
-        ),
-      );
-    },
+                    const SizedBox(height: 16),
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        onPressed: (typeId == null || colorId == null)
+                            ? null
+                            : () {
+                                Navigator.pop(context);
+                                updateLink(
+                                  id: id,
+                                  title: titleController.text,
+                                  url: urlController.text,
+                                  typeId: typeId!,
+                                  colorId: colorId!,
+                                );
+                              },
+                        child: const Text('Güncelle'),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                  ],
+                ),
+              );
+            },
+          ),
+        );
+      },
     );
   }
 
@@ -719,13 +717,11 @@ class _MyLinksPageState extends State<MyLinksPage> {
       );
     }
 
-    final filteredTypes = linkTypes
-        .where((type) {
-          final name =
-              (type['name'] ?? type['title'] ?? '').toString().toLowerCase();
-          return name.contains(typeSearchQuery);
-        })
-        .toList();
+    final filteredTypes = linkTypes.where((type) {
+      final name =
+          (type['name'] ?? type['title'] ?? '').toString().toLowerCase();
+      return name.contains(typeSearchQuery);
+    }).toList();
     final effectiveTypeValue =
         filteredTypes.any((t) => t['id'] == selectedLinkTypeId)
             ? selectedLinkTypeId
@@ -836,8 +832,8 @@ class _MyLinksPageState extends State<MyLinksPage> {
               style: ElevatedButton.styleFrom(
                 backgroundColor: _primaryColor,
                 foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(
-                    horizontal: 18, vertical: 12),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
@@ -863,11 +859,11 @@ class _MyLinksPageState extends State<MyLinksPage> {
           link['typeId'] ??
           (link['type'] != null ? link['type']['id'] : null),
     );
-    final colorName = _resolveColorName(
-      link['color_id'] ??
-          link['colorId'] ??
-          (link['color'] != null ? link['color']['id'] : null),
-    );
+    final dynamic colorId =
+        link['color_id'] ?? link['colorId'] ?? (link['color']?['id']);
+    final String colorName = _resolveColorName(colorId);
+    final Color colorSwatch = _parseColor(
+        link['color']?['color']?.toString() ?? link['color']?.toString());
 
     return Container(
       decoration: BoxDecoration(
@@ -926,6 +922,16 @@ class _MyLinksPageState extends State<MyLinksPage> {
                           ),
                         if (colorName.isNotEmpty)
                           Chip(
+                            avatar: Container(
+                              width: 14,
+                              height: 14,
+                              decoration: BoxDecoration(
+                                color: colorSwatch,
+                                shape: BoxShape.circle,
+                                border:
+                                    Border.all(color: Colors.black12, width: 1),
+                              ),
+                            ),
                             label: Text(colorName),
                             visualDensity: VisualDensity.compact,
                             padding: EdgeInsets.zero,
