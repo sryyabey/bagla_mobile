@@ -7,6 +7,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart' as http;
 import 'package:share_plus/share_plus.dart';
 import 'package:qr_flutter/qr_flutter.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'config.dart';
 import 'login_page.dart';
 import 'pages/themes.dart';
@@ -105,6 +106,20 @@ class _DashboardPageState extends State<DashboardPage> {
         backgroundColor: success ? Colors.green : Colors.red,
       ),
     );
+  }
+
+  Future<void> _openWhatsAppSupport() async {
+    const phone = '902589110241';
+    final uri = Uri.parse('https://wa.me/$phone');
+    try {
+      final launched =
+          await launchUrl(uri, mode: LaunchMode.externalApplication);
+      if (!launched && mounted) {
+        _showSnack('WhatsApp açılamadı.');
+      }
+    } catch (e) {
+      _showSnack('WhatsApp açılamadı: $e');
+    }
   }
 
   Future<void> _shareBioSystem(String link) async {
@@ -750,6 +765,13 @@ class _DashboardPageState extends State<DashboardPage> {
           style: TextStyle(fontWeight: FontWeight.w700),
         ),
         automaticallyImplyLeading: true,
+        actions: [
+          IconButton(
+            tooltip: 'WhatsApp Destek',
+            icon: const Icon(Icons.chat, color: Colors.green),
+            onPressed: _openWhatsAppSupport,
+          ),
+        ],
       ),
       drawer: Drawer(
         child: ListView(
