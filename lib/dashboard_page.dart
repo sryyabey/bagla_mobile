@@ -5,7 +5,8 @@ import 'package:flutter/services.dart';
 import 'app_localizations.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart' as http;
-import 'package:url_launcher/url_launcher.dart';
+import 'package:share_plus/share_plus.dart';
+import 'package:qr_flutter/qr_flutter.dart';
 import 'config.dart';
 import 'login_page.dart';
 import 'pages/themes.dart';
@@ -106,39 +107,66 @@ class _DashboardPageState extends State<DashboardPage> {
     );
   }
 
-  Future<void> _shareBio(String channel, String link) async {
-    Uri uri;
-    switch (channel) {
-      case 'sms':
-        uri = Uri(
-          scheme: 'sms',
-          queryParameters: {'body': link},
-        );
-        break;
-      case 'whatsapp':
-        uri = Uri.parse('https://wa.me/?text=${Uri.encodeComponent(link)}');
-        break;
-      case 'telegram':
-        uri = Uri.parse(
-          'https://t.me/share/url?url=${Uri.encodeComponent(link)}&text=${Uri.encodeComponent(link)}',
-        );
-        break;
-      default:
-        uri = Uri.parse(link);
-    }
-
+  Future<void> _shareBioSystem(String link) async {
     try {
-      final launched = await launchUrl(
-        uri,
-        mode: LaunchMode.externalApplication,
-      );
-
-      if (!launched) {
-        _showSnack('Paylaşım açılamadı.');
-      }
+      await Share.share(link, subject: 'Bagla bio link');
     } catch (e) {
-      _showSnack('Paylaşım açılamadı: $e');
+      _showSnack('Paylaşım başarısız: $e');
     }
+  }
+
+  void _showQrModal(String link) {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (ctx) {
+        return Padding(
+          padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 56,
+                height: 4,
+                margin: const EdgeInsets.only(bottom: 16),
+                decoration: BoxDecoration(
+                  color: Colors.black12,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const Text(
+                'Bio Link QR',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 12),
+              QrImageView(
+                data: link,
+                version: QrVersions.auto,
+                size: 220,
+                backgroundColor: Colors.white,
+              ),
+              const SizedBox(height: 12),
+              Text(
+                link,
+                textAlign: TextAlign.center,
+                style: const TextStyle(color: Colors.blue),
+              ),
+              const SizedBox(height: 12),
+              OutlinedButton.icon(
+                onPressed: () {
+                  Navigator.of(ctx).pop();
+                  _shareBioSystem(link);
+                },
+                icon: const Icon(Icons.share),
+                label: const Text('Paylaş'),
+              ),
+            ],
+          ),
+        );
+      },
+    );
   }
 
   Widget _buildStatCard(String title, String value, IconData icon,
@@ -333,21 +361,17 @@ class _DashboardPageState extends State<DashboardPage> {
           const SizedBox(height: 8),
           Wrap(
             spacing: 8,
+            runSpacing: 8,
             children: [
               ElevatedButton.icon(
-                onPressed: () => _shareBio('sms', link),
-                icon: const Icon(Icons.sms),
-                label: const Text('SMS'),
+                onPressed: () => _shareBioSystem(link),
+                icon: const Icon(Icons.share),
+                label: const Text('Paylaş'),
               ),
-              ElevatedButton.icon(
-                onPressed: () => _shareBio('whatsapp', link),
-                icon: const Icon(Icons.chat),
-                label: const Text('WhatsApp'),
-              ),
-              ElevatedButton.icon(
-                onPressed: () => _shareBio('telegram', link),
-                icon: const Icon(Icons.send),
-                label: const Text('Telegram'),
+              OutlinedButton.icon(
+                onPressed: () => _showQrModal(link),
+                icon: const Icon(Icons.qr_code),
+                label: const Text('QR'),
               ),
             ],
           ),

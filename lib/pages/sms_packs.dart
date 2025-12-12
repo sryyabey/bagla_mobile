@@ -591,34 +591,13 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
       ..loadRequest(Uri.parse(url));
 
-    await showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) {
-        return WillPopScope(
-          onWillPop: () async {
-            _paymentTimer?.cancel();
-            return true;
-          },
-          child: Scaffold(
-            appBar: AppBar(
-              title: const Text('Ödeme'),
-              actions: [
-                IconButton(
-                  icon: const Icon(Icons.close),
-                  onPressed: () {
-                    _paymentTimer?.cancel();
-                    Navigator.of(context).pop();
-                  },
-                )
-              ],
-            ),
-            body: SafeArea(
-              child: WebViewWidget(controller: controller),
-            ),
-          ),
-        );
-      },
+    await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => _PaymentPage(
+          controller: controller,
+          onExit: () => _paymentTimer?.cancel(),
+        ),
+      ),
     );
   }
 
@@ -626,6 +605,16 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
     _paymentTimer?.cancel();
     _paymentTimer = Timer.periodic(const Duration(seconds: 3), (_) {
       _checkOrderStatus(transactionId);
+    });
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Ensure any stray timer is cleared when leaving the page.
+    ModalRoute.of(context)?.addScopedWillPopCallback(() async {
+      _paymentTimer?.cancel();
+      return true;
     });
   }
 
@@ -1455,6 +1444,43 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
                       );
                     },
                   ),
+      ),
+    );
+  }
+}
+
+class _PaymentPage extends StatelessWidget {
+  final WebViewController controller;
+  final VoidCallback onExit;
+
+  const _PaymentPage({
+    required this.controller,
+    required this.onExit,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return WillPopScope(
+      onWillPop: () async {
+        onExit();
+        return true;
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text('Ödeme'),
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.close),
+              onPressed: () {
+                onExit();
+                Navigator.of(context).pop();
+              },
+            )
+          ],
+        ),
+        body: SafeArea(
+          child: WebViewWidget(controller: controller),
+        ),
       ),
     );
   }

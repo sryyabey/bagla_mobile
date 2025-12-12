@@ -1055,55 +1055,63 @@ class _MyLinksPageState extends State<MyLinksPage> {
           style: TextStyle(fontWeight: FontWeight.w700),
         ),
       ),
-      body: isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : Column(
-              children: [
-                Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: _buildReorderableList(),
-                  ),
-                ),
-                if (isSavingOrder)
-                  const Padding(
-                    padding: EdgeInsets.only(bottom: 4),
-                    child: Text('Sıralama kaydediliyor...'),
-                  ),
-                Padding(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  child: ElevatedButton.icon(
-                    onPressed: () {
-                      setState(() {
-                        showForm = !showForm;
-                      });
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: _primaryColor,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 18, vertical: 12),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
+      body: SafeArea(
+        child: isLoading
+            ? const Center(child: CircularProgressIndicator())
+            : Column(
+                children: [
+                  Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: _buildReorderableList(),
                     ),
-                    icon: Icon(showForm ? Icons.close : Icons.add),
-                    label: Text(showForm ? 'Formu Gizle' : 'Yeni Link Ekle'),
                   ),
-                ),
-                AnimatedSwitcher(
-                  duration: const Duration(milliseconds: 250),
-                  child: showForm
-                      ? Padding(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 16, vertical: 8),
-                          child: _buildLinkForm(),
-                        )
-                      : const SizedBox.shrink(),
-                ),
-              ],
-            ),
+                  if (isSavingOrder)
+                    const Padding(
+                      padding: EdgeInsets.only(bottom: 4),
+                      child: Text('Sıralama kaydediliyor...'),
+                    ),
+                  SafeArea(
+                    top: false,
+                    minimum: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        ElevatedButton.icon(
+                          onPressed: () {
+                            setState(() {
+                              showForm = !showForm;
+                            });
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: _primaryColor,
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 18, vertical: 12),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          icon: Icon(showForm ? Icons.close : Icons.add),
+                          label:
+                              Text(showForm ? 'Formu Gizle' : 'Yeni Link Ekle'),
+                        ),
+                        AnimatedSwitcher(
+                          duration: const Duration(milliseconds: 250),
+                          child: showForm
+                              ? Padding(
+                                  padding:
+                                      const EdgeInsets.symmetric(vertical: 10),
+                                  child: _buildLinkForm(),
+                                )
+                              : const SizedBox.shrink(),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+      ),
     );
   }
 }

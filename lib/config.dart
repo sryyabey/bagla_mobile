@@ -3,11 +3,12 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 
 String get apiBaseUrl {
-  // Local development base URL.
-  const localBase = 'http://127.0.0.1:8000';
+  // Production base URL.
+  const prodBase = 'https://bagla.app';
+  // const localBase = 'http://127.0.0.1:8000'; // Dev only
 
-  // Android emulators cannot hit host loopback directly; use 10.0.2.2 there.
-  if (kIsWeb) return localBase;
-  if (Platform.isAndroid) return 'http://10.0.2.2:8000';
-  return localBase;
+  // Use production everywhere; uncomment localBase above for local dev.
+  if (kIsWeb) return prodBase;
+  if (Platform.isAndroid) return prodBase;
+  return prodBase;
 }

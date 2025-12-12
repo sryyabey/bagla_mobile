@@ -19,6 +19,8 @@ dependencies:
   intl: ^0.20.2
   http: ^1.2.2
   url_launcher: ^6.3.2
+  share_plus: ^10.0.2
+  qr_flutter: ^4.1.0
   image_picker: ^1.1.2
   cupertino_icons: ^1.0.6
   dio: ^5.4.3+1

@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import '../dashboard_page.dart';
+import 'sms_packs.dart';
 
 class AppointmentsPage extends StatefulWidget {
   final String? initialQuickDate;
@@ -73,14 +74,16 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
   final TextEditingController _filterDateToController = TextEditingController();
   final TextEditingController _filterTimeFromController =
       TextEditingController();
-  final TextEditingController _filterTimeToController =
-      TextEditingController();
+  final TextEditingController _filterTimeToController = TextEditingController();
   Map<String, String> _activeFilters = {};
   bool _showFilters = false;
-  final List<String> _timeOptions =
-      List.generate(24 * 12, (i) => '${(i ~/ 12).toString().padLeft(2, '0')}:${((i % 12) * 5).toString().padLeft(2, '0')}');
+  final List<String> _timeOptions = List.generate(
+      24 * 12,
+      (i) =>
+          '${(i ~/ 12).toString().padLeft(2, '0')}:${((i % 12) * 5).toString().padLeft(2, '0')}');
   String _lastPhoneDigits = '';
   int _lastPhoneTextLength = 0;
+  bool _hasUserPack = true;
 
   ButtonStyle _mainButtonStyle() => ElevatedButton.styleFrom(
         backgroundColor: primaryColor,
@@ -105,7 +108,9 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
       if (dateStr == null) return false;
       try {
         final d = DateTime.parse(dateStr);
-        return d.year == today.year && d.month == today.month && d.day == today.day;
+        return d.year == today.year &&
+            d.month == today.month &&
+            d.day == today.day;
       } catch (_) {
         return false;
       }
@@ -138,7 +143,9 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            if (title != null || subtitle != null || (actions != null && actions.isNotEmpty))
+            if (title != null ||
+                subtitle != null ||
+                (actions != null && actions.isNotEmpty))
               Padding(
                 padding: const EdgeInsets.only(bottom: 12),
                 child: Row(
@@ -259,9 +266,11 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
           const SizedBox(height: 14),
           Row(
             children: [
-              _statPill('Bugün', '$todayCount', Icons.event_available, primaryColor),
+              _statPill(
+                  'Bugün', '$todayCount', Icons.event_available, primaryColor),
               const SizedBox(width: 12),
-              _statPill('Toplam', '$totalCount', Icons.calendar_today, secondaryColor),
+              _statPill('Toplam', '$totalCount', Icons.calendar_today,
+                  secondaryColor),
             ],
           ),
           const SizedBox(height: 12),
@@ -271,6 +280,14 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
             children: [
               ElevatedButton.icon(
                 onPressed: () {
+                  if (!_hasUserPack) {
+                    _showSnack('Randevu işlemleri için paket alınız.');
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const SmsPacksPage()),
+                    );
+                    return;
+                  }
                   setState(() {
                     _showQuickForm = true;
                   });
@@ -285,7 +302,8 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
                     _showFilters = !_showFilters;
                   });
                 },
-                icon: Icon(_showFilters ? Icons.filter_alt_off : Icons.filter_alt),
+                icon: Icon(
+                    _showFilters ? Icons.filter_alt_off : Icons.filter_alt),
                 label: Text(_showFilters ? 'Filtreyi Gizle' : 'Filtrele'),
               ),
               OutlinedButton.icon(
@@ -395,8 +413,8 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
     }
 
     try {
-      final uri = Uri.parse('$apiBaseUrl/api/appointments')
-          .replace(queryParameters: (filters ?? _activeFilters).isNotEmpty
+      final uri = Uri.parse('$apiBaseUrl/api/appointments').replace(
+          queryParameters: (filters ?? _activeFilters).isNotEmpty
               ? (filters ?? _activeFilters)
               : null);
       final response = await http.get(
@@ -410,6 +428,16 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
       if (response.statusCode == 200) {
         final decoded = jsonDecode(response.body);
         final rawData = decoded['data'] ?? decoded;
+        bool? extractedUserPack;
+        if (decoded is Map) {
+          final candidate = decoded['user_pack'] ?? decoded['userPack'];
+          if (candidate != null) extractedUserPack = _asBool(candidate);
+        }
+        if (rawData is Map) {
+          final candidate = rawData['user_pack'] ?? rawData['userPack'];
+          if (candidate != null) extractedUserPack = _asBool(candidate);
+        }
+        final hasUserPack = extractedUserPack ?? true;
         List<Map<String, dynamic>> list = [];
         if (rawData is List) {
           list = List<Map<String, dynamic>>.from(
@@ -425,6 +453,10 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
         setState(() {
           _appointments = list;
           _loadingList = false;
+          _hasUserPack = hasUserPack;
+          if (!_hasUserPack) {
+            _showQuickForm = false;
+          }
         });
       } else {
         setState(() {
@@ -535,8 +567,7 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
       } else {
         setState(() {
           _loadingStatuses = false;
-          _statusesError =
-              'Durumlar alınamadı (HTTP ${response.statusCode}).';
+          _statusesError = 'Durumlar alınamadı (HTTP ${response.statusCode}).';
         });
       }
     } catch (e) {
@@ -615,6 +646,10 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
 
   Future<void> _submitQuickAppointment() async {
     if (_savingQuick) return;
+    if (!_hasUserPack) {
+      _showSnack('Randevu işlemleri için paket alınız.');
+      return;
+    }
 
     final firstName = _quickNameController.text.trim();
     final lastName = _quickLastNameController.text.trim();
@@ -1059,6 +1094,10 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
     int? appointmentStatusId,
   }) async {
     if (_creatingRebook) return;
+    if (!_hasUserPack) {
+      _showSnack('Randevu işlemleri için paket alınız.');
+      return;
+    }
 
     if (date.isEmpty || time.isEmpty) {
       _showSnack('Tarih ve saat zorunludur.');
@@ -1545,8 +1584,7 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
             _loadingCustomerInfo = false;
           });
         } else {
-          String message =
-              'Bilgiler alınamadı (HTTP ${response.statusCode}).';
+          String message = 'Bilgiler alınamadı (HTTP ${response.statusCode}).';
           try {
             final decoded = jsonDecode(response.body);
             message = decoded['message']?.toString() ?? message;
@@ -1626,7 +1664,7 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
                             ),
                           ],
                         ),
-                    ),
+                      ),
                     if (info != null) ...[
                       const SizedBox(height: 8),
                       Card(
@@ -1752,8 +1790,8 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
                                     const SizedBox(height: 6),
                                     Text(
                                       notes,
-                                      style:
-                                          const TextStyle(color: Colors.black87),
+                                      style: const TextStyle(
+                                          color: Colors.black87),
                                     ),
                                   ],
                                 ],
@@ -1778,10 +1816,9 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
         ? appt['customer_id'] as int
         : int.tryParse(appt['customer_id']?.toString() ?? '');
     final customer = appt['customer'] is Map ? appt['customer'] : null;
-    final String customerName =
-        (customer?['name'] ?? '').toString().isNotEmpty
-            ? customer['name'].toString()
-            : 'Müşteri #${appt["customer_id"] ?? ""}';
+    final String customerName = (customer?['name'] ?? '').toString().isNotEmpty
+        ? customer['name'].toString()
+        : 'Müşteri #${appt["customer_id"] ?? ""}';
 
     final TextEditingController dateCtrl = TextEditingController();
     final TextEditingController timeCtrl = TextEditingController();
@@ -2128,13 +2165,13 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
     final customerName = rawCustomerName.isNotEmpty
         ? rawCustomerName
         : 'Müşteri #${appt["customer_id"] ?? ""}';
-    final statusName =
-        status == null ? '' : _localizedStatusLabel(Map<String, dynamic>.from(status));
+    final statusName = status == null
+        ? ''
+        : _localizedStatusLabel(Map<String, dynamic>.from(status));
     final statusColor = _statusColor(status?['color']?.toString());
-    final phone = (customer?['phone'] ??
-            customer?['formatted_phone'] ??
-            appt['phone'])
-        ?.toString();
+    final phone =
+        (customer?['phone'] ?? customer?['formatted_phone'] ?? appt['phone'])
+            ?.toString();
 
     return AnimatedContainer(
       duration: const Duration(milliseconds: 250),
@@ -2315,7 +2352,8 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
     final activeCount = _activeFilters.length;
     return _sectionCard(
       title: 'Filtreler',
-      subtitle: activeCount > 0 ? '$activeCount aktif filtre' : 'Aradığını hızla bul',
+      subtitle:
+          activeCount > 0 ? '$activeCount aktif filtre' : 'Aradığını hızla bul',
       actions: [
         IconButton(
           icon: Icon(_showFilters ? Icons.expand_less : Icons.expand_more),
@@ -2367,119 +2405,127 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
                   const SizedBox(height: 8),
                   Row(
                     children: [
-                        Expanded(
-                          child: TextField(
-                            controller: _filterDateFromController,
-                            readOnly: true,
-                            decoration: const InputDecoration(
-                      labelText: 'Başlangıç Tarihi',
-                      hintText: 'Takvimden seçin',
-                    ),
-                    onTap: () async {
-                      final today = DateTime.now();
-                      final minDate = DateTime(today.year - 1, 1, 1);
-                      final maxDate = DateTime(today.year + 5, 12, 31);
-                      final initial =
-                          _clampDate(_parseInputDateOrNow(_filterDateFromController.text), minDate, maxDate);
-                      final picked = await showDatePicker(
-                        context: context,
-                        initialDate: initial,
-                        firstDate: minDate,
-                        lastDate: maxDate,
-                      );
-                      if (picked != null) {
-                        setState(() {
-                          _filterDateFromController.text = _formatDateDisplay(picked);
-                        });
-                      }
-                    },
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: TextField(
-                    controller: _filterDateToController,
-                    readOnly: true,
-                    decoration: const InputDecoration(
-                      labelText: 'Bitiş Tarihi',
-                      hintText: 'Takvimden seçin',
-                    ),
-                    onTap: () async {
-                      final today = DateTime.now();
-                      final minDate = DateTime(today.year - 1, 1, 1);
-                      final maxDate = DateTime(today.year + 5, 12, 31);
-                      final initial =
-                          _clampDate(_parseInputDateOrNow(_filterDateToController.text), minDate, maxDate);
-                      final picked = await showDatePicker(
-                        context: context,
-                        initialDate: initial,
-                        firstDate: minDate,
-                        lastDate: maxDate,
-                      );
-                      if (picked != null) {
-                        setState(() {
-                          _filterDateToController.text = _formatDateDisplay(picked);
-                        });
-                      }
-                    },
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            Row(
-              children: [
-                Expanded(
-                  child: DropdownButtonFormField<String>(
-                    value: _filterTimeFromController.text.isNotEmpty
-                        ? _filterTimeFromController.text
-                        : null,
-                    decoration: const InputDecoration(
-                      labelText: 'Başlangıç Saati',
-                      hintText: 'HH:MM',
-                    ),
-                    items: _timeOptions
-                        .map(
-                          (t) => DropdownMenuItem<String>(
-                            value: t,
-                            child: Text(t),
+                      Expanded(
+                        child: TextField(
+                          controller: _filterDateFromController,
+                          readOnly: true,
+                          decoration: const InputDecoration(
+                            labelText: 'Başlangıç Tarihi',
+                            hintText: 'Takvimden seçin',
                           ),
-                        )
-                        .toList(),
-                    onChanged: (val) {
-                      setState(() {
-                        _filterTimeFromController.text = val ?? '';
-                      });
-                    },
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: DropdownButtonFormField<String>(
-                    value: _filterTimeToController.text.isNotEmpty
-                        ? _filterTimeToController.text
-                        : null,
-                    decoration: const InputDecoration(
-                      labelText: 'Bitiş Saati',
-                      hintText: 'HH:MM',
-                    ),
-                    items: _timeOptions
-                        .map(
-                          (t) => DropdownMenuItem<String>(
-                            value: t,
-                            child: Text(t),
+                          onTap: () async {
+                            final today = DateTime.now();
+                            final minDate = DateTime(today.year - 1, 1, 1);
+                            final maxDate = DateTime(today.year + 5, 12, 31);
+                            final initial = _clampDate(
+                                _parseInputDateOrNow(
+                                    _filterDateFromController.text),
+                                minDate,
+                                maxDate);
+                            final picked = await showDatePicker(
+                              context: context,
+                              initialDate: initial,
+                              firstDate: minDate,
+                              lastDate: maxDate,
+                            );
+                            if (picked != null) {
+                              setState(() {
+                                _filterDateFromController.text =
+                                    _formatDateDisplay(picked);
+                              });
+                            }
+                          },
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: TextField(
+                          controller: _filterDateToController,
+                          readOnly: true,
+                          decoration: const InputDecoration(
+                            labelText: 'Bitiş Tarihi',
+                            hintText: 'Takvimden seçin',
                           ),
-                        )
-                        .toList(),
-                    onChanged: (val) {
-                      setState(() {
-                        _filterTimeToController.text = val ?? '';
-                      });
-                    },
+                          onTap: () async {
+                            final today = DateTime.now();
+                            final minDate = DateTime(today.year - 1, 1, 1);
+                            final maxDate = DateTime(today.year + 5, 12, 31);
+                            final initial = _clampDate(
+                                _parseInputDateOrNow(
+                                    _filterDateToController.text),
+                                minDate,
+                                maxDate);
+                            final picked = await showDatePicker(
+                              context: context,
+                              initialDate: initial,
+                              firstDate: minDate,
+                              lastDate: maxDate,
+                            );
+                            if (picked != null) {
+                              setState(() {
+                                _filterDateToController.text =
+                                    _formatDateDisplay(picked);
+                              });
+                            }
+                          },
+                        ),
+                      ),
+                    ],
                   ),
-                ),
-              ],
-            ),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: DropdownButtonFormField<String>(
+                          value: _filterTimeFromController.text.isNotEmpty
+                              ? _filterTimeFromController.text
+                              : null,
+                          decoration: const InputDecoration(
+                            labelText: 'Başlangıç Saati',
+                            hintText: 'HH:MM',
+                          ),
+                          items: _timeOptions
+                              .map(
+                                (t) => DropdownMenuItem<String>(
+                                  value: t,
+                                  child: Text(t),
+                                ),
+                              )
+                              .toList(),
+                          onChanged: (val) {
+                            setState(() {
+                              _filterTimeFromController.text = val ?? '';
+                            });
+                          },
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: DropdownButtonFormField<String>(
+                          value: _filterTimeToController.text.isNotEmpty
+                              ? _filterTimeToController.text
+                              : null,
+                          decoration: const InputDecoration(
+                            labelText: 'Bitiş Saati',
+                            hintText: 'HH:MM',
+                          ),
+                          items: _timeOptions
+                              .map(
+                                (t) => DropdownMenuItem<String>(
+                                  value: t,
+                                  child: Text(t),
+                                ),
+                              )
+                              .toList(),
+                          onChanged: (val) {
+                            setState(() {
+                              _filterTimeToController.text = val ?? '';
+                            });
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
                   const SizedBox(height: 12),
                   Row(
                     children: [
@@ -2509,9 +2555,29 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
   }
 
   Widget _buildQuickForm() {
+    if (!_hasUserPack) {
+      return _sectionCard(
+        title: 'Hızlı Randevu',
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const SmsPacksPage()),
+              );
+            },
+            child: const Text('Paket Al'),
+          ),
+        ],
+        child: const Text(
+          'Randevu işlemleri için paket alınız.',
+          style: TextStyle(fontWeight: FontWeight.w600),
+        ),
+      );
+    }
+
     return _sectionCard(
       title: 'Hızlı Randevu',
-      subtitle: 'İsim, tarih ve saatle hızla ekle',
       actions: [
         TextButton.icon(
           onPressed: () {
@@ -2665,7 +2731,8 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
                     ],
                   ),
                   const SizedBox(height: 8),
-                  if (_loadingSlots) const LinearProgressIndicator(minHeight: 2),
+                  if (_loadingSlots)
+                    const LinearProgressIndicator(minHeight: 2),
                   if (_timeSlots.isNotEmpty)
                     Wrap(
                       spacing: 8,
@@ -2733,8 +2800,8 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
                   SwitchListTile(
                     contentPadding: EdgeInsets.zero,
                     title: const Text('Hatırlatma gönderme'),
-                    subtitle:
-                        const Text('Bu randevu için hatırlatma bildirimi kapalı'),
+                    subtitle: const Text(
+                        'Bu randevu için hatırlatma bildirimi kapalı'),
                     value: _quickNoReminder,
                     onChanged: (val) {
                       setState(() {
