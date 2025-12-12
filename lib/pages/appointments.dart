@@ -1388,7 +1388,7 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
             return SafeArea(
               child: Padding(
                 padding: EdgeInsets.only(
-                  bottom: MediaQuery.of(ctx).viewInsets.bottom + 24,
+                  bottom: MediaQuery.of(ctx).viewInsets.bottom + 48,
                   left: 16,
                   right: 16,
                   top: 16,
