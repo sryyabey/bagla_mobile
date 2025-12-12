@@ -21,7 +21,13 @@ class _LoginPageState extends State<LoginPage> {
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
   final FlutterSecureStorage _secureStorage = const FlutterSecureStorage();
-  final GoogleSignIn _googleSignIn = GoogleSignIn(scopes: ['email']);
+  final GoogleSignIn _googleSignIn = GoogleSignIn(
+    scopes: const ['email'],
+    // Use the web client ID as serverClientId so idToken is returned.
+    serverClientId:
+        '99910465030-ng2ik9e1hpmbv9dg5530u7jr2e2emrmu.apps.googleusercontent.com',
+    // iOS clientId is read from GoogleService-Info.plist when left null.
+  );
   Locale _locale = const Locale('tr');
   bool _isLoading = false;
   bool _isGoogleLoading = false;
@@ -93,8 +99,8 @@ class _LoginPageState extends State<LoginPage> {
         final msg = _extractMessage(response.body) ?? 'Yetkisiz giriş.';
         _showError(msg);
       } else {
-        final msg =
-            _extractMessage(response.body) ?? 'Giriş başarısız (HTTP ${response.statusCode}).';
+        final msg = _extractMessage(response.body) ??
+            'Giriş başarısız (HTTP ${response.statusCode}).';
         _showError(msg);
       }
     } catch (e) {
@@ -149,8 +155,8 @@ class _LoginPageState extends State<LoginPage> {
           _showError('Token alınamadı.');
         }
       } else {
-        final msg =
-            _extractMessage(response.body) ?? 'Google giriş başarısız (HTTP ${response.statusCode}).';
+        final msg = _extractMessage(response.body) ??
+            'Google giriş başarısız (HTTP ${response.statusCode}).';
         _showError(msg);
       }
     } catch (e) {
