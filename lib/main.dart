@@ -48,7 +48,7 @@ class _BaglaAppState extends State<BaglaApp> {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Bagla.app',
-      debugShowCheckedModeBanner: true,
+      debugShowCheckedModeBanner: false,
       theme: ThemeData(
         primarySwatch: Colors.deepPurple,
       ),

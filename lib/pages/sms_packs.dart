@@ -55,14 +55,13 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
     {'value': 'eft', 'label': 'Havale / EFT'},
     {'value': 'cash', 'label': 'Nakit'},
   ];
+  String? _authToken;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _loadPacks();
-      _loadCountries();
-      _loadAddresses();
+      _bootstrap();
     });
   }
 
@@ -83,18 +82,48 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
     super.dispose();
   }
 
+  Future<void> _bootstrap() async {
+    final token = await _getToken();
+    if (token == null || token.isEmpty) {
+      if (mounted) {
+        setState(() {
+          _loading = false;
+          _loadingCountries = false;
+          _loadingAddresses = false;
+          _error = 'Oturum bulunamadı. Lütfen tekrar giriş yapın.';
+          _countriesError = 'Oturum bulunamadı.';
+        });
+      }
+      return;
+    }
+
+    if (mounted) {
+      setState(() {
+        _authToken = token;
+      });
+    }
+
+    // Ardışık yerine paralel başlat; token hazır
+    await Future.wait([
+      _loadPacks(skipToken: true),
+      _loadCountries(skipToken: true),
+      _loadAddresses(skipToken: true),
+    ]);
+  }
+
   Future<String?> _getToken() async {
+    if (_authToken != null) return _authToken;
     final prefs = await SharedPreferences.getInstance();
     return prefs.getString('bearer_token') ?? prefs.getString('authToken');
   }
 
-  Future<void> _loadPacks() async {
+  Future<void> _loadPacks({bool skipToken = false}) async {
     setState(() {
       _loading = true;
       _error = null;
     });
 
-    final token = await _getToken();
+    final token = skipToken ? _authToken : await _getToken();
     if (token == null || token.isEmpty) {
       setState(() {
         _loading = false;
@@ -155,13 +184,13 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
     }
   }
 
-  Future<void> _loadCountries() async {
+  Future<void> _loadCountries({bool skipToken = false}) async {
     setState(() {
       _loadingCountries = true;
       _countriesError = null;
     });
 
-    final token = await _getToken();
+    final token = skipToken ? _authToken : await _getToken();
     if (token == null || token.isEmpty) {
       setState(() {
         _loadingCountries = false;
@@ -212,13 +241,13 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
     }
   }
 
-  Future<void> _loadAddresses() async {
+  Future<void> _loadAddresses({bool skipToken = false}) async {
     setState(() {
       _loadingAddresses = true;
       _addressesError = null;
     });
 
-    final token = await _getToken();
+    final token = skipToken ? _authToken : await _getToken();
     if (token == null || token.isEmpty) {
       setState(() {
         _loadingAddresses = false;

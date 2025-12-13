@@ -19,6 +19,7 @@ import 'pages/appointments.dart';
 import 'pages/sms_templates.dart';
 import 'pages/calendar.dart';
 import 'pages/sms_packs.dart';
+import 'pages/orders.dart';
 
 class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key});
@@ -31,6 +32,7 @@ class _DashboardPageState extends State<DashboardPage> {
   bool _loading = true;
   String? _error;
   Map<String, dynamic>? _dashboardData;
+  bool _hasDashboardLoaded = false;
 
   @override
   void initState() {
@@ -45,7 +47,13 @@ class _DashboardPageState extends State<DashboardPage> {
     return prefs.getString('bearer_token') ?? prefs.getString('authToken');
   }
 
-  Future<void> _fetchDashboard() async {
+  Future<void> _fetchDashboard({bool force = false}) async {
+    if (_hasDashboardLoaded && !force) {
+      setState(() {
+        _loading = false;
+      });
+      return;
+    }
     setState(() {
       _loading = true;
       _error = null;
@@ -74,6 +82,7 @@ class _DashboardPageState extends State<DashboardPage> {
         final data = decoded['data'] ?? decoded;
         setState(() {
           _dashboardData = Map<String, dynamic>.from(data);
+          _hasDashboardLoaded = true;
         });
       } else {
         String message = 'Dashboard alınamadı (HTTP ${response.statusCode}).';
@@ -96,6 +105,19 @@ class _DashboardPageState extends State<DashboardPage> {
         });
       }
     }
+  }
+
+  void _navigateToPage(Widget page, String routeName) {
+    // Çekmeceden çık ve stack şişmesini engellemek için köke dönüp tek sayfa ekle
+    Navigator.pop(context);
+    Navigator.of(context).popUntil((route) => route.isFirst);
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => page,
+        settings: RouteSettings(name: routeName),
+      ),
+    );
   }
 
   void _showSnack(String message, {bool success = false}) {
@@ -676,7 +698,7 @@ class _DashboardPageState extends State<DashboardPage> {
         : null;
 
     return RefreshIndicator(
-      onRefresh: _fetchDashboard,
+      onRefresh: () => _fetchDashboard(force: true),
       child: ListView(
         physics: const AlwaysScrollableScrollPhysics(),
         padding: const EdgeInsets.all(16),
@@ -873,72 +895,50 @@ class _DashboardPageState extends State<DashboardPage> {
               title: Text(loc.themes),
               onTap: () {
                 // Temalar sayfasına yönlendirme
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const ThemesPage(),
-                  ),
-                );
+                _navigateToPage(const ThemesPage(), 'themes');
               },
             ),
             ListTile(
               leading: const Icon(Icons.event),
               title: const Text('Randevular'),
               onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const AppointmentsPage(),
-                  ),
-                );
+                _navigateToPage(const AppointmentsPage(), 'appointments');
               },
             ),
             ListTile(
               leading: const Icon(Icons.calendar_month),
               title: const Text('Haftalık Takvim'),
               onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const CalendarPage(),
-                  ),
-                );
+                _navigateToPage(const CalendarPage(), 'calendar');
               },
             ),
             ListTile(
               leading: const Icon(Icons.shopping_bag_outlined),
               title: const Text('SMS Paketleri'),
               onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const SmsPacksPage(),
-                  ),
-                );
+                _navigateToPage(const SmsPacksPage(), 'sms_packs');
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.receipt_long),
+              title: const Text('Siparişler'),
+              onTap: () {
+                _navigateToPage(const OrdersPage(), 'orders');
               },
             ),
             ListTile(
               leading: const Icon(Icons.schedule),
               title: const Text('Çalışma Saatleri'),
               onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const WorkingPreferencesPage(),
-                  ),
-                );
+                _navigateToPage(
+                    const WorkingPreferencesPage(), 'working_preferences');
               },
             ),
             ListTile(
               leading: const Icon(Icons.sms),
               title: const Text('SMS Şablonları'),
               onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const SmsTemplatesPage(),
-                  ),
-                );
+                _navigateToPage(const SmsTemplatesPage(), 'sms_templates');
               },
             ),
             ListTile(
@@ -999,7 +999,7 @@ class _DashboardPageState extends State<DashboardPage> {
                           ),
                           const SizedBox(height: 12),
                           ElevatedButton.icon(
-                            onPressed: _fetchDashboard,
+                            onPressed: () => _fetchDashboard(force: true),
                             icon: const Icon(Icons.refresh),
                             label: const Text('Tekrar Dene'),
                           ),

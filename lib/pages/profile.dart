@@ -1,12 +1,13 @@
 import 'dart:convert';
 import 'dart:typed_data';
 
-import 'package:bagla_mobile/config.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
 import 'package:http_parser/http_parser.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:bagla_mobile/config.dart';
+import 'orders.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -39,6 +40,7 @@ class _ProfilePageState extends State<ProfilePage> {
   String? _avatarUrl;
   Uint8List? _avatarBytes;
   String? _avatarFileName;
+  String _avatarMimeType = 'image/jpeg';
   Map<String, dynamic>? _packInfo;
   static const Color _backgroundColor = Color(0xFFF7F9FC);
   static const Color _primaryColor = Color(0xFF6366F1);
@@ -132,19 +134,39 @@ class _ProfilePageState extends State<ProfilePage> {
     final picker = ImagePicker();
     final picked = await picker.pickImage(
       source: ImageSource.gallery,
-      imageQuality: 90,
+      imageQuality: 80,
     );
 
     if (picked == null) return;
 
     try {
+      // Boyut ve format doğrulama
+      final sizeBytes = await picked.length();
+      const maxSize = 3 * 1024 * 1024; // 3MB
+      if (sizeBytes > maxSize) {
+        _showSnack('Avatar 3MB\'tan küçük olmalı.');
+        return;
+      }
+
+      final ext = picked.name.split('.').last.toLowerCase();
+      final isJpeg = ext == 'jpg' || ext == 'jpeg';
+      final isPng = ext == 'png';
+      final isWebp = ext == 'webp';
+      if (!isJpeg && !isPng && !isWebp) {
+        _showSnack('Yalnızca JPG, PNG veya WEBP yükleyin.');
+        return;
+      }
+
       setState(() {
         _avatarBytes = null;
       });
       final rawBytes = await picked.readAsBytes();
       setState(() {
         _avatarBytes = rawBytes;
-        _avatarFileName = picked.name.isNotEmpty ? picked.name : 'avatar.jpg';
+        _avatarFileName =
+            picked.name.isNotEmpty ? picked.name : 'avatar.${ext.isNotEmpty ? ext : 'jpg'}';
+        _avatarMimeType =
+            isPng ? 'image/png' : isWebp ? 'image/webp' : 'image/jpeg';
       });
     } catch (e) {
       _showSnack('Avatar hazırlanamadı: $e');
@@ -192,7 +214,7 @@ class _ProfilePageState extends State<ProfilePage> {
             'avatar',
             _avatarBytes!,
             filename: _avatarFileName ?? 'avatar.jpg',
-            contentType: MediaType('image', 'jpeg'),
+            contentType: MediaType.parse(_avatarMimeType),
           ),
         );
       }
@@ -432,6 +454,22 @@ class _ProfilePageState extends State<ProfilePage> {
                         ),
                     ],
                   ),
+                const SizedBox(height: 10),
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: OutlinedButton.icon(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const OrdersPage(),
+                        ),
+                      );
+                    },
+                    icon: const Icon(Icons.receipt_long),
+                    label: const Text('Siparişlerim'),
+                  ),
+                ),
               ],
             ),
           ),
