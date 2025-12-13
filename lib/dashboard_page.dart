@@ -915,6 +915,20 @@ class _DashboardPageState extends State<DashboardPage> {
               },
             ),
             ListTile(
+              leading: const Icon(Icons.sms_outlined),
+              title: const Text('SMS Paketleri'),
+              onTap: () {
+                _navigateToPage(const SmsPacksPage(), 'sms_packs');
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.receipt_long),
+              title: const Text('Siparişler'),
+              onTap: () {
+                _navigateToPage(const OrdersPage(), 'orders');
+              },
+            ),
+            ListTile(
               leading: const Icon(Icons.schedule),
               title: const Text('Çalışma Saatleri'),
               onTap: () {

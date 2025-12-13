@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../dashboard_page.dart';
 import '../pages/appointments.dart';
-import '../pages/sms_packs.dart';
+import '../pages/calendar.dart';
 import '../pages/profile.dart';
 
 class MainNavBar extends StatelessWidget {
@@ -20,7 +20,7 @@ class MainNavBar extends StatelessWidget {
         page = const AppointmentsPage();
         break;
       case 2:
-        page = const SmsPacksPage();
+        page = const CalendarPage();
         break;
       case 3:
       default:
@@ -49,8 +49,8 @@ class MainNavBar extends StatelessWidget {
           label: 'Randevular',
         ),
         BottomNavigationBarItem(
-          icon: Icon(Icons.sms_outlined),
-          label: 'SMS',
+          icon: Icon(Icons.calendar_today_outlined),
+          label: 'Takvim',
         ),
         BottomNavigationBarItem(
           icon: Icon(Icons.person_outline),
