@@ -20,6 +20,8 @@ import 'pages/sms_templates.dart';
 import 'pages/calendar.dart';
 import 'pages/sms_packs.dart';
 import 'pages/orders.dart';
+import 'pages/profile.dart';
+import 'widgets/main_nav.dart';
 
 class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key});
@@ -913,20 +915,6 @@ class _DashboardPageState extends State<DashboardPage> {
               },
             ),
             ListTile(
-              leading: const Icon(Icons.shopping_bag_outlined),
-              title: const Text('SMS Paketleri'),
-              onTap: () {
-                _navigateToPage(const SmsPacksPage(), 'sms_packs');
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.receipt_long),
-              title: const Text('Siparişler'),
-              onTap: () {
-                _navigateToPage(const OrdersPage(), 'orders');
-              },
-            ),
-            ListTile(
               leading: const Icon(Icons.schedule),
               title: const Text('Çalışma Saatleri'),
               onTap: () {
@@ -1009,6 +997,7 @@ class _DashboardPageState extends State<DashboardPage> {
                   )
                 : _buildDashboardBody(),
       ),
+      bottomNavigationBar: const MainNavBar(currentIndex: 0),
     );
   }
 }

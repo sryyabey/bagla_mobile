@@ -6,6 +6,7 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import '../dashboard_page.dart';
 import 'sms_packs.dart';
+import '../widgets/main_nav.dart';
 
 class AppointmentsPage extends StatefulWidget {
   final String? initialQuickDate;
@@ -3018,6 +3019,7 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
           ),
         ),
       ),
+      bottomNavigationBar: const MainNavBar(currentIndex: 1),
     );
   }
 }

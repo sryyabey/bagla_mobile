@@ -9,6 +9,7 @@ import 'package:webview_flutter/webview_flutter.dart';
 import '../config.dart';
 import '../login_page.dart';
 import '../auth.dart';
+import '../widgets/main_nav.dart';
 
 class SmsPacksPage extends StatefulWidget {
   const SmsPacksPage({super.key});
@@ -1522,6 +1523,7 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
                     },
                   ),
       ),
+      bottomNavigationBar: const MainNavBar(currentIndex: 2),
     );
   }
 }

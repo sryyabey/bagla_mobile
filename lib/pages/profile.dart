@@ -7,7 +7,8 @@ import 'package:image_picker/image_picker.dart';
 import 'package:http_parser/http_parser.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:bagla_mobile/config.dart';
-import 'orders.dart';
+import '../auth.dart';
+import '../widgets/main_nav.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -543,28 +544,6 @@ class _ProfilePageState extends State<ProfilePage> {
             decoration: _inputDecoration('Footer'),
           ),
           const SizedBox(height: 16),
-          const Divider(),
-          const Text(
-            'SEO',
-            style: TextStyle(fontWeight: FontWeight.w600),
-          ),
-          const SizedBox(height: 12),
-          TextField(
-            controller: _seoTitleController,
-            decoration: _inputDecoration('Başlık'),
-          ),
-          const SizedBox(height: 12),
-          TextField(
-            controller: _seoDescriptionController,
-            maxLines: 2,
-            decoration: _inputDecoration('Açıklama'),
-          ),
-          const SizedBox(height: 12),
-          TextField(
-            controller: _seoKeywordsController,
-            decoration: _inputDecoration('Anahtar kelimeler'),
-          ),
-          const SizedBox(height: 16),
           Row(
             children: [
               Expanded(
@@ -610,9 +589,37 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
+  Widget _buildSeoForm() {
+    return _sectionCard(
+      title: 'SEO',
+      subtitle: 'Başlık, açıklama ve anahtar kelimeler',
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          TextField(
+            controller: _seoTitleController,
+            decoration: _inputDecoration('Başlık'),
+          ),
+          const SizedBox(height: 12),
+          TextField(
+            controller: _seoDescriptionController,
+            maxLines: 2,
+            decoration: _inputDecoration('Açıklama'),
+          ),
+          const SizedBox(height: 12),
+          TextField(
+            controller: _seoKeywordsController,
+            decoration: _inputDecoration('Anahtar kelimeler'),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildPasswordForm() {
     return _sectionCard(
       title: 'Parola Güncelle',
+      subtitle: _passwordSavedRecently ? 'Başarıyla güncellendi' : null,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -703,15 +710,43 @@ class _ProfilePageState extends State<ProfilePage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
+                    if (_profileSavedRecently)
+                      Container(
+                        margin: const EdgeInsets.only(bottom: 12),
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Colors.green.shade50,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: Colors.green.shade200),
+                        ),
+                        child: Row(
+                          children: const [
+                            Icon(Icons.check_circle, color: Colors.green),
+                            SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                'Profil kaydedildi.',
+                                style: TextStyle(
+                                  color: Colors.green,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
                     _buildHeader(),
                     const SizedBox(height: 12),
                     _buildProfileForm(),
+                    const SizedBox(height: 12),
+                    _buildSeoForm(),
                     const SizedBox(height: 12),
                     _buildPasswordForm(),
                   ],
                 ),
               ),
             ),
+      bottomNavigationBar: const MainNavBar(currentIndex: 3),
     );
   }
 }
