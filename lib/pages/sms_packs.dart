@@ -7,6 +7,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 
 import '../config.dart';
+import '../login_page.dart';
+import '../auth.dart';
 
 class SmsPacksPage extends StatefulWidget {
   const SmsPacksPage({super.key});
@@ -56,6 +58,7 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
     {'value': 'cash', 'label': 'Nakit'},
   ];
   String? _authToken;
+  bool _loggingOut = false;
 
   @override
   void initState() {
@@ -117,29 +120,73 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
     return prefs.getString('bearer_token') ?? prefs.getString('authToken');
   }
 
+  Future<http.Response?> _withAuth(
+      Future<http.Response> Function(String token) fn) async {
+    final token = await _getToken();
+    if (token == null || token.isEmpty) {
+      await _handleUnauthorized();
+      return null;
+    }
+
+    var res = await fn(token);
+    if (res.statusCode != 401) {
+      _authToken = token;
+      return res;
+    }
+
+    if (_loggingOut) return null;
+
+    final refreshed = await refreshAccessToken();
+    if (refreshed != null) {
+      _authToken = refreshed;
+      res = await fn(refreshed);
+      if (res.statusCode != 401) return res;
+    }
+
+    await _handleUnauthorized();
+    return null;
+  }
+
+  Future<void> _handleUnauthorized() async {
+    if (_loggingOut) return;
+    _loggingOut = true;
+    _paymentTimer?.cancel();
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('bearer_token');
+    await prefs.remove('authToken');
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Oturum süresi doldu, lütfen tekrar giriş yapın.'),
+        backgroundColor: Colors.red,
+      ),
+    );
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute(
+        builder: (_) => LoginPage(onLocaleChange: (_) {}),
+      ),
+      (route) => false,
+    );
+  }
+
   Future<void> _loadPacks({bool skipToken = false}) async {
     setState(() {
       _loading = true;
       _error = null;
     });
 
-    final token = skipToken ? _authToken : await _getToken();
-    if (token == null || token.isEmpty) {
-      setState(() {
-        _loading = false;
-        _error = 'Oturum bulunamadı. Lütfen tekrar giriş yapın.';
-      });
-      return;
-    }
-
     try {
-      final response = await http.get(
-        Uri.parse('$apiBaseUrl/api/packs'),
-        headers: {
-          'Authorization': 'Bearer $token',
-          'Accept': 'application/json',
-        },
-      );
+      final response = await _withAuth((token) {
+        return http.get(
+          Uri.parse('$apiBaseUrl/api/packs'),
+          headers: {
+            'Authorization': 'Bearer $token',
+            'Accept': 'application/json',
+          },
+        );
+      });
+
+      if (response == null) return;
 
       if (response.statusCode == 200) {
         final decoded = jsonDecode(response.body);
@@ -190,23 +237,18 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
       _countriesError = null;
     });
 
-    final token = skipToken ? _authToken : await _getToken();
-    if (token == null || token.isEmpty) {
-      setState(() {
-        _loadingCountries = false;
-        _countriesError = 'Oturum bulunamadı.';
-      });
-      return;
-    }
-
     try {
-      final response = await http.get(
-        Uri.parse('$apiBaseUrl/api/settings/countries'),
-        headers: {
-          'Authorization': 'Bearer $token',
-          'Accept': 'application/json',
-        },
-      );
+      final response = await _withAuth((token) {
+        return http.get(
+          Uri.parse('$apiBaseUrl/api/settings/countries'),
+          headers: {
+            'Authorization': 'Bearer $token',
+            'Accept': 'application/json',
+          },
+        );
+      });
+
+      if (response == null) return;
 
       if (response.statusCode == 200) {
         final decoded = jsonDecode(response.body);
@@ -247,22 +289,18 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
       _addressesError = null;
     });
 
-    final token = skipToken ? _authToken : await _getToken();
-    if (token == null || token.isEmpty) {
-      setState(() {
-        _loadingAddresses = false;
-      });
-      return;
-    }
-
     try {
-      final response = await http.get(
-        Uri.parse('$apiBaseUrl/api/packs/user-addresses'),
-        headers: {
-          'Authorization': 'Bearer $token',
-          'Accept': 'application/json',
-        },
-      );
+      final response = await _withAuth((token) {
+        return http.get(
+          Uri.parse('$apiBaseUrl/api/packs/user-addresses'),
+          headers: {
+            'Authorization': 'Bearer $token',
+            'Accept': 'application/json',
+          },
+        );
+      });
+
+      if (response == null) return;
 
       if (response.statusCode == 200) {
         final decoded = jsonDecode(response.body);
@@ -533,7 +571,10 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
         body: jsonEncode(body),
       );
 
-      if (response.statusCode == 200 || response.statusCode == 201) {
+      if (response.statusCode == 401) {
+        await _handleUnauthorized();
+        return;
+      } else if (response.statusCode == 200 || response.statusCode == 201) {
         String message =
             'Siparişiniz başarıyla oluşturuldu, ödeme ekranına yönlendiriliyorsunuz.';
         String? transactionId;
@@ -588,7 +629,10 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
         },
         body: jsonEncode({'transaction_id': transactionId}),
       );
-      if (res.statusCode == 200 || res.statusCode == 201) {
+      if (res.statusCode == 401) {
+        await _handleUnauthorized();
+        return;
+      } else if (res.statusCode == 200 || res.statusCode == 201) {
         String? iframeUrl;
         try {
           final decoded = jsonDecode(res.body);
@@ -659,7 +703,11 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
           'Accept': 'application/json',
         },
       );
-      if (res.statusCode == 200) {
+      if (res.statusCode == 401) {
+        _paymentTimer?.cancel();
+        await _handleUnauthorized();
+        return;
+      } else if (res.statusCode == 200) {
         String status = 'pending';
         Map<String, dynamic> order = {};
         try {

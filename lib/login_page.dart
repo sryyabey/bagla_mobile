@@ -7,6 +7,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'dashboard_page.dart';
 import 'config.dart';
+import 'auth.dart';
 
 class LoginPage extends StatefulWidget {
   final Function(Locale) onLocaleChange;
@@ -33,14 +34,8 @@ class _LoginPageState extends State<LoginPage> {
   bool _isGoogleLoading = false;
   String? _error;
 
-  Future<void> _storeToken(String token) async {
-    try {
-      await _secureStorage.write(key: 'bearer_token', value: token);
-    } catch (e) {
-      debugPrint('Secure storage yazılamadı: $e');
-    }
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('bearer_token', token);
+  Future<void> _storeToken(String token, {String? refresh}) async {
+    await saveTokens(accessToken: token, refreshToken: refresh);
   }
 
   Future<void> _handleLoginSuccess(String token) async {
@@ -90,7 +85,11 @@ class _LoginPageState extends State<LoginPage> {
         final token = data['token'] ??
             (data['data'] != null ? data['data']['token'] : null) ??
             data['access_token'];
+        final refresh = data['refresh_token'] ??
+            data['refreshToken'] ??
+            (data['data'] != null ? data['data']['refresh_token'] : null);
         if (token != null) {
+          await _storeToken(token, refresh: refresh?.toString());
           await _handleLoginSuccess(token);
         } else {
           _showError('Token alınamadı.');

@@ -33,6 +33,8 @@ class _ProfilePageState extends State<ProfilePage> {
   final TextEditingController _newPasswordController = TextEditingController();
   final TextEditingController _confirmPasswordController =
       TextEditingController();
+  bool _profileSavedRecently = false;
+  bool _passwordSavedRecently = false;
 
   bool _loadingProfile = true;
   bool _savingProfile = false;
@@ -225,6 +227,16 @@ class _ProfilePageState extends State<ProfilePage> {
       if (response.statusCode == 200) {
         _showSnack('Profil güncellendi.', success: true);
         _avatarBytes = null;
+        setState(() {
+          _profileSavedRecently = true;
+        });
+        Future.delayed(const Duration(seconds: 2), () {
+          if (mounted) {
+            setState(() {
+              _profileSavedRecently = false;
+            });
+          }
+        });
         await _loadProfile();
       } else {
         String message = 'Güncelleme başarısız.';
@@ -284,6 +296,16 @@ class _ProfilePageState extends State<ProfilePage> {
         _currentPasswordController.clear();
         _newPasswordController.clear();
         _confirmPasswordController.clear();
+        setState(() {
+          _passwordSavedRecently = true;
+        });
+        Future.delayed(const Duration(seconds: 2), () {
+          if (mounted) {
+            setState(() {
+              _passwordSavedRecently = false;
+            });
+          }
+        });
       } else {
         String message = 'Parola güncellenemedi.';
         try {
@@ -454,22 +476,6 @@ class _ProfilePageState extends State<ProfilePage> {
                         ),
                     ],
                   ),
-                const SizedBox(height: 10),
-                Align(
-                  alignment: Alignment.centerLeft,
-                  child: OutlinedButton.icon(
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => const OrdersPage(),
-                        ),
-                      );
-                    },
-                    icon: const Icon(Icons.receipt_long),
-                    label: const Text('Siparişlerim'),
-                  ),
-                ),
               ],
             ),
           ),
@@ -559,28 +565,45 @@ class _ProfilePageState extends State<ProfilePage> {
             decoration: _inputDecoration('Anahtar kelimeler'),
           ),
           const SizedBox(height: 16),
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton.icon(
-              onPressed: _savingProfile ? null : _saveProfile,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: _primaryColor,
-                foregroundColor: Colors.white,
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
+          Row(
+            children: [
+              Expanded(
+                child: ElevatedButton.icon(
+                  onPressed: _savingProfile ? null : _saveProfile,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: _primaryColor,
+                    foregroundColor: Colors.white,
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  icon: _savingProfile
+                      ? const SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Icon(Icons.save),
+                  label: Text(_savingProfile ? 'Kaydediliyor...' : 'Kaydet'),
                 ),
               ),
-              icon: _savingProfile
-                  ? const SizedBox(
-                      width: 16,
-                      height: 16,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : const Icon(Icons.save),
-              label: Text(_savingProfile ? 'Kaydediliyor...' : 'Kaydet'),
-            ),
+              const SizedBox(width: 10),
+              AnimatedSwitcher(
+                duration: const Duration(milliseconds: 200),
+                child: _profileSavedRecently
+                    ? const Icon(Icons.check_circle,
+                        key: ValueKey('profile_saved'),
+                        color: Colors.green,
+                        size: 28)
+                    : const SizedBox(
+                        key: ValueKey('profile_unsaved'),
+                        width: 28,
+                        height: 28,
+                      ),
+              ),
+            ],
           ),
         ],
       ),
@@ -611,28 +634,46 @@ class _ProfilePageState extends State<ProfilePage> {
             decoration: _inputDecoration('Yeni parola tekrar'),
           ),
           const SizedBox(height: 16),
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton.icon(
-              onPressed: _savingPassword ? null : _changePassword,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: _primaryColor,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
+          Row(
+            children: [
+              Expanded(
+                child: ElevatedButton.icon(
+                  onPressed: _savingPassword ? null : _changePassword,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: _primaryColor,
+                    foregroundColor: Colors.white,
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  icon: _savingPassword
+                      ? const SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Icon(Icons.lock_reset),
+                  label: Text(
+                      _savingPassword ? 'Gönderiliyor...' : 'Parolayı Güncelle'),
                 ),
               ),
-              icon: _savingPassword
-                  ? const SizedBox(
-                      width: 16,
-                      height: 16,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : const Icon(Icons.lock_reset),
-              label:
-                  Text(_savingPassword ? 'Gönderiliyor...' : 'Parolayı Güncelle'),
-            ),
+              const SizedBox(width: 10),
+              AnimatedSwitcher(
+                duration: const Duration(milliseconds: 200),
+                child: _passwordSavedRecently
+                    ? const Icon(Icons.check_circle,
+                        key: ValueKey('password_saved'),
+                        color: Colors.green,
+                        size: 28)
+                    : const SizedBox(
+                        key: ValueKey('password_unsaved'),
+                        width: 28,
+                        height: 28,
+                      ),
+              ),
+            ],
           ),
         ],
       ),
