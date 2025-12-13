@@ -5,7 +5,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
-	<string>Bagla Mobile</string>
+	<string>Bagla App</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -13,7 +13,7 @@
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleName</key>
-	<string>bagla_mobile</string>
+	<string>Bagla App</string>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
@@ -61,10 +61,13 @@
 			<string>Editor</string>
 			<key>CFBundleURLSchemes</key>
 			<array>
-				<!-- Replace with REVERSED_CLIENT_ID from iOS GoogleService-Info.plist -->
-				<string>com.googleusercontent.apps.YOUR_IOS_CLIENT_ID</string>
+				<!-- REVERSED_CLIENT_ID for Google Sign-In -->
+				<string>com.googleusercontent.apps.99910465030-6kktpcsfhsqpj3mhf3ui0nieaet667lh</string>
 			</array>
 		</dict>
 	</array>
+	<!-- Google Sign-In client id -->
+	<key>GIDClientID</key>
+	<string>99910465030-6kktpcsfhsqpj3mhf3ui0nieaet667lh.apps.googleusercontent.com</string>
 </dict>
 </plist>
