@@ -10,6 +10,7 @@ import 'package:flutter_html/flutter_html.dart';
 import '../config.dart';
 import '../login_page.dart';
 import '../auth.dart';
+import '../dashboard_page.dart';
 
 class SmsPacksPage extends StatefulWidget {
   const SmsPacksPage({super.key});
@@ -54,6 +55,7 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
   Timer? _paymentTimer;
   String? _contractTitle;
   String? _contractDescriptionHtml;
+  bool _pendingNotified = false;
 
   final List<Map<String, String>> _paymentOptions = const [
     {'value': 'credit_card', 'label': 'Kredi Kartı'},
@@ -766,6 +768,7 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
 
   void _startPaymentPolling(String transactionId) {
     _paymentTimer?.cancel();
+    _pendingNotified = false;
     _paymentTimer = Timer.periodic(const Duration(seconds: 3), (_) {
       _checkOrderStatus(transactionId);
     });
@@ -782,23 +785,13 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
   }
 
   Future<void> _checkOrderStatus(String transactionId) async {
-    final token = await _getToken();
-    if (token == null || token.isEmpty) return;
-
     try {
       final res = await http.get(
         Uri.parse(
-            '$apiBaseUrl/api/payment/success/paytr?transaction_id=$transactionId'),
-        headers: {
-          'Authorization': 'Bearer $token',
-          'Accept': 'application/json',
-        },
+            '$apiBaseUrl/payment/success/paytr?transaction_id=$transactionId'),
+        headers: {'Accept': 'application/json'},
       );
-      if (res.statusCode == 401) {
-        _paymentTimer?.cancel();
-        await _handleUnauthorized();
-        return;
-      } else if (res.statusCode == 200) {
+      if (res.statusCode == 200) {
         String status = 'pending';
         Map<String, dynamic> order = {};
         try {
@@ -809,16 +802,26 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
           if (orderMap is Map<String, dynamic>) {
             order = orderMap;
           }
+          // Payment status varsa onu kullan
+          final paymentStatus = order['payment_status']?.toString();
+          if (paymentStatus != null && paymentStatus.isNotEmpty) {
+            status = paymentStatus;
+          }
         } catch (_) {}
 
         final normalized = status.toLowerCase();
-        if (normalized == 'paid') {
+        if (normalized == 'paid' || normalized == 'success') {
           _paymentTimer?.cancel();
           if (Navigator.canPop(context)) {
             Navigator.of(context, rootNavigator: true).pop();
           }
           _showPaymentResultDialog(status, order);
-        } else if (normalized == 'failed') {
+        } else if (normalized == 'pending') {
+          if (!_pendingNotified) {
+            _pendingNotified = true;
+            _showSnack('Ödeme onaylanıyor, lütfen bekleyin.', success: true);
+          }
+        } else if (normalized == 'failed' || normalized == 'canceled') {
           _paymentTimer?.cancel();
           if (Navigator.canPop(context)) {
             Navigator.of(context, rootNavigator: true).pop();
@@ -828,6 +831,11 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
       } else if (res.statusCode == 403) {
         _paymentTimer?.cancel();
         _showSnack('Ödeme doğrulanamadı (403).');
+      } else if (res.statusCode == 404) {
+        _paymentTimer?.cancel();
+        _showSnack('İşlem bulunamadı (404).');
+      } else {
+        _showSnack('Ödeme doğrulanamadı (HTTP ${res.statusCode}).');
       }
     } catch (_) {}
   }
@@ -870,19 +878,24 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
             ],
           ),
           actions: [
-            if (isPending)
+            if (isSuccess)
               TextButton(
                 onPressed: () {
-                  Navigator.of(context).pop();
-                  _startPaymentPolling(
-                      order['transaction_id']?.toString() ?? '');
+                  _paymentTimer?.cancel();
+                  Navigator.of(context).popUntil((route) => route.isFirst);
+                  Navigator.of(context).pushReplacement(
+                    MaterialPageRoute(
+                      builder: (_) => const DashboardPage(),
+                    ),
+                  );
                 },
-                child: const Text('Yenile'),
+                child: const Text('Ana sayfaya dön'),
+              )
+            else
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('Kapat'),
               ),
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Kapat'),
-            ),
           ],
         );
       },
