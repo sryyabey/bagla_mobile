@@ -7,14 +7,14 @@ const _localHostBase = 'http://127.0.0.1:8000';
 const _androidEmulatorBase = 'http://10.0.2.2:8000';
 
 String get apiBaseUrl {
-  // APP_ENV=prod ile prod'a geç; aksi halde debug ve APP_ENV=dev/local'da local kullan.
-  const env = String.fromEnvironment('APP_ENV', defaultValue: 'dev');
-  final useLocal = false; // her ortamda prod kullan
+  // APP_ENV=prod -> prod, APP_ENV=dev/local -> local; varsayılan prod.
+  const env = String.fromEnvironment('APP_ENV', defaultValue: 'prod');
+  final useLocal = env == 'dev' || env == 'local';
 
   if (useLocal) {
     if (kIsWeb) return _localHostBase;
     if (Platform.isAndroid) return _androidEmulatorBase;
     return _localHostBase;
   }
-  return _localHostBase;
+  return _prodBase;
 }

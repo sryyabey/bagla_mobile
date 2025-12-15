@@ -1,4 +1,6 @@
 import 'dart:convert';
+import 'dart:io';
+import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -8,6 +10,7 @@ import 'package:http/http.dart' as http;
 import 'package:share_plus/share_plus.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:path_provider/path_provider.dart';
 import 'config.dart';
 import 'login_page.dart';
 import 'pages/themes.dart';
@@ -132,6 +135,29 @@ class _DashboardPageState extends State<DashboardPage> {
     );
   }
 
+  Future<void> _downloadQr(String link) async {
+    try {
+      final painter = QrPainter(
+        data: link,
+        version: QrVersions.auto,
+        gapless: true,
+        color: Colors.black,
+        emptyColor: Colors.white,
+      );
+      final imageData = await painter.toImageData(600, format: ui.ImageByteFormat.png);
+      final bytes = imageData?.buffer.asUint8List();
+      if (bytes == null) throw 'Görsel oluşturulamadı';
+
+      final dir = await getTemporaryDirectory();
+      final file = File('${dir.path}/bagla_qr.png');
+      await file.writeAsBytes(bytes);
+
+      await Share.shareXFiles([XFile(file.path)], text: 'Bagla.bio QR');
+    } catch (e) {
+      _showSnack('QR indirilemedi: $e');
+    }
+  }
+
   Future<void> _openWhatsAppSupport() async {
     const phone = '902589110241';
     final uri = Uri.parse('https://wa.me/$phone');
@@ -193,13 +219,30 @@ class _DashboardPageState extends State<DashboardPage> {
                 style: const TextStyle(color: Colors.blue),
               ),
               const SizedBox(height: 12),
-              OutlinedButton.icon(
-                onPressed: () {
-                  Navigator.of(ctx).pop();
-                  _shareBioSystem(link);
-                },
-                icon: const Icon(Icons.share),
-                label: const Text('Paylaş'),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: () {
+                        Navigator.of(ctx).pop();
+                        _shareBioSystem(link);
+                      },
+                      icon: const Icon(Icons.share),
+                      label: const Text('Paylaş'),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: () async {
+                        Navigator.of(ctx).pop();
+                        await _downloadQr(link);
+                      },
+                      icon: const Icon(Icons.download),
+                      label: const Text('İndir'),
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
