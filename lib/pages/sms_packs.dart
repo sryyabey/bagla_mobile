@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:webview_flutter/webview_flutter.dart';
+import 'package:flutter_html/flutter_html.dart';
 
 import '../config.dart';
 import '../login_page.dart';
@@ -51,11 +52,11 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
   String _selectedPayment = 'credit_card';
   bool _agreementChecked = false;
   Timer? _paymentTimer;
+  String? _contractTitle;
+  String? _contractDescriptionHtml;
 
   final List<Map<String, String>> _paymentOptions = const [
     {'value': 'credit_card', 'label': 'Kredi Kartı'},
-    {'value': 'eft', 'label': 'Havale / EFT'},
-    {'value': 'cash', 'label': 'Nakit'},
   ];
   String? _authToken;
   bool _loggingOut = false;
@@ -207,11 +208,44 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
           }
         });
 
+        final contract = data['contract'];
+        String? contractTitle;
+        String? contractDesc;
+        if (contract is Map<String, dynamic>) {
+          final title = contract['title'];
+          if (title is Map) {
+            contractTitle = title['tr']?.toString();
+            contractTitle ??= title.values
+                .firstWhere((e) => e != null && e.toString().isNotEmpty,
+                    orElse: () => null)
+                ?.toString();
+          } else if (title != null) {
+            contractTitle = title.toString();
+          }
+
+          final desc = contract['description'];
+          if (desc is Map) {
+            contractDesc = desc['tr']?.toString();
+            contractDesc ??= desc.values
+                .firstWhere((e) => e != null && e.toString().isNotEmpty,
+                    orElse: () => null)
+                ?.toString();
+          } else if (desc != null) {
+            contractDesc = desc.toString();
+          }
+        } else if (contract is String) {
+          contractDesc = contract;
+        }
+        contractDesc ??= data['contract_description']?.toString();
+        contractTitle ??= data['contract_title']?.toString();
+
         setState(() {
           _types = types.isNotEmpty ? types : parsed.keys.toList();
           _packsByType = parsed;
           _selectedType =
               _selectedType ?? (_types.isNotEmpty ? _types.first : null);
+          _contractTitle = contractTitle;
+          _contractDescriptionHtml = contractDesc;
         });
       } else {
         setState(() {
@@ -317,8 +351,7 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
         });
       } else {
         setState(() {
-          _addressesError =
-              'Adresler alınamadı (HTTP ${response.statusCode}).';
+          _addressesError = 'Adresler alınamadı (HTTP ${response.statusCode}).';
         });
       }
     } catch (e) {
@@ -351,6 +384,63 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
         content: Text(message),
         backgroundColor: success ? Colors.green : Colors.red,
       ),
+    );
+  }
+
+  void _showContract() {
+    final htmlText = _contractDescriptionHtml ?? 'İçerik bulunamadı.';
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (_) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Center(
+                  child: Container(
+                    width: 48,
+                    height: 5,
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade300,
+                      borderRadius: BorderRadius.circular(99),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  _contractTitle ?? 'Sözleşme',
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                SizedBox(
+                  height: MediaQuery.of(context).size.height * 0.5,
+                  child: SingleChildScrollView(
+                    child: Html(data: htmlText),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: TextButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    child: const Text('Kapat'),
+                  ),
+                )
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 
@@ -476,15 +566,15 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
         }
       } else {
         _selectedPhoneCode = null;
-      _phoneController.text = phone;
-    }
+        _phoneController.text = phone;
+      }
 
-    _addressTitleController.text = address['title']?.toString() ?? '';
-    _identityController.text = address['identity_number']?.toString() ?? '';
-    _taxNumberController.text = address['tax_number']?.toString() ?? '';
-    _taxOfficeController.text = address['tax_office']?.toString() ?? '';
-    _addressController.text = address['address']?.toString() ?? '';
-    _noteController.text = address['note']?.toString() ?? '';
+      _addressTitleController.text = address['title']?.toString() ?? '';
+      _identityController.text = address['identity_number']?.toString() ?? '';
+      _taxNumberController.text = address['tax_number']?.toString() ?? '';
+      _taxOfficeController.text = address['tax_office']?.toString() ?? '';
+      _addressController.text = address['address']?.toString() ?? '';
+      _noteController.text = address['note']?.toString() ?? '';
     });
   }
 
@@ -697,7 +787,8 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
 
     try {
       final res = await http.get(
-        Uri.parse('$apiBaseUrl/api/payment/success/paytr?transaction_id=$transactionId'),
+        Uri.parse(
+            '$apiBaseUrl/api/payment/success/paytr?transaction_id=$transactionId'),
         headers: {
           'Authorization': 'Bearer $token',
           'Accept': 'application/json',
@@ -749,9 +840,8 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
 
     final packName = order['pack_name']?.toString() ?? 'Paket';
     final packType = order['pack_type']?.toString() ?? '';
-    final total = order['total_price']?.toString() ??
-        order['price']?.toString() ??
-        '-';
+    final total =
+        order['total_price']?.toString() ?? order['price']?.toString() ?? '-';
     final invoice = order['invoice_number']?.toString() ?? '';
     if (!mounted) return;
 
@@ -929,7 +1019,8 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
                                 crossAxisAlignment: CrossAxisAlignment.center,
                                 children: [
                                   Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
                                       Text(
                                         '₺$price',
@@ -1073,8 +1164,8 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
                 });
                 return;
               }
-              final addr =
-                  _addresses.firstWhere((a) => a['id'] == val, orElse: () => {});
+              final addr = _addresses.firstWhere((a) => a['id'] == val,
+                  orElse: () => {});
               if (addr.isNotEmpty) {
                 _applyAddress(addr);
               }
@@ -1180,8 +1271,9 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
                 .map(
                   (c) => DropdownMenuItem<int>(
                     value: c['id'] as int?,
-                    child:
-                        Text('${c['name'] ?? ''} (+${c['phone_code'] ?? '-'})'),
+                    child: Text(
+                      '${c['name'] ?? ''} (+${_cleanPhoneCode(c['phone_code']?.toString()) ?? '-'})',
+                    ),
                   ),
                 )
                 .toList(),
@@ -1267,7 +1359,6 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
             hintText: 'Faturaya eklenecek not veya özel talepler',
           ),
         ),
-        const SizedBox(height: 12),
         CheckboxListTile(
           contentPadding: EdgeInsets.zero,
           value: _agreementChecked,
@@ -1278,6 +1369,16 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
           },
           title: const Text('Satın alma sözleşmesini okudum, onaylıyorum.'),
           controlAffinity: ListTileControlAffinity.leading,
+        ),
+        Align(
+          alignment: Alignment.centerLeft,
+          child: TextButton.icon(
+            onPressed: _showContract,
+            icon: const Icon(Icons.description_outlined),
+            label: Text(_contractTitle?.isNotEmpty == true
+                ? _contractTitle!
+                : 'Sözleşme'),
+          ),
         ),
       ],
     );
@@ -1312,8 +1413,7 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
           trailing: Column(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              Text(
-                  '₺$price',
+              Text('₺$price',
                   style: const TextStyle(
                       fontWeight: FontWeight.w800, fontSize: 20)),
               const SizedBox(height: 6),

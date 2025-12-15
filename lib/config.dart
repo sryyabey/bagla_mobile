@@ -9,13 +9,12 @@ const _androidEmulatorBase = 'http://10.0.2.2:8000';
 String get apiBaseUrl {
   // APP_ENV=prod ile prod'a geç; aksi halde debug ve APP_ENV=dev/local'da local kullan.
   const env = String.fromEnvironment('APP_ENV', defaultValue: 'dev');
-  final useLocal = !kReleaseMode || env == 'dev' || env == 'local';
+  final useLocal = false; // her ortamda prod kullan
 
   if (useLocal) {
     if (kIsWeb) return _localHostBase;
     if (Platform.isAndroid) return _androidEmulatorBase;
     return _localHostBase;
   }
-
-  return _prodBase;
+  return _localHostBase;
 }

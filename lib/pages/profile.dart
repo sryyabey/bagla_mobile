@@ -543,6 +543,33 @@ class _ProfilePageState extends State<ProfilePage> {
             controller: _footerController,
             decoration: _inputDecoration('Footer'),
           ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSeoForm() {
+    return _sectionCard(
+      title: 'SEO',
+      subtitle: 'Başlık, açıklama ve anahtar kelimeler',
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          TextField(
+            controller: _seoTitleController,
+            decoration: _inputDecoration('Başlık'),
+          ),
+          const SizedBox(height: 12),
+          TextField(
+            controller: _seoDescriptionController,
+            maxLines: 2,
+            decoration: _inputDecoration('Açıklama'),
+          ),
+          const SizedBox(height: 12),
+          TextField(
+            controller: _seoKeywordsController,
+            decoration: _inputDecoration('Anahtar kelimeler'),
+          ),
           const SizedBox(height: 16),
           Row(
             children: [
@@ -583,33 +610,6 @@ class _ProfilePageState extends State<ProfilePage> {
                       ),
               ),
             ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSeoForm() {
-    return _sectionCard(
-      title: 'SEO',
-      subtitle: 'Başlık, açıklama ve anahtar kelimeler',
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          TextField(
-            controller: _seoTitleController,
-            decoration: _inputDecoration('Başlık'),
-          ),
-          const SizedBox(height: 12),
-          TextField(
-            controller: _seoDescriptionController,
-            maxLines: 2,
-            decoration: _inputDecoration('Açıklama'),
-          ),
-          const SizedBox(height: 12),
-          TextField(
-            controller: _seoKeywordsController,
-            decoration: _inputDecoration('Anahtar kelimeler'),
           ),
         ],
       ),
