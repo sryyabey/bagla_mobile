@@ -2991,7 +2991,7 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
           IconButton(
             onPressed: _navigateToDashboard,
             icon: const Icon(Icons.home_outlined),
-            tooltip: 'Dashboard',
+            tooltip: 'Anasayfa',
           ),
           IconButton(
             onPressed: _fetchAppointments,

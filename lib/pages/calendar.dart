@@ -290,7 +290,9 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
 
   bool _dayWorking(WeekDayInfo day, Map<String, dynamic> prefs) {
     final pref = prefs[day.dayOfWeekIso.toString()];
-    final prefWorking = pref is Map ? (pref['is_working'] == true || pref['is_working'] == 1) : true;
+    final prefWorking = pref is Map
+        ? (pref['is_working'] == true || pref['is_working'] == 1)
+        : true;
     return day.isWorking && prefWorking;
   }
 
@@ -397,7 +399,8 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
                   Expanded(
                     child: Text(
                       phone.isNotEmpty ? phone : '',
-                      style: const TextStyle(fontSize: 11, color: Colors.black87),
+                      style:
+                          const TextStyle(fontSize: 11, color: Colors.black87),
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
@@ -531,8 +534,7 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
                               height: 64,
                               decoration: BoxDecoration(
                                 color: Colors.grey.shade50,
-                                border:
-                                    Border.all(color: Colors.grey.shade200),
+                                border: Border.all(color: Colors.grey.shade200),
                               ),
                               child: const Center(
                                 child: Text(
@@ -594,7 +596,7 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
               );
             },
             icon: const Icon(Icons.home_outlined),
-            tooltip: 'Dashboard',
+            tooltip: 'Anasayfa',
           ),
         ],
       ),

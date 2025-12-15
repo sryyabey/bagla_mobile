@@ -42,7 +42,7 @@ class MainNavBar extends StatelessWidget {
       items: const [
         BottomNavigationBarItem(
           icon: Icon(Icons.dashboard_outlined),
-          label: 'Dashboard',
+          label: 'Anasayfa',
         ),
         BottomNavigationBarItem(
           icon: Icon(Icons.event_note_outlined),
