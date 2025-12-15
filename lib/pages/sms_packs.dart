@@ -124,7 +124,8 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
   }
 
   Future<http.Response?> _withAuth(
-      Future<http.Response> Function(String token) fn) async {
+    Future<http.Response> Function(String token) fn,
+  ) async {
     final token = await _getToken();
     if (token == null || token.isEmpty) {
       await _handleUnauthorized();
@@ -165,9 +166,7 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
       ),
     );
     Navigator.of(context).pushAndRemoveUntil(
-      MaterialPageRoute(
-        builder: (_) => LoginPage(onLocaleChange: (_) {}),
-      ),
+      MaterialPageRoute(builder: (_) => LoginPage(onLocaleChange: (_) {})),
       (route) => false,
     );
   }
@@ -218,8 +217,10 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
           if (title is Map) {
             contractTitle = title['tr']?.toString();
             contractTitle ??= title.values
-                .firstWhere((e) => e != null && e.toString().isNotEmpty,
-                    orElse: () => null)
+                .firstWhere(
+                  (e) => e != null && e.toString().isNotEmpty,
+                  orElse: () => null,
+                )
                 ?.toString();
           } else if (title != null) {
             contractTitle = title.toString();
@@ -229,8 +230,10 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
           if (desc is Map) {
             contractDesc = desc['tr']?.toString();
             contractDesc ??= desc.values
-                .firstWhere((e) => e != null && e.toString().isNotEmpty,
-                    orElse: () => null)
+                .firstWhere(
+                  (e) => e != null && e.toString().isNotEmpty,
+                  orElse: () => null,
+                )
                 ?.toString();
           } else if (desc != null) {
             contractDesc = desc.toString();
@@ -297,8 +300,9 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
           _countries = parsed;
           if (parsed.isNotEmpty && _selectedCountryId == null) {
             _selectedCountryId = parsed.first['id'] as int?;
-            _selectedPhoneCode =
-                _cleanPhoneCode(parsed.first['phone_code']?.toString());
+            _selectedPhoneCode = _cleanPhoneCode(
+              parsed.first['phone_code']?.toString(),
+            );
           }
         });
       } else {
@@ -426,9 +430,7 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
                 const SizedBox(height: 12),
                 SizedBox(
                   height: MediaQuery.of(context).size.height * 0.5,
-                  child: SingleChildScrollView(
-                    child: Html(data: htmlText),
-                  ),
+                  child: SingleChildScrollView(child: Html(data: htmlText)),
                 ),
                 const SizedBox(height: 12),
                 Align(
@@ -437,7 +439,7 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
                     onPressed: () => Navigator.of(context).pop(),
                     child: const Text('Kapat'),
                   ),
-                )
+                ),
               ],
             ),
           ),
@@ -788,7 +790,8 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
     try {
       final res = await http.get(
         Uri.parse(
-            '$apiBaseUrl/payment/success/paytr?transaction_id=$transactionId'),
+          '$apiBaseUrl/payment/success/paytr?transaction_id=$transactionId',
+        ),
         headers: {'Accept': 'application/json'},
       );
       if (res.statusCode == 200) {
@@ -841,7 +844,9 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
   }
 
   Future<void> _showPaymentResultDialog(
-      String status, Map<String, dynamic> order) async {
+    String status,
+    Map<String, dynamic> order,
+  ) async {
     final normalized = status.toLowerCase();
     final isSuccess = normalized == 'paid';
     final isPending = normalized == 'pending';
@@ -857,11 +862,13 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: Text(isSuccess
-              ? 'Ödeme Başarılı'
-              : isPending
-                  ? 'Ödeme Bekliyor'
-                  : 'Ödeme Başarısız'),
+          title: Text(
+            isSuccess
+                ? 'Ödeme Başarılı'
+                : isPending
+                    ? 'Ödeme Bekliyor'
+                    : 'Ödeme Başarısız',
+          ),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -884,9 +891,7 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
                   _paymentTimer?.cancel();
                   Navigator.of(context).popUntil((route) => route.isFirst);
                   Navigator.of(context).pushReplacement(
-                    MaterialPageRoute(
-                      builder: (_) => const DashboardPage(),
-                    ),
+                    MaterialPageRoute(builder: (_) => const DashboardPage()),
                   );
                 },
                 child: const Text('Ana sayfaya dön'),
@@ -963,7 +968,7 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
                   color: Colors.black.withOpacity(0.04),
                   blurRadius: 8,
                   offset: const Offset(0, 4),
-                )
+                ),
               ],
             ),
             child: InkWell(
@@ -1046,7 +1051,7 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
                                       const SizedBox(height: 2),
                                       Text(
                                         priceWithTax.isNotEmpty
-                                            ? 'KDV Dahil ₺$priceWithTax'
+                                            ? "KDV'li ₺$priceWithTax"
                                             : '',
                                         style: const TextStyle(
                                           color: Colors.black54,
@@ -1120,7 +1125,7 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
               for (final pack in packs) ...[
                 buildCard(pack),
                 const SizedBox(height: 12),
-              ]
+              ],
             ],
           );
         }
@@ -1177,8 +1182,10 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
                 });
                 return;
               }
-              final addr = _addresses.firstWhere((a) => a['id'] == val,
-                  orElse: () => {});
+              final addr = _addresses.firstWhere(
+                (a) => a['id'] == val,
+                orElse: () => {},
+              );
               if (addr.isNotEmpty) {
                 _applyAddress(addr);
               }
@@ -1272,12 +1279,15 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
             value: _selectedCountryId,
             onChanged: (val) {
               if (val == null) return;
-              final selected = _countries.firstWhere((c) => c['id'] == val,
-                  orElse: () => {});
+              final selected = _countries.firstWhere(
+                (c) => c['id'] == val,
+                orElse: () => {},
+              );
               setState(() {
                 _selectedCountryId = val;
-                _selectedPhoneCode =
-                    _cleanPhoneCode(selected['phone_code']?.toString());
+                _selectedPhoneCode = _cleanPhoneCode(
+                  selected['phone_code']?.toString(),
+                );
               });
             },
             items: _countries
@@ -1388,9 +1398,9 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
           child: TextButton.icon(
             onPressed: _showContract,
             icon: const Icon(Icons.description_outlined),
-            label: Text(_contractTitle?.isNotEmpty == true
-                ? _contractTitle!
-                : 'Sözleşme'),
+            label: Text(
+              _contractTitle?.isNotEmpty == true ? _contractTitle! : 'Sözleşme',
+            ),
           ),
         ),
       ],
@@ -1415,25 +1425,57 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        ListTile(
-          contentPadding: EdgeInsets.zero,
-          title: Text(
-            pack['name']?.toString() ?? '-',
-            style: const TextStyle(fontWeight: FontWeight.bold),
-          ),
-          subtitle: Text(
-              'Tip: ${_localizePlanLabel(pack['type']?.toString() ?? _selectedType)}'),
-          trailing: Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
+        Padding(
+          padding: EdgeInsets.zero,
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('₺$price',
-                  style: const TextStyle(
-                      fontWeight: FontWeight.w800, fontSize: 20)),
-              const SizedBox(height: 6),
-              if (priceWithTax.isNotEmpty)
-                Text('KDV Dahil ₺$priceWithTax',
-                    style: const TextStyle(
-                        fontWeight: FontWeight.w700, fontSize: 14)),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      pack['name']?.toString() ?? '-',
+                      style: const TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Tip: ${_localizePlanLabel(pack['type']?.toString() ?? _selectedType)}',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 12),
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                alignment: Alignment.centerRight,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Text(
+                      '₺$price',
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w800,
+                        fontSize: 20,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 6),
+                    if (priceWithTax.isNotEmpty)
+                      Text(
+                        'KDV Dahil ₺$priceWithTax',
+                        style: const TextStyle(
+                            fontWeight: FontWeight.w700, fontSize: 14),
+                        overflow: TextOverflow.ellipsis,
+                        maxLines: 1,
+                      ),
+                  ],
+                ),
+              ),
             ],
           ),
         ),
@@ -1556,9 +1598,7 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('SMS Paketleri'),
-      ),
+      appBar: AppBar(title: const Text('SMS Paketleri')),
       body: SafeArea(
         child: _loading
             ? const Center(child: CircularProgressIndicator())
@@ -1582,7 +1622,7 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
                             onPressed: _loadPacks,
                             icon: const Icon(Icons.refresh),
                             label: const Text('Tekrar Dene'),
-                          )
+                          ),
                         ],
                       ),
                     ),
@@ -1643,10 +1683,7 @@ class _PaymentPage extends StatelessWidget {
   final WebViewController controller;
   final VoidCallback onExit;
 
-  const _PaymentPage({
-    required this.controller,
-    required this.onExit,
-  });
+  const _PaymentPage({required this.controller, required this.onExit});
 
   @override
   Widget build(BuildContext context) {
@@ -1665,12 +1702,10 @@ class _PaymentPage extends StatelessWidget {
                 onExit();
                 Navigator.of(context).pop();
               },
-            )
+            ),
           ],
         ),
-        body: SafeArea(
-          child: WebViewWidget(controller: controller),
-        ),
+        body: SafeArea(child: WebViewWidget(controller: controller)),
       ),
     );
   }
