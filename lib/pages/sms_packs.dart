@@ -31,12 +31,20 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
   Map<String, dynamic>? _selectedPack;
   List<Map<String, dynamic>> _countries = [];
   List<Map<String, dynamic>> _addresses = [];
+  List<Map<String, dynamic>> _cities = [];
+  List<Map<String, dynamic>> _districts = [];
   bool _loadingCountries = true;
   bool _loadingAddresses = true;
+  bool _loadingCities = false;
+  bool _loadingDistricts = false;
   String? _countriesError;
   String? _addressesError;
+  String? _citiesError;
+  String? _districtsError;
   int? _selectedAddressId;
   int? _selectedCountryId;
+  int? _selectedCityId;
+  int? _selectedDistrictId;
   String? _selectedPhoneCode;
 
   final TextEditingController _nameController = TextEditingController();
@@ -305,6 +313,18 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
             );
           }
         });
+        final targetCountryId = _selectedCountryId ??
+            (_countries.isNotEmpty ? _countries.first['id'] as int? : null);
+        if (targetCountryId != null) {
+          _loadCities(countryId: targetCountryId);
+        } else {
+          setState(() {
+            _cities = [];
+            _districts = [];
+            _selectedCityId = null;
+            _selectedDistrictId = null;
+          });
+        }
       } else {
         setState(() {
           _countriesError = 'Ülkeler alınamadı (HTTP ${response.statusCode}).';
@@ -318,6 +338,171 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
       if (mounted) {
         setState(() {
           _loadingCountries = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _loadCities({
+    int? countryId,
+    int? preselectCityId,
+    int? preselectDistrictId,
+  }) async {
+    final targetCountryId = countryId ?? _selectedCountryId;
+    setState(() {
+      _loadingCities = true;
+      _citiesError = null;
+      _cities = [];
+      _selectedCityId = null;
+      _districts = [];
+      _selectedDistrictId = null;
+      _loadingDistricts = false;
+      _districtsError = null;
+    });
+
+    if (targetCountryId == null) {
+      setState(() {
+        _loadingCities = false;
+      });
+      return;
+    }
+
+    try {
+      final response = await _withAuth((token) {
+        return http.get(
+          Uri.parse(
+            '$apiBaseUrl/api/settings/cities?country_id=$targetCountryId',
+          ),
+          headers: {
+            'Authorization': 'Bearer $token',
+            'Accept': 'application/json',
+          },
+        );
+      });
+
+      if (response == null) return;
+
+      if (response.statusCode == 200) {
+        final decoded = jsonDecode(response.body);
+        final data = decoded['data'] ?? decoded;
+        final List<dynamic> list = data is List ? data : (data['data'] ?? []);
+        final parsed = list
+            .map((e) => Map<String, dynamic>.from(e as Map))
+            .toList(growable: false);
+
+        int? cityToSelect;
+        if (preselectCityId != null &&
+            parsed.any((c) => c['id'] == preselectCityId)) {
+          cityToSelect = preselectCityId;
+        } else if (parsed.isNotEmpty) {
+          cityToSelect = parsed.first['id'] as int?;
+        }
+
+        if (!mounted) return;
+        setState(() {
+          _cities = parsed;
+          _selectedCityId = cityToSelect;
+        });
+
+        if (cityToSelect != null) {
+          await _loadDistricts(
+            cityId: cityToSelect,
+            preselectDistrictId: preselectDistrictId,
+          );
+        } else {
+          if (!mounted) return;
+          setState(() {
+            _districts = [];
+            _selectedDistrictId = null;
+          });
+        }
+      } else {
+        setState(() {
+          _citiesError = 'Şehirler alınamadı (HTTP ${response.statusCode}).';
+        });
+      }
+    } catch (e) {
+      setState(() {
+        _citiesError = 'Şehirler alınırken hata oluştu: $e';
+      });
+    } finally {
+      if (mounted) {
+        setState(() {
+          _loadingCities = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _loadDistricts({
+    int? cityId,
+    int? preselectDistrictId,
+  }) async {
+    final targetCityId = cityId ?? _selectedCityId;
+    setState(() {
+      _loadingDistricts = true;
+      _districtsError = null;
+      _districts = [];
+      _selectedDistrictId = null;
+    });
+
+    if (targetCityId == null) {
+      setState(() {
+        _loadingDistricts = false;
+      });
+      return;
+    }
+
+    try {
+      final response = await _withAuth((token) {
+        return http.get(
+          Uri.parse(
+            '$apiBaseUrl/api/settings/districts?city_id=$targetCityId',
+          ),
+          headers: {
+            'Authorization': 'Bearer $token',
+            'Accept': 'application/json',
+          },
+        );
+      });
+
+      if (response == null) return;
+
+      if (response.statusCode == 200) {
+        final decoded = jsonDecode(response.body);
+        final data = decoded['data'] ?? decoded;
+        final List<dynamic> list = data is List ? data : (data['data'] ?? []);
+        final parsed = list
+            .map((e) => Map<String, dynamic>.from(e as Map))
+            .toList(growable: false);
+
+        int? districtToSelect;
+        if (preselectDistrictId != null &&
+            parsed.any((d) => d['id'] == preselectDistrictId)) {
+          districtToSelect = preselectDistrictId;
+        } else if (parsed.isNotEmpty) {
+          districtToSelect = parsed.first['id'] as int?;
+        }
+
+        if (!mounted) return;
+        setState(() {
+          _districts = parsed;
+          _selectedDistrictId = districtToSelect;
+        });
+      } else {
+        setState(() {
+          _districtsError =
+              'İlçeler alınamadı (HTTP ${response.statusCode}).';
+        });
+      }
+    } catch (e) {
+      setState(() {
+        _districtsError = 'İlçeler alınırken hata oluştu: $e';
+      });
+    } finally {
+      if (mounted) {
+        setState(() {
+          _loadingDistricts = false;
         });
       }
     }
@@ -454,6 +639,28 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
     return trimmed.startsWith('+') ? trimmed.substring(1) : trimmed;
   }
 
+  void _onCountryChanged(int val) {
+    final selected = _countries.firstWhere(
+      (c) => c['id'] == val,
+      orElse: () => {},
+    );
+    setState(() {
+      _selectedCountryId = val;
+      _selectedPhoneCode = _cleanPhoneCode(
+        selected['phone_code']?.toString(),
+      );
+    });
+    _loadCities(countryId: val);
+  }
+
+  void _onCityChanged(int? val) {
+    if (val == null) return;
+    setState(() {
+      _selectedCityId = val;
+    });
+    _loadDistricts(cityId: val);
+  }
+
   void _showDetailsModal(List<dynamic> details, Color accent) {
     if (details.isEmpty) return;
     showModalBottomSheet(
@@ -530,33 +737,80 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
     return raw?.toUpperCase() ?? '';
   }
 
+  String _getNameById(List<Map<String, dynamic>> list, int? id) {
+    if (id == null) return '';
+    final match =
+        list.firstWhere((item) => item['id'] == id, orElse: () => {});
+    return match['name']?.toString() ?? '';
+  }
+
   void _clearAddressFields() {
     _selectedAddressId = null;
+    final int? currentCountryId = _selectedCountryId ??
+        (_countries.isNotEmpty ? _countries.first['id'] as int? : null);
     _addressTitleController.clear();
     _nameController.clear();
     _lastNameController.clear();
     _companyController.clear();
     _emailController.clear();
     _phoneController.clear();
-    _selectedPhoneCode = null;
+    _selectedCountryId = currentCountryId;
+    _selectedCityId = null;
+    _selectedDistrictId = null;
+    _cities = [];
+    _districts = [];
+    _loadingCities = false;
+    _loadingDistricts = false;
+    _citiesError = null;
+    _districtsError = null;
+    final selectedCountry = _countries.firstWhere(
+      (c) => c['id'] == _selectedCountryId,
+      orElse: () => {},
+    );
+    _selectedPhoneCode = _cleanPhoneCode(
+      selectedCountry['phone_code']?.toString(),
+    );
     _identityController.clear();
     _taxNumberController.clear();
     _taxOfficeController.clear();
     _addressController.clear();
     _noteController.clear();
+    if (_selectedCountryId != null) {
+      _loadCities(countryId: _selectedCountryId);
+    }
   }
 
   void _applyAddress(Map<String, dynamic> address) {
+    final int? countryId = address['country_id'] is int
+        ? address['country_id'] as int
+        : int.tryParse(address['country_id']?.toString() ?? '');
+    final int? cityId = address['city_id'] is int
+        ? address['city_id'] as int
+        : int.tryParse(address['city_id']?.toString() ?? '');
+    final int? districtId = address['district_id'] is int
+        ? address['district_id'] as int
+        : int.tryParse(address['district_id']?.toString() ?? '');
+    final selectedCountry = _countries.firstWhere(
+      (c) => c['id'] == countryId,
+      orElse: () => {},
+    );
+    final fallbackPhoneCode =
+        _cleanPhoneCode(selectedCountry['phone_code']?.toString());
+
     setState(() {
       _selectedAddressId = address['id'] is int
           ? address['id'] as int
           : int.tryParse(address['id']?.toString() ?? '');
+      _selectedCountryId = countryId ?? _selectedCountryId;
+      _selectedCityId = cityId;
+      _selectedDistrictId = districtId;
       _nameController.text = address['name']?.toString() ?? '';
       _lastNameController.text = address['last_name']?.toString() ?? '';
       _companyController.text = address['company_name']?.toString() ?? '';
       _emailController.text = address['email']?.toString() ?? '';
 
       final phone = address['phone']?.toString() ?? '';
+      _selectedPhoneCode = fallbackPhoneCode;
       if (phone.startsWith('+')) {
         final cleaned = phone.replaceFirst('+', '');
         final digits = cleaned.replaceAll(RegExp(r'\D'), '');
@@ -565,11 +819,11 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
           _selectedPhoneCode = digits.substring(0, digits.length - 9);
           _phoneController.text = digits.substring(digits.length - 9);
         } else {
-          _selectedPhoneCode = null;
+          _selectedPhoneCode = fallbackPhoneCode;
           _phoneController.text = cleaned;
         }
       } else {
-        _selectedPhoneCode = null;
+        _selectedPhoneCode = fallbackPhoneCode;
         _phoneController.text = phone;
       }
 
@@ -580,6 +834,14 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
       _addressController.text = address['address']?.toString() ?? '';
       _noteController.text = address['note']?.toString() ?? '';
     });
+
+    if (_selectedCountryId != null) {
+      _loadCities(
+        countryId: _selectedCountryId,
+        preselectCityId: _selectedCityId,
+        preselectDistrictId: _selectedDistrictId,
+      );
+    }
   }
 
   bool _validateStep(int step) {
@@ -589,6 +851,18 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
         return false;
       }
     } else if (step == 1) {
+      if (_selectedCountryId == null) {
+        _showSnack('Lütfen ülke seçin.');
+        return false;
+      }
+      if (_selectedCityId == null) {
+        _showSnack('Lütfen şehir seçin.');
+        return false;
+      }
+      if (_selectedDistrictId == null) {
+        _showSnack('Lütfen ilçe seçin.');
+        return false;
+      }
       if (_nameController.text.trim().isEmpty) {
         _showSnack('Ad alanı boş bırakılamaz.');
         return false;
@@ -640,6 +914,9 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
         'plan_type': planType,
         'title': _addressTitleController.text.trim(),
         if (_selectedAddressId != null) 'address_id': _selectedAddressId,
+        'country_id': _selectedCountryId,
+        'city_id': _selectedCityId,
+        'district_id': _selectedDistrictId,
         'name': _nameController.text.trim(),
         'last_name': _lastNameController.text.trim(),
         'company_name': _companyController.text.trim(),
@@ -1279,16 +1556,7 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
             value: _selectedCountryId,
             onChanged: (val) {
               if (val == null) return;
-              final selected = _countries.firstWhere(
-                (c) => c['id'] == val,
-                orElse: () => {},
-              );
-              setState(() {
-                _selectedCountryId = val;
-                _selectedPhoneCode = _cleanPhoneCode(
-                  selected['phone_code']?.toString(),
-                );
-              });
+              _onCountryChanged(val);
             },
             items: _countries
                 .map(
@@ -1297,6 +1565,86 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
                     child: Text(
                       '${c['name'] ?? ''} (+${_cleanPhoneCode(c['phone_code']?.toString()) ?? '-'})',
                     ),
+                  ),
+                )
+                .toList(),
+          ),
+        const SizedBox(height: 12),
+        if (_loadingCities)
+          const LinearProgressIndicator(minHeight: 2)
+        else if (_citiesError != null)
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  _citiesError!,
+                  style: const TextStyle(color: Colors.red),
+                ),
+              ),
+              TextButton(
+                onPressed: () => _loadCities(
+                  countryId: _selectedCountryId,
+                  preselectCityId: _selectedCityId,
+                  preselectDistrictId: _selectedDistrictId,
+                ),
+                child: const Text('Yenile'),
+              ),
+            ],
+          )
+        else
+          DropdownButtonFormField<int>(
+            decoration: const InputDecoration(
+              labelText: 'Şehir',
+              border: OutlineInputBorder(),
+            ),
+            value: _selectedCityId,
+            onChanged: _cities.isEmpty ? null : _onCityChanged,
+            items: _cities
+                .map(
+                  (c) => DropdownMenuItem<int>(
+                    value: c['id'] as int?,
+                    child: Text(c['name']?.toString() ?? ''),
+                  ),
+                )
+                .toList(),
+          ),
+        const SizedBox(height: 12),
+        if (_loadingDistricts)
+          const LinearProgressIndicator(minHeight: 2)
+        else if (_districtsError != null)
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  _districtsError!,
+                  style: const TextStyle(color: Colors.red),
+                ),
+              ),
+              TextButton(
+                onPressed: () => _loadDistricts(cityId: _selectedCityId),
+                child: const Text('Yenile'),
+              ),
+            ],
+          )
+        else
+          DropdownButtonFormField<int>(
+            decoration: const InputDecoration(
+              labelText: 'İlçe',
+              border: OutlineInputBorder(),
+            ),
+            value: _selectedDistrictId,
+            onChanged: _districts.isEmpty
+                ? null
+                : (val) {
+                    setState(() {
+                      _selectedDistrictId = val;
+                    });
+                  },
+            items: _districts
+                .map(
+                  (d) => DropdownMenuItem<int>(
+                    value: d['id'] as int?,
+                    child: Text(d['name']?.toString() ?? ''),
                   ),
                 )
                 .toList(),
@@ -1493,9 +1841,11 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
         Text('Ad Soyad: ${_nameController.text} ${_lastNameController.text}'),
         Text('E-posta: ${_emailController.text}'),
         if (_selectedCountryId != null)
-          Text(
-            'Ülke: ${_countries.firstWhere((c) => c['id'] == _selectedCountryId, orElse: () => {})['name'] ?? ''}',
-          ),
+          Text('Ülke: ${_getNameById(_countries, _selectedCountryId)}'),
+        if (_selectedCityId != null)
+          Text('İl: ${_getNameById(_cities, _selectedCityId)}'),
+        if (_selectedDistrictId != null)
+          Text('İlçe: ${_getNameById(_districts, _selectedDistrictId)}'),
         if (_phoneController.text.isNotEmpty)
           Text(
             'Telefon: ${_selectedPhoneCode != null && _selectedPhoneCode!.isNotEmpty ? '+$_selectedPhoneCode ' : ''}${_phoneController.text}',
