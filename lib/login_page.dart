@@ -26,7 +26,7 @@ class _LoginPageState extends State<LoginPage> {
     scopes: const ['email'],
     // Use the Web client ID here so the backend can verify idToken audience.
     serverClientId:
-        '99910465030-ng2ik9e1hpmbv9dg5530u7jr2e2emrmu.apps.googleusercontent.com',
+        '99910465030-vj8m6u9nccv4lt0528bk2c3f3i0vouf5.apps.googleusercontent.com',
     // On iOS, the native clientId is read from GoogleService-Info.plist.
   );
   Locale _locale = const Locale('tr');
