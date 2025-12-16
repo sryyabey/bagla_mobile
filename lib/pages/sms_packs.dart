@@ -1598,7 +1598,18 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('SMS Paketleri')),
+      appBar: AppBar(
+        title: const Text('SMS Paketleri'),
+        leading: IconButton(
+          icon: const Icon(Icons.home_outlined),
+          onPressed: () {
+            Navigator.of(context).pushAndRemoveUntil(
+              MaterialPageRoute(builder: (_) => const DashboardPage()),
+              (route) => false,
+            );
+          },
+        ),
+      ),
       body: SafeArea(
         child: _loading
             ? const Center(child: CircularProgressIndicator())
