@@ -1,52 +1,58 @@
-import 'package:flutter/material.dart';
-import 'app_localizations.dart';
-import 'package:http/http.dart' as http;
 import 'dart:convert';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+
+import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 import 'package:google_sign_in/google_sign_in.dart';
-import 'dashboard_page.dart';
-import 'config.dart';
+
 import 'auth.dart';
-import 'register_page.dart';
+import 'config.dart';
+import 'dashboard_page.dart';
 
-class LoginPage extends StatefulWidget {
-  final Function(Locale) onLocaleChange;
-
-  const LoginPage({super.key, required this.onLocaleChange});
+class RegisterPage extends StatefulWidget {
+  const RegisterPage({super.key});
 
   @override
-  State<LoginPage> createState() => _LoginPageState();
+  State<RegisterPage> createState() => _RegisterPageState();
 }
 
-class _LoginPageState extends State<LoginPage> {
-  final emailController = TextEditingController();
-  final passwordController = TextEditingController();
-  final FlutterSecureStorage _secureStorage = const FlutterSecureStorage();
+class _RegisterPageState extends State<RegisterPage> {
+  final _nameController = TextEditingController();
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
+  final _passwordConfirmController = TextEditingController();
+  final _usernameController = TextEditingController();
+  final String _deviceName = 'bagla_mobile';
   final GoogleSignIn _googleSignIn = GoogleSignIn(
     scopes: const ['email'],
-    // Use the Web client ID here so the backend can verify idToken audience.
     serverClientId:
         '99910465030-ng2ik9e1hpmbv9dg5530u7jr2e2emrmu.apps.googleusercontent.com',
-    // On iOS, the native clientId is read from GoogleService-Info.plist.
   );
-  Locale _locale = const Locale('tr');
+
   bool _isLoading = false;
   bool _isGoogleLoading = false;
   String? _error;
+  Map<String, dynamic>? _user;
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _emailController.dispose();
+    _passwordController.dispose();
+    _passwordConfirmController.dispose();
+    _usernameController.dispose();
+    super.dispose();
+  }
 
   Future<void> _storeToken(String token, {String? refresh}) async {
     await saveTokens(accessToken: token, refreshToken: refresh);
   }
 
-  Future<void> _handleLoginSuccess(String token) async {
+  Future<void> _handleRegisterSuccess(String token) async {
     await _storeToken(token);
     if (!mounted) return;
     Navigator.pushReplacement(
       context,
-      MaterialPageRoute(
-        builder: (context) => DashboardPage(),
-      ),
+      MaterialPageRoute(builder: (context) => const DashboardPage()),
     );
   }
 
@@ -62,9 +68,28 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 
-  Future<void> _loginWithEmail() async {
-    final email = emailController.text.trim();
-    final password = passwordController.text;
+  String _formatValidationErrors(dynamic errors) {
+    if (errors is Map) {
+      final messages = <String>[];
+      for (final entry in errors.entries) {
+        final value = entry.value;
+        if (value is List) {
+          messages.addAll(value.map((e) => e.toString()));
+        } else if (value != null) {
+          messages.add(value.toString());
+        }
+      }
+      if (messages.isNotEmpty) return messages.join('\n');
+    }
+    return 'Kayıt sırasında hata oluştu.';
+  }
+
+  Future<void> _register() async {
+    final name = _nameController.text.trim();
+    final email = _emailController.text.trim();
+    final password = _passwordController.text;
+    final passwordConfirm = _passwordConfirmController.text;
+    final username = _usernameController.text.trim();
 
     setState(() {
       _isLoading = true;
@@ -72,36 +97,50 @@ class _LoginPageState extends State<LoginPage> {
     });
 
     try {
+      final body = <String, dynamic>{
+        'name': name,
+        'email': email,
+        'password': password,
+        'password_confirmation': passwordConfirm,
+      };
+      if (username.isNotEmpty) {
+        body['username'] = username;
+      }
+      body['device_name'] = _deviceName;
+
       final response = await http.post(
-        Uri.parse('$apiBaseUrl/api/login'),
+        Uri.parse('$apiBaseUrl/api/register'),
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
         },
-        body: jsonEncode({'email': email, 'password': password}),
+        body: jsonEncode(body),
       );
 
-      if (response.statusCode == 200) {
+      if (response.statusCode == 200 || response.statusCode == 201) {
         final data = jsonDecode(response.body);
         final token = data['token'] ??
             (data['data'] != null ? data['data']['token'] : null) ??
             data['access_token'];
-        final refresh = data['refresh_token'] ??
-            data['refreshToken'] ??
-            (data['data'] != null ? data['data']['refresh_token'] : null);
+        final user = data['user'] ??
+            (data['data'] != null ? data['data']['user'] : null);
+        if (user is Map) {
+          setState(() {
+            _user = Map<String, dynamic>.from(user);
+          });
+        }
         if (token != null) {
-          await _storeToken(token, refresh: refresh?.toString());
-          await _handleLoginSuccess(token);
+          await _handleRegisterSuccess(token.toString());
         } else {
           _showError('Token alınamadı.');
         }
-      } else if (response.statusCode == 401) {
-        final msg = _extractMessage(response.body) ?? 'Yetkisiz giriş.';
-        _showError(msg);
+      } else if (response.statusCode == 422) {
+        final decoded = jsonDecode(response.body);
+        final message = decoded['message']?.toString();
+        final errors = decoded['errors'];
+        _showError(message ?? _formatValidationErrors(errors));
       } else {
-        final msg = _extractMessage(response.body) ??
-            'Giriş başarısız (HTTP ${response.statusCode}).';
-        _showError(msg);
+        _showError('Kayıt başarısız (HTTP ${response.statusCode}).');
       }
     } catch (e) {
       _showError('Sunucuya bağlanılamadı: $e');
@@ -119,6 +158,7 @@ class _LoginPageState extends State<LoginPage> {
       _isGoogleLoading = true;
       _error = null;
     });
+
     try {
       final account = await _googleSignIn.signIn();
       if (account == null) {
@@ -140,7 +180,7 @@ class _LoginPageState extends State<LoginPage> {
         },
         body: jsonEncode({
           'id_token': idToken,
-          'device_name': 'bagla_mobile',
+          'device_name': _deviceName,
         }),
       );
 
@@ -150,14 +190,16 @@ class _LoginPageState extends State<LoginPage> {
             (data['data'] != null ? data['data']['token'] : null) ??
             data['access_token'];
         if (token != null) {
-          await _handleLoginSuccess(token);
+          await _handleRegisterSuccess(token.toString());
         } else {
           _showError('Token alınamadı.');
         }
       } else {
-        final msg = _extractMessage(response.body) ??
-            'Google giriş başarısız (HTTP ${response.statusCode}).';
-        _showError(msg);
+        final decoded = jsonDecode(response.body);
+        final message = decoded is Map ? decoded['message']?.toString() : null;
+        _showError(
+          message ?? 'Google giriş başarısız (HTTP ${response.statusCode}).',
+        );
       }
     } catch (e) {
       _showError('Google girişi başarısız: $e');
@@ -170,29 +212,8 @@ class _LoginPageState extends State<LoginPage> {
     }
   }
 
-  String? _extractMessage(String body) {
-    try {
-      final decoded = jsonDecode(body);
-      if (decoded is Map && decoded['message'] != null) {
-        return decoded['message'].toString();
-      }
-    } catch (_) {}
-    return null;
-  }
-
-  void _onLocaleChanged(Locale? newLocale) {
-    if (newLocale != null) {
-      setState(() {
-        _locale = newLocale;
-      });
-      widget.onLocaleChange(newLocale);
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
-    final loc = AppLocalizations.of(context)!;
-
     return Scaffold(
       body: Container(
         color: const Color(0xFF0A84FF),
@@ -202,62 +223,37 @@ class _LoginPageState extends State<LoginPage> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                // Language Switcher Dropdown
-                Align(
-                  alignment: Alignment.topRight,
-                  child: DropdownButton<Locale>(
-                    dropdownColor: Colors.white,
-                    value: _locale,
-                    underline: const SizedBox(),
-                    iconEnabledColor: Colors.white,
-                    items: const [
-                      DropdownMenuItem(
-                        value: Locale('tr'),
-                        child: Text('TR'),
-                      ),
-                      DropdownMenuItem(
-                        value: Locale('en'),
-                        child: Text('EN'),
-                      ),
-                    ],
-                    onChanged: _onLocaleChanged,
-                  ),
-                ),
-                const SizedBox(height: 30),
-                Container(
-                  width: 120,
-                  height: 120,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: Colors.white.withOpacity(0.15),
-                  ),
-                  child: Center(
-                    child: ClipOval(
-                      child: Image.asset(
-                        'assets/mobile_logo.png',
-                        height: 96,
-                        width: 96,
-                        fit: BoxFit.cover,
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 24),
                 Text(
-                  loc.loginTitle,
+                  'Hesap Oluştur',
                   style: const TextStyle(
                     color: Colors.white,
-                    fontSize: 36,
+                    fontSize: 32,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-                const SizedBox(height: 40),
+                const SizedBox(height: 24),
                 TextField(
-                  controller: emailController,
+                  controller: _nameController,
+                  style: const TextStyle(color: Colors.white),
+                  decoration: InputDecoration(
+                    labelText: 'Ad Soyad',
+                    labelStyle: const TextStyle(color: Colors.white70),
+                    filled: true,
+                    fillColor: Colors.white.withOpacity(0.2),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide.none,
+                    ),
+                    prefixIcon: const Icon(Icons.person, color: Colors.white70),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: _emailController,
                   keyboardType: TextInputType.emailAddress,
                   style: const TextStyle(color: Colors.white),
                   decoration: InputDecoration(
-                    labelText: loc.emailLabel,
+                    labelText: 'E-posta',
                     labelStyle: const TextStyle(color: Colors.white70),
                     filled: true,
                     fillColor: Colors.white.withOpacity(0.2),
@@ -268,13 +264,13 @@ class _LoginPageState extends State<LoginPage> {
                     prefixIcon: const Icon(Icons.email, color: Colors.white70),
                   ),
                 ),
-                const SizedBox(height: 20),
+                const SizedBox(height: 16),
                 TextField(
-                  controller: passwordController,
+                  controller: _passwordController,
                   obscureText: true,
                   style: const TextStyle(color: Colors.white),
                   decoration: InputDecoration(
-                    labelText: loc.passwordLabel,
+                    labelText: 'Şifre',
                     labelStyle: const TextStyle(color: Colors.white70),
                     filled: true,
                     fillColor: Colors.white.withOpacity(0.2),
@@ -285,12 +281,57 @@ class _LoginPageState extends State<LoginPage> {
                     prefixIcon: const Icon(Icons.lock, color: Colors.white70),
                   ),
                 ),
-                const SizedBox(height: 30),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: _passwordConfirmController,
+                  obscureText: true,
+                  style: const TextStyle(color: Colors.white),
+                  decoration: InputDecoration(
+                    labelText: 'Şifre (Tekrar)',
+                    labelStyle: const TextStyle(color: Colors.white70),
+                    filled: true,
+                    fillColor: Colors.white.withOpacity(0.2),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide.none,
+                    ),
+                    prefixIcon:
+                        const Icon(Icons.lock_outline, color: Colors.white70),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: _usernameController,
+                  style: const TextStyle(color: Colors.white),
+                  decoration: InputDecoration(
+                    labelText: 'Kullanıcı Adı (opsiyonel)',
+                    labelStyle: const TextStyle(color: Colors.white70),
+                    filled: true,
+                    fillColor: Colors.white.withOpacity(0.2),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide.none,
+                    ),
+                    prefixIcon:
+                        const Icon(Icons.alternate_email, color: Colors.white70),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                const SizedBox(height: 24),
+                if (_error != null)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 12),
+                    child: Text(
+                      _error!,
+                      style: const TextStyle(color: Colors.yellowAccent),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
                 SizedBox(
                   width: double.infinity,
                   height: 50,
                   child: ElevatedButton(
-                    onPressed: _isLoading ? null : _loginWithEmail,
+                    onPressed: _isLoading ? null : _register,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.white,
                       shape: RoundedRectangleBorder(
@@ -303,9 +344,9 @@ class _LoginPageState extends State<LoginPage> {
                             width: 20,
                             child: CircularProgressIndicator(strokeWidth: 2.5),
                           )
-                        : Text(
-                            loc.loginTitle,
-                            style: const TextStyle(
+                        : const Text(
+                            'Kayıt Ol',
+                            style: TextStyle(
                               color: Color(0xFF2575FC),
                               fontSize: 18,
                               fontWeight: FontWeight.bold,
@@ -313,15 +354,7 @@ class _LoginPageState extends State<LoginPage> {
                           ),
                   ),
                 ),
-                const SizedBox(height: 20),
-                if (_error != null)
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 12),
-                    child: Text(
-                      _error!,
-                      style: const TextStyle(color: Colors.yellowAccent),
-                    ),
-                  ),
+                const SizedBox(height: 12),
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton.icon(
@@ -341,7 +374,7 @@ class _LoginPageState extends State<LoginPage> {
                             width: 24,
                           ),
                     label: Text(
-                      _isGoogleLoading ? 'Bağlanıyor...' : 'Google ile giriş',
+                      _isGoogleLoading ? 'Bağlanıyor...' : 'Google ile devam et',
                       style: const TextStyle(color: Colors.black87),
                     ),
                     style: ElevatedButton.styleFrom(
@@ -355,19 +388,12 @@ class _LoginPageState extends State<LoginPage> {
                 ),
                 const SizedBox(height: 16),
                 TextButton(
-                  onPressed: () {
-                    Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (_) => const RegisterPage(),
-                      ),
-                    );
-                  },
+                  onPressed: () => Navigator.of(context).pop(),
                   child: const Text(
-                    'E-posta ile hesap oluştur',
+                    'Zaten hesabın var mı? Giriş yap',
                     style: TextStyle(color: Colors.white70),
                   ),
                 ),
-                const SizedBox(height: 40),
               ],
             ),
           ),
