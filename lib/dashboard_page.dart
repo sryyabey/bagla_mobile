@@ -11,8 +11,10 @@ import 'package:share_plus/share_plus.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 import 'config.dart';
 import 'login_page.dart';
+import 'auth.dart';
 import 'pages/themes.dart';
 import 'pages/myLinks.dart';
 import 'pages/profile.dart';
@@ -1004,8 +1006,18 @@ class _DashboardPageState extends State<DashboardPage> {
               leading: const Icon(Icons.logout),
               title: Text(loc.exit),
               onTap: () async {
+                await clearTokens();
                 final prefs = await SharedPreferences.getInstance();
                 await prefs.remove('authToken');
+                try {
+                  final googleSignIn = GoogleSignIn(
+                    scopes: const ['email'],
+                    serverClientId:
+                        '99910465030-ng2ik9e1hpmbv9dg5530u7jr2e2emrmu.apps.googleusercontent.com',
+                  );
+                  await googleSignIn.signOut();
+                  await googleSignIn.disconnect();
+                } catch (_) {}
 
                 if (context.mounted) {
                   Navigator.pushReplacement(
