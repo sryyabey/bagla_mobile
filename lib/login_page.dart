@@ -24,6 +24,10 @@ class _LoginPageState extends State<LoginPage> {
   final FlutterSecureStorage _secureStorage = const FlutterSecureStorage();
   final GoogleSignIn _googleSignIn = GoogleSignIn(
     scopes: const ['email'],
+    // Use the Web client ID here so the backend can verify idToken audience.
+    serverClientId:
+        '99910465030-ng2ik9e1hpmbv9dg5530u7jr2e2emrmu.apps.googleusercontent.com',
+    // On iOS, the native clientId is read from GoogleService-Info.plist.
   );
   Locale _locale = const Locale('tr');
   bool _isLoading = false;
