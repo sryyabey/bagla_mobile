@@ -47,6 +47,7 @@ class _DashboardPageState extends State<DashboardPage> {
   String? _error;
   Map<String, dynamic>? _dashboardData;
   bool _hasDashboardLoaded = false;
+  bool _noInternet = false;
 
   @override
   void initState() {
@@ -71,6 +72,7 @@ class _DashboardPageState extends State<DashboardPage> {
     setState(() {
       _loading = true;
       _error = null;
+      _noInternet = false;
     });
 
     final token = await _getToken();
@@ -110,7 +112,10 @@ class _DashboardPageState extends State<DashboardPage> {
       }
     } catch (e) {
       setState(() {
-        _error = 'Dashboard alınamadı: $e';
+        _noInternet = e is SocketException ||
+            e.toString().contains('SocketException') ||
+            e.toString().contains('Failed host lookup');
+        _error = _noInternet ? 'İnternet bağlantınızı kontrol ediniz.' : 'Dashboard alınamadı: $e';
       });
     } finally {
       if (mounted) {
@@ -1068,25 +1073,50 @@ class _DashboardPageState extends State<DashboardPage> {
                 ? Center(
                     child: Padding(
                       padding: const EdgeInsets.all(16.0),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            _error!,
-                            textAlign: TextAlign.center,
-                            style: const TextStyle(
-                              color: Colors.redAccent,
-                              fontWeight: FontWeight.w600,
+                      child: _noInternet
+                          ? Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(Icons.wifi_off,
+                                    size: 64, color: Colors.redAccent),
+                                const SizedBox(height: 12),
+                                const Text(
+                                  'İnternet bağlantınızı kontrol ediniz.',
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                    color: Colors.redAccent,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                                const SizedBox(height: 12),
+                                ElevatedButton.icon(
+                                  onPressed: () =>
+                                      _fetchDashboard(force: true),
+                                  icon: const Icon(Icons.refresh),
+                                  label: const Text('Tekrar Dene'),
+                                ),
+                              ],
+                            )
+                          : Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  _error!,
+                                  textAlign: TextAlign.center,
+                                  style: const TextStyle(
+                                    color: Colors.redAccent,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                                const SizedBox(height: 12),
+                                ElevatedButton.icon(
+                                  onPressed: () =>
+                                      _fetchDashboard(force: true),
+                                  icon: const Icon(Icons.refresh),
+                                  label: const Text('Tekrar Dene'),
+                                ),
+                              ],
                             ),
-                          ),
-                          const SizedBox(height: 12),
-                          ElevatedButton.icon(
-                            onPressed: () => _fetchDashboard(force: true),
-                            icon: const Icon(Icons.refresh),
-                            label: const Text('Tekrar Dene'),
-                          ),
-                        ],
-                      ),
                     ),
                   )
                 : _buildDashboardBody(),
