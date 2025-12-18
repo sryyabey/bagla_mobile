@@ -5,10 +5,10 @@ import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:google_sign_in/google_sign_in.dart';
-import 'dashboard_page.dart';
 import 'config.dart';
 import 'auth.dart';
 import 'register_page.dart';
+import 'main_tabs_page.dart';
 
 class LoginPage extends StatefulWidget {
   final Function(Locale) onLocaleChange;
@@ -45,7 +45,7 @@ class _LoginPageState extends State<LoginPage> {
     Navigator.pushReplacement(
       context,
       MaterialPageRoute(
-        builder: (context) => DashboardPage(),
+        builder: (context) => const MainTabsPage(),
       ),
     );
   }

@@ -6,18 +6,23 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import '../dashboard_page.dart';
 import 'sms_packs.dart';
+import 'working_preferences.dart';
 import '../widgets/main_nav.dart';
 
 class AppointmentsPage extends StatefulWidget {
   final String? initialQuickDate;
   final String? initialQuickTime;
   final bool autoShowQuick;
+  final bool showBottomNav;
+  final ValueChanged<int>? onTabSelected;
 
   const AppointmentsPage({
     super.key,
     this.initialQuickDate,
     this.initialQuickTime,
     this.autoShowQuick = false,
+    this.showBottomNav = true,
+    this.onTabSelected,
   });
 
   @override
@@ -54,6 +59,7 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
   bool _quickNoReminder = false;
   bool _showQuickForm = false;
   bool _loadingSlots = false;
+  bool _slotsRequested = false;
   String? _slotsError;
   List<Map<String, dynamic>> _timeSlots = [];
   String? _selectedSlotTime;
@@ -1052,6 +1058,7 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
 
     setState(() {
       _loadingSlots = true;
+      _slotsRequested = true;
       _slotsError = null;
       _timeSlots = [];
       _selectedSlotTime = null;
@@ -1091,6 +1098,41 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
         _loadingSlots = false;
       });
     }
+  }
+
+  Widget _buildWorkingPrefCallout() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.blue.shade50,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.blue.shade100),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.info_outline, color: Colors.blue),
+          const SizedBox(width: 10),
+          const Expanded(
+            child: Text(
+              'Lütfen çalışma saatlerinizi ayarlayınız.',
+              style: TextStyle(fontWeight: FontWeight.w600),
+            ),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => const WorkingPreferencesPage(),
+                ),
+              );
+            },
+            child: const Text('Çalışma Saati Ayarla'),
+          ),
+        ],
+      ),
+    );
   }
 
   Future<void> _updateAppointment({
@@ -2858,6 +2900,11 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
                 ),
                 const SizedBox(height: 8),
                 if (_loadingSlots) const LinearProgressIndicator(minHeight: 2),
+                if (_slotsRequested &&
+                    !_loadingSlots &&
+                    _slotsError == null &&
+                    _timeSlots.isEmpty)
+                  _buildWorkingPrefCallout(),
                 if (_timeSlots.isNotEmpty)
                   Wrap(
                     spacing: 8,
@@ -2988,11 +3035,12 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
           ],
         ),
         actions: [
-          IconButton(
-            onPressed: _navigateToDashboard,
-            icon: const Icon(Icons.home_outlined),
-            tooltip: 'Anasayfa',
-          ),
+          if (widget.showBottomNav)
+            IconButton(
+              onPressed: _navigateToDashboard,
+              icon: const Icon(Icons.home_outlined),
+              tooltip: 'Anasayfa',
+            ),
           IconButton(
             onPressed: _fetchAppointments,
             icon: const Icon(Icons.refresh),
@@ -3019,7 +3067,12 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
           ),
         ),
       ),
-      bottomNavigationBar: const MainNavBar(currentIndex: 1),
+      bottomNavigationBar: widget.showBottomNav
+          ? MainNavBar(
+              currentIndex: 1,
+              onIndexSelected: widget.onTabSelected,
+            )
+          : null,
     );
   }
 }

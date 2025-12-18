@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:bagla_mobile/config.dart';
 import 'package:bagla_mobile/dashboard_page.dart';
 import 'package:bagla_mobile/pages/appointments.dart';
+import 'package:bagla_mobile/pages/working_preferences.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -115,6 +116,7 @@ class WeeklyCalendarData {
   final Map<String, List<dynamic>> appointmentsBySlot;
   final Map<String, String> statusColors;
   final Map<String, dynamic> workingPreferences;
+  final bool hasTimeSlots;
 
   WeeklyCalendarData({
     required this.weekStart,
@@ -126,9 +128,18 @@ class WeeklyCalendarData {
     required this.appointmentsBySlot,
     required this.statusColors,
     required this.workingPreferences,
+    required this.hasTimeSlots,
   });
 
   factory WeeklyCalendarData.fromJson(Map<String, dynamic> json) {
+    bool parseBool(dynamic value, {bool defaultValue = false}) {
+      if (value == null) return defaultValue;
+      if (value is bool) return value;
+      if (value is num) return value != 0;
+      final str = value.toString().trim().toLowerCase();
+      return str == 'true' || str == '1' || str == 'yes';
+    }
+
     final weekDays = (json['week_days'] as List? ?? [])
         .map((e) => WeekDayInfo.fromJson(Map<String, dynamic>.from(e)))
         .toList();
@@ -164,10 +175,24 @@ class WeeklyCalendarData {
     }
 
     final statusColorsMap = <String, String>{};
-    final rawColors = json['status_colors'] as Map? ?? {};
-    rawColors.forEach((k, v) {
-      statusColorsMap[k.toString()] = v?.toString() ?? '';
-    });
+    final rawColors = json['status_colors'];
+    if (rawColors is Map) {
+      rawColors.forEach((k, v) {
+        statusColorsMap[k.toString()] = v?.toString() ?? '';
+      });
+    }
+    final timeGrid = (json['time_grid'] as List? ?? [])
+        .map((e) => e?.toString() ?? '')
+        .toList();
+
+    final rawTimeSlot = json['time_slot'];
+    bool hasTimeSlots = parseBool(rawTimeSlot, defaultValue: true);
+
+    // Eğer API boş zaman aralığı haritası döndüyse uyarıyı göster
+    final hasAnySlot = slotsMap.values.any((slots) => slots.isNotEmpty);
+    if (!hasAnySlot || timeGrid.isEmpty) {
+      hasTimeSlots = false;
+    }
 
     return WeeklyCalendarData(
       weekStart: parseDate(json['week_start_date']?.toString() ?? ''),
@@ -175,14 +200,13 @@ class WeeklyCalendarData {
       weekRangeText: json['week_range_text']?.toString() ?? '',
       weekDays: weekDays,
       timeSlotsByDay: slotsMap,
-      timeGrid: (json['time_grid'] as List? ?? [])
-          .map((e) => e?.toString() ?? '')
-          .toList(),
+      timeGrid: timeGrid,
       appointmentsBySlot: appointmentsBySlot,
       statusColors: statusColorsMap,
-      workingPreferences: Map<String, dynamic>.from(
-        json['working_preferences'] as Map? ?? {},
-      ),
+      workingPreferences: json['working_preferences'] is Map
+          ? Map<String, dynamic>.from(json['working_preferences'])
+          : <String, dynamic>{},
+      hasTimeSlots: hasTimeSlots,
     );
   }
 }
@@ -248,7 +272,14 @@ final weeklyCalendarProvider =
 );
 
 class CalendarPage extends ConsumerStatefulWidget {
-  const CalendarPage({super.key});
+  final bool showBottomNav;
+  final ValueChanged<int>? onTabSelected;
+
+  const CalendarPage({
+    super.key,
+    this.showBottomNav = true,
+    this.onTabSelected,
+  });
 
   @override
   ConsumerState<CalendarPage> createState() => _CalendarPageState();
@@ -561,6 +592,42 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
     );
   }
 
+  Widget _buildWorkingPrefCallout() {
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.symmetric(vertical: 8),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: _primaryColor.withOpacity(0.08),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: _primaryColor.withOpacity(0.2)),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.info_outline, color: _primaryColor),
+          const SizedBox(width: 10),
+          const Expanded(
+            child: Text(
+              'Lütfen çalışma saatlerinizi ayarlayınız.',
+              style: TextStyle(fontWeight: FontWeight.w600),
+            ),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => const WorkingPreferencesPage(),
+                ),
+              );
+            },
+            child: const Text('Çalışma saati ayarla'),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     ref.listen<AsyncValue<WeeklyCalendarData>>(
@@ -588,17 +655,19 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Haftalık Takvim'),
-        actions: [
-          IconButton(
-            onPressed: () {
-              Navigator.of(context).pushReplacement(
-                MaterialPageRoute(builder: (_) => const DashboardPage()),
-              );
-            },
-            icon: const Icon(Icons.home_outlined),
-            tooltip: 'Anasayfa',
-          ),
-        ],
+        actions: widget.showBottomNav
+            ? [
+                IconButton(
+                  onPressed: () {
+                    Navigator.of(context).pushReplacement(
+                      MaterialPageRoute(builder: (_) => const DashboardPage()),
+                    );
+                  },
+                  icon: const Icon(Icons.home_outlined),
+                  tooltip: 'Anasayfa',
+                ),
+              ]
+            : null,
       ),
       body: Padding(
         padding: const EdgeInsets.all(12),
@@ -657,6 +726,13 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
             ),
             const SizedBox(height: 8),
             asyncData.when(
+              data: (d) =>
+                  d.hasTimeSlots ? const SizedBox.shrink() : _buildWorkingPrefCallout(),
+              loading: () => const SizedBox.shrink(),
+              error: (_, __) => const SizedBox.shrink(),
+            ),
+            const SizedBox(height: 4),
+            asyncData.when(
               data: (d) {
                 if (d.timeGrid.isEmpty || d.weekDays.isEmpty) {
                   return const Text('Bu hafta için veri yok.');
@@ -671,7 +747,12 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
           ],
         ),
       ),
-      bottomNavigationBar: const MainNavBar(currentIndex: 2),
+      bottomNavigationBar: widget.showBottomNav
+          ? MainNavBar(
+              currentIndex: 2,
+              onIndexSelected: widget.onTabSelected,
+            )
+          : null,
     );
   }
 }

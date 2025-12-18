@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart'; // Added import for SharedPreferences
-import 'dashboard_page.dart';
 import 'login_page.dart';
 import 'app_localizations.dart';
+import 'main_tabs_page.dart';
 
 void main() {
   runApp(const ProviderScope(child: BaglaApp()));
@@ -61,7 +61,7 @@ class _BaglaAppState extends State<BaglaApp> {
       supportedLocales: AppLocalizations.supportedLocales,
       locale: _locale ?? const Locale('tr'),
       home: _isLoggedIn
-          ? const DashboardPage()
+          ? const MainTabsPage()
           : SplashScreen(onLocaleChange: setLocale),
     );
   }

@@ -6,7 +6,7 @@ import 'package:google_sign_in/google_sign_in.dart';
 
 import 'auth.dart';
 import 'config.dart';
-import 'dashboard_page.dart';
+import 'main_tabs_page.dart';
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});
@@ -52,7 +52,7 @@ class _RegisterPageState extends State<RegisterPage> {
     if (!mounted) return;
     Navigator.pushReplacement(
       context,
-      MaterialPageRoute(builder: (context) => const DashboardPage()),
+      MaterialPageRoute(builder: (context) => const MainTabsPage()),
     );
   }
 

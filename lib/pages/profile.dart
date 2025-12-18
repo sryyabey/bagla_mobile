@@ -11,7 +11,14 @@ import '../auth.dart';
 import '../widgets/main_nav.dart';
 
 class ProfilePage extends StatefulWidget {
-  const ProfilePage({super.key});
+  final bool showBottomNav;
+  final ValueChanged<int>? onTabSelected;
+
+  const ProfilePage({
+    super.key,
+    this.showBottomNav = true,
+    this.onTabSelected,
+  });
 
   @override
   State<ProfilePage> createState() => _ProfilePageState();
@@ -746,7 +753,12 @@ class _ProfilePageState extends State<ProfilePage> {
                 ),
               ),
             ),
-      bottomNavigationBar: const MainNavBar(currentIndex: 3),
+      bottomNavigationBar: widget.showBottomNav
+          ? MainNavBar(
+              currentIndex: 3,
+              onIndexSelected: widget.onTabSelected,
+            )
+          : null,
     );
   }
 }

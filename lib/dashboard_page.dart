@@ -29,7 +29,14 @@ import 'pages/profile.dart';
 import 'widgets/main_nav.dart';
 
 class DashboardPage extends StatefulWidget {
-  const DashboardPage({super.key});
+  final bool showBottomNav;
+  final ValueChanged<int>? onTabSelected;
+
+  const DashboardPage({
+    super.key,
+    this.showBottomNav = true,
+    this.onTabSelected,
+  });
 
   @override
   State<DashboardPage> createState() => _DashboardPageState();
@@ -115,8 +122,26 @@ class _DashboardPageState extends State<DashboardPage> {
   }
 
   void _navigateToPage(Widget page, String routeName) {
-    // Çekmeceden çık ve stack şişmesini engellemek için köke dönüp tek sayfa ekle
+    // Çekmeceden çık; varsa üst seviye sayfa shell'i için tab değiştir
     Navigator.pop(context);
+    if (widget.onTabSelected != null) {
+      if (page is DashboardPage) {
+        widget.onTabSelected!(0);
+        return;
+      }
+      if (page is AppointmentsPage) {
+        widget.onTabSelected!(1);
+        return;
+      }
+      if (page is CalendarPage) {
+        widget.onTabSelected!(2);
+        return;
+      }
+      if (page is ProfilePage) {
+        widget.onTabSelected!(3);
+        return;
+      }
+    }
     Navigator.of(context).popUntil((route) => route.isFirst);
     Navigator.push(
       context,
@@ -1066,7 +1091,12 @@ class _DashboardPageState extends State<DashboardPage> {
                   )
                 : _buildDashboardBody(),
       ),
-      bottomNavigationBar: const MainNavBar(currentIndex: 0),
+      bottomNavigationBar: widget.showBottomNav
+          ? MainNavBar(
+              currentIndex: 0,
+              onIndexSelected: widget.onTabSelected,
+            )
+          : null,
     );
   }
 }

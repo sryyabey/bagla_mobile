@@ -7,10 +7,20 @@ import '../pages/profile.dart';
 
 class MainNavBar extends StatelessWidget {
   final int currentIndex;
-  const MainNavBar({super.key, required this.currentIndex});
+  final ValueChanged<int>? onIndexSelected;
+
+  const MainNavBar({
+    super.key,
+    required this.currentIndex,
+    this.onIndexSelected,
+  });
 
   void _onTap(BuildContext context, int index) {
     if (index == currentIndex) return;
+    if (onIndexSelected != null) {
+      onIndexSelected!(index);
+      return;
+    }
     Widget page;
     switch (index) {
       case 0:
