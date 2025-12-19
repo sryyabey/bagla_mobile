@@ -9,6 +9,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:bagla_mobile/config.dart';
 import '../auth.dart';
 import '../widgets/main_nav.dart';
+import 'package:bagla_mobile/l10n/app_localizations.dart';
 
 class ProfilePage extends StatefulWidget {
   final bool showBottomNav;
@@ -25,6 +26,7 @@ class ProfilePage extends StatefulWidget {
 }
 
 class _ProfilePageState extends State<ProfilePage> {
+  AppLocalizations get loc => AppLocalizations.of(context)!;
   // Form controller'ları: profil & SEO
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _usernameController = TextEditingController();
@@ -91,7 +93,7 @@ class _ProfilePageState extends State<ProfilePage> {
 
     final token = await _getToken();
     if (token == null || token.isEmpty) {
-      _showSnack('Oturum bulunamadı. Lütfen tekrar giriş yapın.');
+      _showSnack(loc.profileSessionMissing);
       setState(() {
         _loadingProfile = false;
       });
@@ -126,10 +128,10 @@ class _ProfilePageState extends State<ProfilePage> {
               : null;
         });
       } else {
-        _showSnack('Profil alınamadı (${response.statusCode}).');
+        _showSnack(loc.profileFetchFailedStatus(response.statusCode));
       }
     } catch (e) {
-      _showSnack('Profil yüklenirken hata oluştu: $e');
+      _showSnack(loc.profileFetchFailed(e.toString()));
     } finally {
       if (mounted) {
         setState(() {
@@ -154,7 +156,7 @@ class _ProfilePageState extends State<ProfilePage> {
       final sizeBytes = await picked.length();
       const maxSize = 3 * 1024 * 1024; // 3MB
       if (sizeBytes > maxSize) {
-        _showSnack('Avatar 3MB\'tan küçük olmalı.');
+        _showSnack(loc.profileAvatarTooLarge);
         return;
       }
 
@@ -163,7 +165,7 @@ class _ProfilePageState extends State<ProfilePage> {
       final isPng = ext == 'png';
       final isWebp = ext == 'webp';
       if (!isJpeg && !isPng && !isWebp) {
-        _showSnack('Yalnızca JPG, PNG veya WEBP yükleyin.');
+        _showSnack(loc.profileAvatarInvalidFormat);
         return;
       }
 
@@ -179,7 +181,7 @@ class _ProfilePageState extends State<ProfilePage> {
             isPng ? 'image/png' : isWebp ? 'image/webp' : 'image/jpeg';
       });
     } catch (e) {
-      _showSnack('Avatar hazırlanamadı: $e');
+      _showSnack(loc.profileAvatarPrepareFailed(e.toString()));
     }
   }
 
@@ -189,7 +191,7 @@ class _ProfilePageState extends State<ProfilePage> {
 
     final token = await _getToken();
     if (token == null || token.isEmpty) {
-      _showSnack('Oturum bulunamadı. Lütfen tekrar giriş yapın.');
+      _showSnack(loc.profileSessionMissing);
       return;
     }
 
@@ -233,7 +235,7 @@ class _ProfilePageState extends State<ProfilePage> {
       final response = await http.Response.fromStream(streamedResponse);
 
       if (response.statusCode == 200) {
-        _showSnack('Profil güncellendi.', success: true);
+        _showSnack(loc.profileSaved, success: true);
         _avatarBytes = null;
         setState(() {
           _profileSavedRecently = true;
@@ -247,7 +249,7 @@ class _ProfilePageState extends State<ProfilePage> {
         });
         await _loadProfile();
       } else {
-        String message = 'Güncelleme başarısız.';
+        String message = loc.profileUpdateFailedGeneric;
         try {
           final body = jsonDecode(response.body);
           message = body['message']?.toString() ?? message;
@@ -255,7 +257,7 @@ class _ProfilePageState extends State<ProfilePage> {
         _showSnack('$message (${response.statusCode})');
       }
     } catch (e) {
-      _showSnack('Profil güncellenemedi: $e');
+      _showSnack(loc.profileUpdateFailed(e.toString()));
     } finally {
       if (mounted) {
         setState(() {
@@ -270,13 +272,13 @@ class _ProfilePageState extends State<ProfilePage> {
     if (_savingPassword) return;
 
     if (_newPasswordController.text != _confirmPasswordController.text) {
-      _showSnack('Yeni parola ve doğrulama eşleşmiyor.');
+      _showSnack(loc.profilePasswordMismatch);
       return;
     }
 
     final token = await _getToken();
     if (token == null || token.isEmpty) {
-      _showSnack('Oturum bulunamadı. Lütfen tekrar giriş yapın.');
+      _showSnack(loc.profileSessionMissing);
       return;
     }
 
@@ -300,7 +302,7 @@ class _ProfilePageState extends State<ProfilePage> {
       );
 
       if (response.statusCode == 200) {
-        _showSnack('Parola güncellendi.', success: true);
+        _showSnack(loc.profilePasswordUpdated, success: true);
         _currentPasswordController.clear();
         _newPasswordController.clear();
         _confirmPasswordController.clear();
@@ -315,7 +317,7 @@ class _ProfilePageState extends State<ProfilePage> {
           }
         });
       } else {
-        String message = 'Parola güncellenemedi.';
+        String message = loc.profilePasswordUpdateFailed;
         try {
           final decoded = jsonDecode(response.body);
           message = decoded['message']?.toString() ?? message;
@@ -323,7 +325,7 @@ class _ProfilePageState extends State<ProfilePage> {
         _showSnack('$message (${response.statusCode})');
       }
     } catch (e) {
-      _showSnack('Parola güncellenemedi: $e');
+      _showSnack(loc.profilePasswordUpdateFailedWithError(e.toString()));
     } finally {
       if (mounted) {
         setState(() {
@@ -431,7 +433,7 @@ class _ProfilePageState extends State<ProfilePage> {
         OutlinedButton.icon(
           onPressed: _pickAvatar,
           icon: const Icon(Icons.photo_camera),
-          label: const Text('Avatar Yükle'),
+          label: Text(loc.profileAvatarUpload),
         ),
       ],
     );
@@ -450,14 +452,14 @@ class _ProfilePageState extends State<ProfilePage> {
               children: [
                 Text(
                   _nameController.text.isEmpty
-                      ? 'İsim girilmemiş'
+                      ? loc.profileNameMissing
                       : _nameController.text,
                   style: const TextStyle(
                       fontSize: 18, fontWeight: FontWeight.w700),
                 ),
                 Text(
                   _usernameController.text.isEmpty
-                      ? '@kullanici'
+                      ? loc.profileUsernamePlaceholder
                       : '@${_usernameController.text}',
                   style: const TextStyle(color: Colors.black54),
                 ),
@@ -480,7 +482,7 @@ class _ProfilePageState extends State<ProfilePage> {
                       if (_packInfo?['remaining_sms'] != null)
                         _infoChip(
                           Icons.sms,
-                          'SMS: ${_packInfo!['remaining_sms']}',
+                          loc.profileSmsCount(_packInfo!['remaining_sms']),
                         ),
                     ],
                   ),
@@ -526,29 +528,29 @@ class _ProfilePageState extends State<ProfilePage> {
 
   Widget _buildProfileForm() {
     return _sectionCard(
-      title: 'Profil Bilgileri',
+      title: loc.profileInfoTitle,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           TextField(
             controller: _nameController,
-            decoration: _inputDecoration('İsim'),
+            decoration: _inputDecoration(loc.profileFieldName),
           ),
           const SizedBox(height: 12),
           TextField(
             controller: _usernameController,
-            decoration: _inputDecoration('Kullanıcı adı'),
+            decoration: _inputDecoration(loc.profileFieldUsername),
           ),
           const SizedBox(height: 12),
           TextField(
             controller: _descriptionController,
             maxLines: 3,
-            decoration: _inputDecoration('Açıklama'),
+            decoration: _inputDecoration(loc.profileFieldDescription),
           ),
           const SizedBox(height: 12),
           TextField(
             controller: _footerController,
-            decoration: _inputDecoration('Footer'),
+            decoration: _inputDecoration(loc.profileFieldFooter),
           ),
         ],
       ),
@@ -557,25 +559,25 @@ class _ProfilePageState extends State<ProfilePage> {
 
   Widget _buildSeoForm() {
     return _sectionCard(
-      title: 'SEO',
-      subtitle: 'Başlık, açıklama ve anahtar kelimeler',
+      title: loc.profileSeoSectionTitle,
+      subtitle: loc.profileSeoSubtitle,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           TextField(
             controller: _seoTitleController,
-            decoration: _inputDecoration('Başlık'),
+            decoration: _inputDecoration(loc.profileSeoTitleLabel),
           ),
           const SizedBox(height: 12),
           TextField(
             controller: _seoDescriptionController,
             maxLines: 2,
-            decoration: _inputDecoration('Açıklama'),
+            decoration: _inputDecoration(loc.profileSeoDescriptionLabel),
           ),
           const SizedBox(height: 12),
           TextField(
             controller: _seoKeywordsController,
-            decoration: _inputDecoration('Anahtar kelimeler'),
+            decoration: _inputDecoration(loc.profileSeoKeywordsLabel),
           ),
           const SizedBox(height: 16),
           Row(
@@ -599,7 +601,7 @@ class _ProfilePageState extends State<ProfilePage> {
                           child: CircularProgressIndicator(strokeWidth: 2),
                         )
                       : const Icon(Icons.save),
-                  label: Text(_savingProfile ? 'Kaydediliyor...' : 'Kaydet'),
+                  label: Text(_savingProfile ? loc.profileSaving : loc.save),
                 ),
               ),
               const SizedBox(width: 10),
@@ -625,27 +627,27 @@ class _ProfilePageState extends State<ProfilePage> {
 
   Widget _buildPasswordForm() {
     return _sectionCard(
-      title: 'Parola Güncelle',
-      subtitle: _passwordSavedRecently ? 'Başarıyla güncellendi' : null,
+      title: loc.profilePasswordSectionTitle,
+      subtitle: _passwordSavedRecently ? loc.profilePasswordUpdatedSubtitle : null,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           TextField(
             controller: _currentPasswordController,
             obscureText: true,
-            decoration: _inputDecoration('Mevcut parola'),
+            decoration: _inputDecoration(loc.profileCurrentPassword),
           ),
           const SizedBox(height: 12),
           TextField(
             controller: _newPasswordController,
             obscureText: true,
-            decoration: _inputDecoration('Yeni parola'),
+            decoration: _inputDecoration(loc.profileNewPassword),
           ),
           const SizedBox(height: 12),
           TextField(
             controller: _confirmPasswordController,
             obscureText: true,
-            decoration: _inputDecoration('Yeni parola tekrar'),
+            decoration: _inputDecoration(loc.profileConfirmPassword),
           ),
           const SizedBox(height: 16),
           Row(
@@ -669,8 +671,9 @@ class _ProfilePageState extends State<ProfilePage> {
                           child: CircularProgressIndicator(strokeWidth: 2),
                         )
                       : const Icon(Icons.lock_reset),
-                  label: Text(
-                      _savingPassword ? 'Gönderiliyor...' : 'Parolayı Güncelle'),
+                  label: Text(_savingPassword
+                      ? loc.profileChangePasswordSaving
+                      : loc.profileChangePasswordButton),
                 ),
               ),
               const SizedBox(width: 10),
@@ -702,9 +705,9 @@ class _ProfilePageState extends State<ProfilePage> {
         elevation: 0,
         backgroundColor: Colors.white,
         foregroundColor: Colors.black87,
-        title: const Text(
-          'Profil',
-          style: TextStyle(fontWeight: FontWeight.w700),
+        title: Text(
+          loc.profileTitle,
+          style: const TextStyle(fontWeight: FontWeight.w700),
         ),
       ),
       body: _loadingProfile
@@ -727,13 +730,13 @@ class _ProfilePageState extends State<ProfilePage> {
                           border: Border.all(color: Colors.green.shade200),
                         ),
                         child: Row(
-                          children: const [
-                            Icon(Icons.check_circle, color: Colors.green),
-                            SizedBox(width: 8),
+                          children: [
+                            const Icon(Icons.check_circle, color: Colors.green),
+                            const SizedBox(width: 8),
                             Expanded(
                               child: Text(
-                                'Profil kaydedildi.',
-                                style: TextStyle(
+                                loc.profileSaved,
+                                style: const TextStyle(
                                   color: Colors.green,
                                   fontWeight: FontWeight.w600,
                                 ),

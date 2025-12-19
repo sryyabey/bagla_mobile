@@ -919,6 +919,228 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Time'**
   String get calendarTimeLabel;
+
+  /// No description provided for @profileTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Profile'**
+  String get profileTitle;
+
+  /// No description provided for @profileSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Profile saved.'**
+  String get profileSaved;
+
+  /// No description provided for @profileSaveError.
+  ///
+  /// In en, this message translates to:
+  /// **'Profile could not be saved.'**
+  String get profileSaveError;
+
+  /// No description provided for @profileSessionMissing.
+  ///
+  /// In en, this message translates to:
+  /// **'Session not found. Please log in again.'**
+  String get profileSessionMissing;
+
+  /// No description provided for @profileFetchFailedStatus.
+  ///
+  /// In en, this message translates to:
+  /// **'Profile could not be loaded (HTTP {status}).'**
+  String profileFetchFailedStatus(Object status);
+
+  /// No description provided for @profileFetchFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Profile could not be loaded: {error}'**
+  String profileFetchFailed(Object error);
+
+  /// No description provided for @profileAvatarTooLarge.
+  ///
+  /// In en, this message translates to:
+  /// **'Avatar must be smaller than 3MB.'**
+  String get profileAvatarTooLarge;
+
+  /// No description provided for @profileAvatarInvalidFormat.
+  ///
+  /// In en, this message translates to:
+  /// **'Please upload JPG, PNG, or WEBP.'**
+  String get profileAvatarInvalidFormat;
+
+  /// No description provided for @profileAvatarPrepareFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Avatar could not be prepared: {error}'**
+  String profileAvatarPrepareFailed(Object error);
+
+  /// No description provided for @profileUpdateFailedGeneric.
+  ///
+  /// In en, this message translates to:
+  /// **'Update failed.'**
+  String get profileUpdateFailedGeneric;
+
+  /// No description provided for @profileUpdateFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Profile could not be updated: {error}'**
+  String profileUpdateFailed(Object error);
+
+  /// No description provided for @profilePasswordMismatch.
+  ///
+  /// In en, this message translates to:
+  /// **'New password and confirmation do not match.'**
+  String get profilePasswordMismatch;
+
+  /// No description provided for @profilePasswordUpdated.
+  ///
+  /// In en, this message translates to:
+  /// **'Password updated.'**
+  String get profilePasswordUpdated;
+
+  /// No description provided for @profilePasswordUpdateFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Password could not be updated.'**
+  String get profilePasswordUpdateFailed;
+
+  /// No description provided for @profilePasswordUpdateFailedWithError.
+  ///
+  /// In en, this message translates to:
+  /// **'Password could not be updated: {error}'**
+  String profilePasswordUpdateFailedWithError(Object error);
+
+  /// No description provided for @profileAvatarUpload.
+  ///
+  /// In en, this message translates to:
+  /// **'Upload Avatar'**
+  String get profileAvatarUpload;
+
+  /// No description provided for @profileNameMissing.
+  ///
+  /// In en, this message translates to:
+  /// **'Name not set'**
+  String get profileNameMissing;
+
+  /// No description provided for @profileUsernamePlaceholder.
+  ///
+  /// In en, this message translates to:
+  /// **'@user'**
+  String get profileUsernamePlaceholder;
+
+  /// No description provided for @profileInfoTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Profile Information'**
+  String get profileInfoTitle;
+
+  /// No description provided for @profileFieldName.
+  ///
+  /// In en, this message translates to:
+  /// **'Name'**
+  String get profileFieldName;
+
+  /// No description provided for @profileFieldUsername.
+  ///
+  /// In en, this message translates to:
+  /// **'Username'**
+  String get profileFieldUsername;
+
+  /// No description provided for @profileFieldDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Description'**
+  String get profileFieldDescription;
+
+  /// No description provided for @profileFieldFooter.
+  ///
+  /// In en, this message translates to:
+  /// **'Footer'**
+  String get profileFieldFooter;
+
+  /// No description provided for @profileSeoSectionTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'SEO'**
+  String get profileSeoSectionTitle;
+
+  /// No description provided for @profileSeoSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Title, description and keywords'**
+  String get profileSeoSubtitle;
+
+  /// No description provided for @profileSeoTitleLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Title'**
+  String get profileSeoTitleLabel;
+
+  /// No description provided for @profileSeoDescriptionLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Description'**
+  String get profileSeoDescriptionLabel;
+
+  /// No description provided for @profileSeoKeywordsLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Keywords'**
+  String get profileSeoKeywordsLabel;
+
+  /// No description provided for @profileSaving.
+  ///
+  /// In en, this message translates to:
+  /// **'Saving...'**
+  String get profileSaving;
+
+  /// No description provided for @profilePasswordSectionTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Update Password'**
+  String get profilePasswordSectionTitle;
+
+  /// No description provided for @profilePasswordUpdatedSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Updated successfully'**
+  String get profilePasswordUpdatedSubtitle;
+
+  /// No description provided for @profileCurrentPassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Current password'**
+  String get profileCurrentPassword;
+
+  /// No description provided for @profileNewPassword.
+  ///
+  /// In en, this message translates to:
+  /// **'New password'**
+  String get profileNewPassword;
+
+  /// No description provided for @profileConfirmPassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm new password'**
+  String get profileConfirmPassword;
+
+  /// No description provided for @profileChangePasswordSaving.
+  ///
+  /// In en, this message translates to:
+  /// **'Sending...'**
+  String get profileChangePasswordSaving;
+
+  /// No description provided for @profileChangePasswordButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Update Password'**
+  String get profileChangePasswordButton;
+
+  /// No description provided for @profileSmsCount.
+  ///
+  /// In en, this message translates to:
+  /// **'SMS: {count}'**
+  String profileSmsCount(Object count);
 }
 
 class _AppLocalizationsDelegate

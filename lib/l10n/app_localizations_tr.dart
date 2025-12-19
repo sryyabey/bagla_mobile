@@ -451,4 +451,129 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get calendarTimeLabel => 'Saat';
+
+  @override
+  String get profileTitle => 'Profil';
+
+  @override
+  String get profileSaved => 'Profil kaydedildi.';
+
+  @override
+  String get profileSaveError => 'Profil kaydedilemedi.';
+
+  @override
+  String get profileSessionMissing =>
+      'Oturum bulunamadı. Lütfen tekrar giriş yapın.';
+
+  @override
+  String profileFetchFailedStatus(Object status) {
+    return 'Profil alınamadı (HTTP $status).';
+  }
+
+  @override
+  String profileFetchFailed(Object error) {
+    return 'Profil alınamadı: $error';
+  }
+
+  @override
+  String get profileAvatarTooLarge => 'Avatar 3MB\'tan küçük olmalı.';
+
+  @override
+  String get profileAvatarInvalidFormat =>
+      'Lütfen JPG, PNG veya WEBP yükleyin.';
+
+  @override
+  String profileAvatarPrepareFailed(Object error) {
+    return 'Avatar hazırlanamadı: $error';
+  }
+
+  @override
+  String get profileUpdateFailedGeneric => 'Güncelleme başarısız.';
+
+  @override
+  String profileUpdateFailed(Object error) {
+    return 'Profil güncellenemedi: $error';
+  }
+
+  @override
+  String get profilePasswordMismatch => 'Yeni parola ve doğrulama eşleşmiyor.';
+
+  @override
+  String get profilePasswordUpdated => 'Parola güncellendi.';
+
+  @override
+  String get profilePasswordUpdateFailed => 'Parola güncellenemedi.';
+
+  @override
+  String profilePasswordUpdateFailedWithError(Object error) {
+    return 'Parola güncellenemedi: $error';
+  }
+
+  @override
+  String get profileAvatarUpload => 'Avatar Yükle';
+
+  @override
+  String get profileNameMissing => 'İsim girilmemiş';
+
+  @override
+  String get profileUsernamePlaceholder => '@kullanici';
+
+  @override
+  String get profileInfoTitle => 'Profil Bilgileri';
+
+  @override
+  String get profileFieldName => 'İsim';
+
+  @override
+  String get profileFieldUsername => 'Kullanıcı adı';
+
+  @override
+  String get profileFieldDescription => 'Açıklama';
+
+  @override
+  String get profileFieldFooter => 'Alt bilgi';
+
+  @override
+  String get profileSeoSectionTitle => 'SEO';
+
+  @override
+  String get profileSeoSubtitle => 'Başlık, açıklama ve anahtar kelimeler';
+
+  @override
+  String get profileSeoTitleLabel => 'Başlık';
+
+  @override
+  String get profileSeoDescriptionLabel => 'Açıklama';
+
+  @override
+  String get profileSeoKeywordsLabel => 'Anahtar kelimeler';
+
+  @override
+  String get profileSaving => 'Kaydediliyor...';
+
+  @override
+  String get profilePasswordSectionTitle => 'Parola Güncelle';
+
+  @override
+  String get profilePasswordUpdatedSubtitle => 'Başarıyla güncellendi';
+
+  @override
+  String get profileCurrentPassword => 'Mevcut parola';
+
+  @override
+  String get profileNewPassword => 'Yeni parola';
+
+  @override
+  String get profileConfirmPassword => 'Yeni parola tekrar';
+
+  @override
+  String get profileChangePasswordSaving => 'Gönderiliyor...';
+
+  @override
+  String get profileChangePasswordButton => 'Parolayı Güncelle';
+
+  @override
+  String profileSmsCount(Object count) {
+    return 'SMS: $count';
+  }
 }

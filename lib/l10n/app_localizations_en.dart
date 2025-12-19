@@ -449,4 +449,128 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get calendarTimeLabel => 'Time';
+
+  @override
+  String get profileTitle => 'Profile';
+
+  @override
+  String get profileSaved => 'Profile saved.';
+
+  @override
+  String get profileSaveError => 'Profile could not be saved.';
+
+  @override
+  String get profileSessionMissing => 'Session not found. Please log in again.';
+
+  @override
+  String profileFetchFailedStatus(Object status) {
+    return 'Profile could not be loaded (HTTP $status).';
+  }
+
+  @override
+  String profileFetchFailed(Object error) {
+    return 'Profile could not be loaded: $error';
+  }
+
+  @override
+  String get profileAvatarTooLarge => 'Avatar must be smaller than 3MB.';
+
+  @override
+  String get profileAvatarInvalidFormat => 'Please upload JPG, PNG, or WEBP.';
+
+  @override
+  String profileAvatarPrepareFailed(Object error) {
+    return 'Avatar could not be prepared: $error';
+  }
+
+  @override
+  String get profileUpdateFailedGeneric => 'Update failed.';
+
+  @override
+  String profileUpdateFailed(Object error) {
+    return 'Profile could not be updated: $error';
+  }
+
+  @override
+  String get profilePasswordMismatch =>
+      'New password and confirmation do not match.';
+
+  @override
+  String get profilePasswordUpdated => 'Password updated.';
+
+  @override
+  String get profilePasswordUpdateFailed => 'Password could not be updated.';
+
+  @override
+  String profilePasswordUpdateFailedWithError(Object error) {
+    return 'Password could not be updated: $error';
+  }
+
+  @override
+  String get profileAvatarUpload => 'Upload Avatar';
+
+  @override
+  String get profileNameMissing => 'Name not set';
+
+  @override
+  String get profileUsernamePlaceholder => '@user';
+
+  @override
+  String get profileInfoTitle => 'Profile Information';
+
+  @override
+  String get profileFieldName => 'Name';
+
+  @override
+  String get profileFieldUsername => 'Username';
+
+  @override
+  String get profileFieldDescription => 'Description';
+
+  @override
+  String get profileFieldFooter => 'Footer';
+
+  @override
+  String get profileSeoSectionTitle => 'SEO';
+
+  @override
+  String get profileSeoSubtitle => 'Title, description and keywords';
+
+  @override
+  String get profileSeoTitleLabel => 'Title';
+
+  @override
+  String get profileSeoDescriptionLabel => 'Description';
+
+  @override
+  String get profileSeoKeywordsLabel => 'Keywords';
+
+  @override
+  String get profileSaving => 'Saving...';
+
+  @override
+  String get profilePasswordSectionTitle => 'Update Password';
+
+  @override
+  String get profilePasswordUpdatedSubtitle => 'Updated successfully';
+
+  @override
+  String get profileCurrentPassword => 'Current password';
+
+  @override
+  String get profileNewPassword => 'New password';
+
+  @override
+  String get profileConfirmPassword => 'Confirm new password';
+
+  @override
+  String get profileChangePasswordSaving => 'Sending...';
+
+  @override
+  String get profileChangePasswordButton => 'Update Password';
+
+  @override
+  String profileSmsCount(Object count) {
+    return 'SMS: $count';
+  }
 }
