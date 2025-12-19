@@ -755,4 +755,368 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get themesFallbackName => 'Tema';
+
+  @override
+  String get smsPacksTitle => 'SMS Paketleri';
+
+  @override
+  String get smsPacksSessionMissing =>
+      'Oturum bulunamadı. Lütfen tekrar giriş yapın.';
+
+  @override
+  String get smsPacksSessionExpired =>
+      'Oturum süresi doldu, lütfen tekrar giriş yapın.';
+
+  @override
+  String smsPacksLoadFailedStatus(Object status) {
+    return 'Paketler alınamadı (HTTP $status).';
+  }
+
+  @override
+  String smsPacksLoadFailed(Object error) {
+    return 'Paketler alınamadı: $error';
+  }
+
+  @override
+  String smsPacksCountriesFailedStatus(Object status) {
+    return 'Ülkeler alınamadı (HTTP $status).';
+  }
+
+  @override
+  String smsPacksCountriesFailed(Object error) {
+    return 'Ülkeler alınamadı: $error';
+  }
+
+  @override
+  String smsPacksCitiesFailedStatus(Object status) {
+    return 'Şehirler alınamadı (HTTP $status).';
+  }
+
+  @override
+  String smsPacksCitiesFailed(Object error) {
+    return 'Şehirler alınamadı: $error';
+  }
+
+  @override
+  String smsPacksDistrictsFailedStatus(Object status) {
+    return 'İlçeler alınamadı (HTTP $status).';
+  }
+
+  @override
+  String smsPacksDistrictsFailed(Object error) {
+    return 'İlçeler alınamadı: $error';
+  }
+
+  @override
+  String smsPacksAddressesFailedStatus(Object status) {
+    return 'Adresler alınamadı (HTTP $status).';
+  }
+
+  @override
+  String smsPacksAddressesFailed(Object error) {
+    return 'Adresler alınamadı: $error';
+  }
+
+  @override
+  String get smsPacksContentMissing => 'İçerik bulunamadı.';
+
+  @override
+  String get smsPacksContract => 'Sözleşme';
+
+  @override
+  String get smsPacksClose => 'Kapat';
+
+  @override
+  String get smsPacksFeatures => 'Özellikler';
+
+  @override
+  String get smsPacksPlanMonthly => 'Aylık';
+
+  @override
+  String get smsPacksPlanAnnual => 'Yıllık';
+
+  @override
+  String get smsPacksSelectPack => 'Lütfen bir paket seçin.';
+
+  @override
+  String get smsPacksSelectCountry => 'Lütfen ülke seçin.';
+
+  @override
+  String get smsPacksSelectCity => 'Lütfen şehir seçin.';
+
+  @override
+  String get smsPacksSelectDistrict => 'Lütfen ilçe seçin.';
+
+  @override
+  String get smsPacksNameRequired => 'Ad alanı boş bırakılamaz.';
+
+  @override
+  String get smsPacksLastNameRequired => 'Soyad alanı boş bırakılamaz.';
+
+  @override
+  String get smsPacksPhoneRequired => 'Telefon alanı boş bırakılamaz.';
+
+  @override
+  String get smsPacksAddressRequired => 'Adres alanı boş bırakılamaz.';
+
+  @override
+  String get smsPacksAgreementRequired =>
+      'Satın alma sözleşmesini onaylamalısınız.';
+
+  @override
+  String get smsPacksPurchaseSuccess =>
+      'Siparişiniz oluşturuldu, ödeme ekranına yönlendiriliyorsunuz.';
+
+  @override
+  String smsPacksPurchaseFailedStatus(Object status) {
+    return 'Satın alma başarısız (HTTP $status).';
+  }
+
+  @override
+  String smsPacksPurchaseError(Object error) {
+    return 'Satın alma sırasında hata oluştu: $error';
+  }
+
+  @override
+  String get smsPacksPaymentStartInvalid =>
+      'Ödeme sayfası açılamadı, geçersiz yanıt.';
+
+  @override
+  String smsPacksPaymentStartFailedStatus(Object status) {
+    return 'Ödeme başlatılamadı (HTTP $status).';
+  }
+
+  @override
+  String smsPacksPaymentStartError(Object error) {
+    return 'Ödeme başlatılırken hata oluştu: $error';
+  }
+
+  @override
+  String get smsPacksPaymentPending => 'Ödeme onaylanıyor, lütfen bekleyin.';
+
+  @override
+  String get smsPacksPaymentVerify403 => 'Ödeme doğrulanamadı (403).';
+
+  @override
+  String get smsPacksPaymentVerify404 => 'İşlem bulunamadı (404).';
+
+  @override
+  String smsPacksPaymentVerifyFailedStatus(Object status) {
+    return 'Ödeme doğrulanamadı (HTTP $status).';
+  }
+
+  @override
+  String smsPacksPaymentVerifyError(Object error) {
+    return 'Ödeme doğrulanamadı: $error';
+  }
+
+  @override
+  String get smsPacksPaymentSuccessTitle => 'Ödeme Başarılı';
+
+  @override
+  String get smsPacksPaymentPendingTitle => 'Ödeme Bekliyor';
+
+  @override
+  String get smsPacksPaymentFailedTitle => 'Ödeme Başarısız';
+
+  @override
+  String get smsPacksPaymentLabel => 'Ödeme';
+
+  @override
+  String get smsPacksPackLabel => 'Paket';
+
+  @override
+  String get smsPacksTypeLabel => 'Tip';
+
+  @override
+  String get smsPacksAmountLabel => 'Tutar';
+
+  @override
+  String get smsPacksInvoiceLabel => 'Fatura No';
+
+  @override
+  String get smsPacksPaymentVerifying => 'Ödeme doğrulanıyor...';
+
+  @override
+  String get smsPacksGoHome => 'Ana sayfaya dön';
+
+  @override
+  String get smsPacksRetry => 'Tekrar Dene';
+
+  @override
+  String get smsPacksStepPack => 'Paket';
+
+  @override
+  String get smsPacksStepInfo => 'Bilgiler';
+
+  @override
+  String get smsPacksStepSummary => 'Özet';
+
+  @override
+  String get smsPacksStepPayment => 'Ödeme';
+
+  @override
+  String get smsPacksNext => 'Devam';
+
+  @override
+  String get smsPacksBack => 'Geri';
+
+  @override
+  String get smsPacksBuy => 'Satın Al';
+
+  @override
+  String get smsPacksDetails => 'Özellikleri Gör';
+
+  @override
+  String get smsPacksSelectButton => 'Paketi Seç';
+
+  @override
+  String get smsPacksSelected => 'Seçildi';
+
+  @override
+  String get smsPacksRefresh => 'Yenile';
+
+  @override
+  String get smsPacksSavedAddresses => 'Kayıtlı Adresler';
+
+  @override
+  String get smsPacksNewAddress => 'Yeni Adres';
+
+  @override
+  String get smsPacksAddressTitle => 'Adres Başlığı';
+
+  @override
+  String get smsPacksFirstName => 'Ad';
+
+  @override
+  String get smsPacksLastName => 'Soyad';
+
+  @override
+  String get smsPacksCompany => 'Şirket Adı (opsiyonel)';
+
+  @override
+  String get smsPacksEmail => 'E-posta';
+
+  @override
+  String get smsPacksCountry => 'Ülke';
+
+  @override
+  String get smsPacksCity => 'Şehir';
+
+  @override
+  String get smsPacksDistrict => 'İlçe';
+
+  @override
+  String get smsPacksPhone => 'Telefon';
+
+  @override
+  String get smsPacksIdentity => 'Kimlik No (opsiyonel)';
+
+  @override
+  String get smsPacksTaxNumber => 'Vergi No (opsiyonel)';
+
+  @override
+  String get smsPacksTaxOffice => 'Vergi Dairesi';
+
+  @override
+  String get smsPacksAddress => 'Adres';
+
+  @override
+  String get smsPacksPaymentMethod => 'Ödeme Yöntemi';
+
+  @override
+  String get smsPacksNote => 'Not';
+
+  @override
+  String get smsPacksNoteHint => 'Faturaya eklenecek not veya özel talepler';
+
+  @override
+  String get smsPacksAgreementTitle =>
+      'Satın alma sözleşmesini okudum, onaylıyorum.';
+
+  @override
+  String get smsPacksSummaryTitle => 'Satın Alma Özeti';
+
+  @override
+  String get smsPacksSummaryPurchaseInfo => 'Satın Alma Bilgileri';
+
+  @override
+  String get smsPacksSmsLabel => 'SMS';
+
+  @override
+  String get smsPacksCompanyLabel => 'Şirket';
+
+  @override
+  String get smsPacksBuyerLabel => 'Ad Soyad';
+
+  @override
+  String get smsPacksEmailLabel => 'E-posta';
+
+  @override
+  String get smsPacksCountryLabel => 'Ülke';
+
+  @override
+  String get smsPacksCityLabel => 'Şehir';
+
+  @override
+  String get smsPacksDistrictLabel => 'İlçe';
+
+  @override
+  String get smsPacksPhoneLabel => 'Telefon';
+
+  @override
+  String get smsPacksTaxNumberLabel => 'Vergi No';
+
+  @override
+  String get smsPacksTaxOfficeLabel => 'Vergi Dairesi';
+
+  @override
+  String get smsPacksIdentityLabel => 'Kimlik No';
+
+  @override
+  String get smsPacksAddressLabel => 'Adres';
+
+  @override
+  String get smsPacksNoteLabel => 'Not';
+
+  @override
+  String get smsPacksSubmitLabel => 'Gönder';
+
+  @override
+  String get smsPacksNoPacksForType => 'Bu tipte paket bulunamadı.';
+
+  @override
+  String smsPacksPriceWithTax(Object price) {
+    return 'KDV\'li ₺$price';
+  }
+
+  @override
+  String smsPacksSmsCount(Object count) {
+    return '$count SMS';
+  }
+
+  @override
+  String get smsPacksSelectPackForSummary =>
+      'Özet için önce paket seçmelisiniz.';
+
+  @override
+  String get smsPacksRefreshing => 'Yenileniyor...';
+
+  @override
+  String get smsPacksSavedAddressesLabel => 'Kayıtlı Adresler';
+
+  @override
+  String get smsPacksSelectAddress => 'Seç';
+
+  @override
+  String get smsPacksPlanLabel => 'Plan';
+
+  @override
+  String get smsPacksPriceLabel => 'Fiyat';
+
+  @override
+  String get smsPacksVatIncluded => 'KDV Dahil';
+
+  @override
+  String get smsPacksSubmitting => 'Gönderiliyor...';
 }

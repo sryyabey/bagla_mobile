@@ -11,6 +11,7 @@ import '../config.dart';
 import '../login_page.dart';
 import '../auth.dart';
 import '../dashboard_page.dart';
+import 'package:bagla_mobile/l10n/app_localizations.dart';
 
 class SmsPacksPage extends StatefulWidget {
   const SmsPacksPage({super.key});
@@ -20,6 +21,7 @@ class SmsPacksPage extends StatefulWidget {
 }
 
 class _SmsPacksPageState extends State<SmsPacksPage> {
+  AppLocalizations get loc => AppLocalizations.of(context)!;
   bool _loading = true;
   bool _purchasing = false;
   String? _error;
@@ -104,8 +106,8 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
           _loading = false;
           _loadingCountries = false;
           _loadingAddresses = false;
-          _error = 'Oturum bulunamadı. Lütfen tekrar giriş yapın.';
-          _countriesError = 'Oturum bulunamadı.';
+          _error = loc.smsPacksSessionMissing;
+          _countriesError = loc.smsPacksSessionMissing;
         });
       }
       return;
@@ -168,8 +170,8 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
     await prefs.remove('authToken');
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Oturum süresi doldu, lütfen tekrar giriş yapın.'),
+      SnackBar(
+        content: Text(loc.smsPacksSessionExpired),
         backgroundColor: Colors.red,
       ),
     );
@@ -262,12 +264,12 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
         });
       } else {
         setState(() {
-          _error = 'Paketler alınamadı (HTTP ${response.statusCode}).';
+          _error = loc.smsPacksLoadFailedStatus(response.statusCode);
         });
       }
     } catch (e) {
       setState(() {
-        _error = 'Paketler alınırken hata oluştu: $e';
+        _error = loc.smsPacksLoadFailed(e.toString());
       });
     } finally {
       if (mounted) {
@@ -327,12 +329,13 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
         }
       } else {
         setState(() {
-          _countriesError = 'Ülkeler alınamadı (HTTP ${response.statusCode}).';
+          _countriesError =
+              loc.smsPacksCountriesFailedStatus(response.statusCode);
         });
       }
     } catch (e) {
       setState(() {
-        _countriesError = 'Ülkeler alınırken hata oluştu: $e';
+        _countriesError = loc.smsPacksCountriesFailed(e.toString());
       });
     } finally {
       if (mounted) {
@@ -418,12 +421,12 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
         }
       } else {
         setState(() {
-          _citiesError = 'Şehirler alınamadı (HTTP ${response.statusCode}).';
+          _citiesError = loc.smsPacksCitiesFailedStatus(response.statusCode);
         });
       }
     } catch (e) {
       setState(() {
-        _citiesError = 'Şehirler alınırken hata oluştu: $e';
+        _citiesError = loc.smsPacksCitiesFailed(e.toString());
       });
     } finally {
       if (mounted) {
@@ -492,12 +495,12 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
       } else {
         setState(() {
           _districtsError =
-              'İlçeler alınamadı (HTTP ${response.statusCode}).';
+              loc.smsPacksDistrictsFailedStatus(response.statusCode);
         });
       }
     } catch (e) {
       setState(() {
-        _districtsError = 'İlçeler alınırken hata oluştu: $e';
+        _districtsError = loc.smsPacksDistrictsFailed(e.toString());
       });
     } finally {
       if (mounted) {
@@ -542,12 +545,13 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
         });
       } else {
         setState(() {
-          _addressesError = 'Adresler alınamadı (HTTP ${response.statusCode}).';
+          _addressesError =
+              loc.smsPacksAddressesFailedStatus(response.statusCode);
         });
       }
     } catch (e) {
       setState(() {
-        _addressesError = 'Adresler alınırken hata oluştu: $e';
+        _addressesError = loc.smsPacksAddressesFailed(e.toString());
       });
     } finally {
       if (mounted) {
@@ -579,7 +583,7 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
   }
 
   void _showContract() {
-    final htmlText = _contractDescriptionHtml ?? 'İçerik bulunamadı.';
+    final htmlText = _contractDescriptionHtml ?? loc.smsPacksContentMissing;
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -688,9 +692,9 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
                   ),
                 ),
                 const SizedBox(height: 12),
-                const Text(
-                  'Özellikler',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+                Text(
+                  loc.smsPacksFeatures,
+                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
                 ),
                 const SizedBox(height: 10),
                 ...details.map((d) {
@@ -732,8 +736,8 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
 
   String _localizePlanLabel(String? raw) {
     final value = raw?.toLowerCase().trim();
-    if (value == 'monthly') return 'Aylık';
-    if (value == 'annual' || value == 'yearly') return 'Yıllık';
+    if (value == 'monthly') return loc.smsPacksPlanMonthly;
+    if (value == 'annual' || value == 'yearly') return loc.smsPacksPlanAnnual;
     return raw?.toUpperCase() ?? '';
   }
 
@@ -847,40 +851,40 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
   bool _validateStep(int step) {
     if (step == 0) {
       if (_selectedPack == null) {
-        _showSnack('Lütfen bir paket seçin.');
+        _showSnack(loc.smsPacksSelectPack);
         return false;
       }
     } else if (step == 1) {
       if (_selectedCountryId == null) {
-        _showSnack('Lütfen ülke seçin.');
+        _showSnack(loc.smsPacksSelectCountry);
         return false;
       }
       if (_selectedCityId == null) {
-        _showSnack('Lütfen şehir seçin.');
+        _showSnack(loc.smsPacksSelectCity);
         return false;
       }
       if (_selectedDistrictId == null) {
-        _showSnack('Lütfen ilçe seçin.');
+        _showSnack(loc.smsPacksSelectDistrict);
         return false;
       }
       if (_nameController.text.trim().isEmpty) {
-        _showSnack('Ad alanı boş bırakılamaz.');
+        _showSnack(loc.smsPacksNameRequired);
         return false;
       }
       if (_lastNameController.text.trim().isEmpty) {
-        _showSnack('Soyad alanı boş bırakılamaz.');
+        _showSnack(loc.smsPacksLastNameRequired);
         return false;
       }
       if (_phoneController.text.trim().isEmpty) {
-        _showSnack('Telefon alanı boş bırakılamaz.');
+        _showSnack(loc.smsPacksPhoneRequired);
         return false;
       }
       if (_addressController.text.trim().isEmpty) {
-        _showSnack('Adres alanı boş bırakılamaz.');
+        _showSnack(loc.smsPacksAddressRequired);
         return false;
       }
       if (!_agreementChecked) {
-        _showSnack('Satın alma sözleşmesini onaylamalısınız.');
+        _showSnack(loc.smsPacksAgreementRequired);
         return false;
       }
     }
@@ -889,12 +893,12 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
 
   Future<void> _purchasePack() async {
     if (_selectedPack == null) {
-      _showSnack('Lütfen bir paket seçin.');
+      _showSnack(loc.smsPacksSelectPack);
       return;
     }
     final token = await _getToken();
     if (token == null || token.isEmpty) {
-      _showSnack('Oturum bulunamadı. Lütfen tekrar giriş yapın.');
+      _showSnack(loc.smsPacksSessionMissing);
       return;
     }
 
@@ -946,8 +950,7 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
         await _handleUnauthorized();
         return;
       } else if (response.statusCode == 200 || response.statusCode == 201) {
-        String message =
-            'Siparişiniz başarıyla oluşturuldu, ödeme ekranına yönlendiriliyorsunuz.';
+        String message = loc.smsPacksPurchaseSuccess;
         String? transactionId;
         try {
           final decoded = jsonDecode(response.body);
@@ -971,7 +974,7 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
           await _startPaytrPayment(token, transactionId!);
         }
       } else {
-        String message = 'Satın alma başarısız (HTTP ${response.statusCode}).';
+        String message = loc.smsPacksPurchaseFailedStatus(response.statusCode);
         try {
           final decoded = jsonDecode(response.body);
           message = decoded['message']?.toString() ?? message;
@@ -979,7 +982,7 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
         _showSnack(message);
       }
     } catch (e) {
-      _showSnack('Satın alma sırasında hata oluştu: $e');
+      _showSnack(loc.smsPacksPurchaseError(e.toString()));
     } finally {
       if (mounted) {
         setState(() {
@@ -1020,13 +1023,13 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
           _startPaymentPolling(transactionId);
           await _openPaymentWebView(iframeUrl);
         } else {
-          _showSnack('Ödeme sayfası açılamadı, geçersiz yanıt.');
+          _showSnack(loc.smsPacksPaymentStartInvalid);
         }
       } else {
-        _showSnack('Ödeme başlatılamadı (HTTP ${res.statusCode}).');
+        _showSnack(loc.smsPacksPaymentStartFailedStatus(res.statusCode));
       }
     } catch (e) {
-      _showSnack('Ödeme başlatılırken hata oluştu: $e');
+      _showSnack(loc.smsPacksPaymentStartError(e.toString()));
     }
   }
 
@@ -1099,7 +1102,7 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
         } else if (normalized == 'pending') {
           if (!_pendingNotified) {
             _pendingNotified = true;
-            _showSnack('Ödeme onaylanıyor, lütfen bekleyin.', success: true);
+            _showSnack(loc.smsPacksPaymentPending, success: true);
           }
         } else if (normalized == 'failed' || normalized == 'canceled') {
           _paymentTimer?.cancel();
@@ -1110,12 +1113,12 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
         }
       } else if (res.statusCode == 403) {
         _paymentTimer?.cancel();
-        _showSnack('Ödeme doğrulanamadı (403).');
+        _showSnack(loc.smsPacksPaymentVerify403);
       } else if (res.statusCode == 404) {
         _paymentTimer?.cancel();
-        _showSnack('İşlem bulunamadı (404).');
+        _showSnack(loc.smsPacksPaymentVerify404);
       } else {
-        _showSnack('Ödeme doğrulanamadı (HTTP ${res.statusCode}).');
+        _showSnack(loc.smsPacksPaymentVerifyFailedStatus(res.statusCode));
       }
     } catch (_) {}
   }
@@ -1128,7 +1131,7 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
     final isSuccess = normalized == 'paid';
     final isPending = normalized == 'pending';
 
-    final packName = order['pack_name']?.toString() ?? 'Paket';
+    final packName = order['pack_name']?.toString() ?? loc.smsPacksPackLabel;
     final packType = order['pack_type']?.toString() ?? '';
     final total =
         order['total_price']?.toString() ?? order['price']?.toString() ?? '-';
@@ -1141,23 +1144,24 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
         return AlertDialog(
           title: Text(
             isSuccess
-                ? 'Ödeme Başarılı'
+                ? loc.smsPacksPaymentSuccessTitle
                 : isPending
-                    ? 'Ödeme Bekliyor'
-                    : 'Ödeme Başarısız',
+                    ? loc.smsPacksPaymentPendingTitle
+                    : loc.smsPacksPaymentFailedTitle,
           ),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('Paket: $packName'),
-              if (packType.isNotEmpty) Text('Tip: $packType'),
-              Text('Tutar: ₺$total'),
-              if (invoice.isNotEmpty) Text('Fatura No: $invoice'),
+              Text('${loc.smsPacksPackLabel}: $packName'),
+              if (packType.isNotEmpty) Text('${loc.smsPacksTypeLabel}: $packType'),
+              Text('${loc.smsPacksAmountLabel}: ₺$total'),
+              if (invoice.isNotEmpty)
+                Text('${loc.smsPacksInvoiceLabel}: $invoice'),
               if (isPending)
-                const Padding(
-                  padding: EdgeInsets.only(top: 8.0),
-                  child: Text('Ödeme doğrulanıyor...'),
+                Padding(
+                  padding: const EdgeInsets.only(top: 8.0),
+                  child: Text(loc.smsPacksPaymentVerifying),
                 ),
             ],
           ),
@@ -1171,12 +1175,12 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
                     MaterialPageRoute(builder: (_) => const DashboardPage()),
                   );
                 },
-                child: const Text('Ana sayfaya dön'),
+                child: Text(loc.smsPacksGoHome),
               )
             else
               TextButton(
                 onPressed: () => Navigator.of(context).pop(),
-                child: const Text('Kapat'),
+                child: Text(loc.smsPacksClose),
               ),
           ],
         );
@@ -1207,9 +1211,9 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
         : <Map<String, dynamic>>[];
 
     if (packs.isEmpty) {
-      return const Padding(
-        padding: EdgeInsets.symmetric(vertical: 20),
-        child: Text('Bu tipte paket bulunamadı.'),
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 20),
+        child: Text(loc.smsPacksNoPacksForType),
       );
     }
 
@@ -1303,7 +1307,7 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
                               ),
                               const SizedBox(height: 6),
                               Text(
-                                '$smsCount SMS',
+                                loc.smsPacksSmsCount(smsCount),
                                 style: const TextStyle(
                                   color: Colors.black87,
                                   fontWeight: FontWeight.w500,
@@ -1328,7 +1332,8 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
                                       const SizedBox(height: 2),
                                       Text(
                                         priceWithTax.isNotEmpty
-                                            ? "KDV'li ₺$priceWithTax"
+                                            ? loc.smsPacksPriceWithTax(
+                                                priceWithTax)
                                             : '',
                                         style: const TextStyle(
                                           color: Colors.black54,
@@ -1359,7 +1364,7 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
                               _showDetailsModal(details, packColor),
                           icon: Icon(Icons.list_alt, color: packColor),
                           label: Text(
-                            'Özellikleri Gör',
+                            loc.smsPacksDetails,
                             style: TextStyle(color: packColor),
                           ),
                           style: TextButton.styleFrom(
@@ -1386,7 +1391,9 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
                             borderRadius: BorderRadius.circular(10),
                           ),
                         ),
-                        child: Text(selected ? 'Seçildi' : 'Paketi Seç'),
+                        child: Text(selected
+                            ? loc.smsPacksSelected
+                            : loc.smsPacksSelectButton),
                       ),
                     ),
                   ],
@@ -1439,15 +1446,15 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
               ),
               TextButton(
                 onPressed: _loadAddresses,
-                child: const Text('Yenile'),
+                child: Text(loc.smsPacksRefresh),
               ),
             ],
           )
         else if (_addresses.isNotEmpty)
           DropdownButtonFormField<int>(
-            decoration: const InputDecoration(
-              labelText: 'Kayıtlı Adresler',
-              border: OutlineInputBorder(),
+            decoration: InputDecoration(
+              labelText: loc.smsPacksSavedAddressesLabel,
+              border: const OutlineInputBorder(),
             ),
             value: _selectedAddressId,
             isExpanded: true,
@@ -1474,7 +1481,7 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
                     child: Text(
                       a['title']?.toString().isNotEmpty == true
                           ? a['title'].toString()
-                          : (a['name']?.toString() ?? 'Adres'),
+                          : (a['name']?.toString() ?? loc.smsPacksAddress),
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
@@ -1482,51 +1489,51 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
                 .toList()
               ..insert(
                 0,
-                const DropdownMenuItem<int>(
+                DropdownMenuItem<int>(
                   value: -1,
-                  child: Text('Yeni Adres'),
+                  child: Text(loc.smsPacksNewAddress),
                 ),
               ),
           ),
         if (_addresses.isNotEmpty) const SizedBox(height: 12),
         TextField(
           controller: _addressTitleController,
-          decoration: const InputDecoration(
-            labelText: 'Adres Başlığı',
-            border: OutlineInputBorder(),
+          decoration: InputDecoration(
+            labelText: loc.smsPacksAddressTitle,
+            border: const OutlineInputBorder(),
           ),
         ),
         const SizedBox(height: 12),
         TextField(
           controller: _nameController,
-          decoration: const InputDecoration(
-            labelText: 'Ad',
-            border: OutlineInputBorder(),
+          decoration: InputDecoration(
+            labelText: loc.smsPacksFirstName,
+            border: const OutlineInputBorder(),
           ),
         ),
         const SizedBox(height: 12),
         TextField(
           controller: _lastNameController,
-          decoration: const InputDecoration(
-            labelText: 'Soyad',
-            border: OutlineInputBorder(),
+          decoration: InputDecoration(
+            labelText: loc.smsPacksLastName,
+            border: const OutlineInputBorder(),
           ),
         ),
         const SizedBox(height: 12),
         TextField(
           controller: _companyController,
-          decoration: const InputDecoration(
-            labelText: 'Şirket Adı (opsiyonel)',
-            border: OutlineInputBorder(),
+          decoration: InputDecoration(
+            labelText: loc.smsPacksCompany,
+            border: const OutlineInputBorder(),
           ),
         ),
         const SizedBox(height: 12),
         TextField(
           controller: _emailController,
           keyboardType: TextInputType.emailAddress,
-          decoration: const InputDecoration(
-            labelText: 'E-posta',
-            border: OutlineInputBorder(),
+          decoration: InputDecoration(
+            labelText: loc.smsPacksEmail,
+            border: const OutlineInputBorder(),
           ),
         ),
         const SizedBox(height: 12),
@@ -1543,15 +1550,15 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
               ),
               TextButton(
                 onPressed: _loadCountries,
-                child: const Text('Yenile'),
+                child: Text(loc.smsPacksRefresh),
               ),
             ],
           )
         else
           DropdownButtonFormField<int>(
-            decoration: const InputDecoration(
-              labelText: 'Ülke',
-              border: OutlineInputBorder(),
+            decoration: InputDecoration(
+              labelText: loc.smsPacksCountry,
+              border: const OutlineInputBorder(),
             ),
             value: _selectedCountryId,
             onChanged: (val) {
@@ -1587,15 +1594,15 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
                   preselectCityId: _selectedCityId,
                   preselectDistrictId: _selectedDistrictId,
                 ),
-                child: const Text('Yenile'),
+                child: Text(loc.smsPacksRefresh),
               ),
             ],
           )
         else
           DropdownButtonFormField<int>(
-            decoration: const InputDecoration(
-              labelText: 'Şehir',
-              border: OutlineInputBorder(),
+            decoration: InputDecoration(
+              labelText: loc.smsPacksCity,
+              border: const OutlineInputBorder(),
             ),
             value: _selectedCityId,
             onChanged: _cities.isEmpty ? null : _onCityChanged,
@@ -1622,15 +1629,15 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
               ),
               TextButton(
                 onPressed: () => _loadDistricts(cityId: _selectedCityId),
-                child: const Text('Yenile'),
+                child: Text(loc.smsPacksRefresh),
               ),
             ],
           )
         else
           DropdownButtonFormField<int>(
-            decoration: const InputDecoration(
-              labelText: 'İlçe',
-              border: OutlineInputBorder(),
+            decoration: InputDecoration(
+              labelText: loc.smsPacksDistrict,
+              border: const OutlineInputBorder(),
             ),
             value: _selectedDistrictId,
             onChanged: _districts.isEmpty
@@ -1654,7 +1661,7 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
           controller: _phoneController,
           keyboardType: TextInputType.phone,
           decoration: InputDecoration(
-            labelText: 'Telefon',
+            labelText: loc.smsPacksPhone,
             border: const OutlineInputBorder(),
             prefixText:
                 _selectedPhoneCode != null && _selectedPhoneCode!.isNotEmpty
@@ -1666,26 +1673,26 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
         TextField(
           controller: _identityController,
           keyboardType: TextInputType.number,
-          decoration: const InputDecoration(
-            labelText: 'Kimlik No (opsiyonel)',
-            border: OutlineInputBorder(),
+          decoration: InputDecoration(
+            labelText: loc.smsPacksIdentity,
+            border: const OutlineInputBorder(),
           ),
         ),
         const SizedBox(height: 12),
         TextField(
           controller: _taxNumberController,
           keyboardType: TextInputType.number,
-          decoration: const InputDecoration(
-            labelText: 'Vergi No (opsiyonel)',
-            border: OutlineInputBorder(),
+          decoration: InputDecoration(
+            labelText: loc.smsPacksTaxNumber,
+            border: const OutlineInputBorder(),
           ),
         ),
         const SizedBox(height: 12),
         TextField(
           controller: _taxOfficeController,
-          decoration: const InputDecoration(
-            labelText: 'Vergi Dairesi',
-            border: OutlineInputBorder(),
+          decoration: InputDecoration(
+            labelText: loc.smsPacksTaxOffice,
+            border: const OutlineInputBorder(),
           ),
         ),
         const SizedBox(height: 12),
@@ -1693,9 +1700,9 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
           controller: _addressController,
           minLines: 2,
           maxLines: 4,
-          decoration: const InputDecoration(
-            labelText: 'Adres',
-            border: OutlineInputBorder(),
+          decoration: InputDecoration(
+            labelText: loc.smsPacksAddress,
+            border: const OutlineInputBorder(),
           ),
         ),
         const SizedBox(height: 12),
@@ -1724,10 +1731,10 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
         TextField(
           controller: _noteController,
           maxLines: 3,
-          decoration: const InputDecoration(
-            labelText: 'Not',
-            border: OutlineInputBorder(),
-            hintText: 'Faturaya eklenecek not veya özel talepler',
+          decoration: InputDecoration(
+            labelText: loc.smsPacksNote,
+            border: const OutlineInputBorder(),
+            hintText: loc.smsPacksNoteHint,
           ),
         ),
         CheckboxListTile(
@@ -1738,7 +1745,7 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
               _agreementChecked = val ?? false;
             });
           },
-          title: const Text('Satın alma sözleşmesini okudum, onaylıyorum.'),
+          title: Text(loc.smsPacksAgreementTitle),
           controlAffinity: ListTileControlAffinity.leading,
         ),
         Align(
@@ -1747,7 +1754,9 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
             onPressed: _showContract,
             icon: const Icon(Icons.description_outlined),
             label: Text(
-              _contractTitle?.isNotEmpty == true ? _contractTitle! : 'Sözleşme',
+              _contractTitle?.isNotEmpty == true
+                  ? _contractTitle!
+                  : loc.smsPacksContract,
             ),
           ),
         ),
@@ -1758,7 +1767,7 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
   Widget _buildSummary() {
     final pack = _selectedPack;
     if (pack == null) {
-      return const Text('Özet için önce paket seçmelisiniz.');
+      return Text(loc.smsPacksSelectPackForSummary);
     }
 
     final smsCount = pack['sms_count']?.toString() ?? '-';
@@ -1788,7 +1797,7 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      'Tip: ${_localizePlanLabel(pack['type']?.toString() ?? _selectedType)}',
+                      '${loc.smsPacksPlanLabel}: ${_localizePlanLabel(pack['type']?.toString() ?? _selectedType)}',
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -1815,7 +1824,7 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
                     const SizedBox(height: 6),
                     if (priceWithTax.isNotEmpty)
                       Text(
-                        'KDV Dahil ₺$priceWithTax',
+                        '${loc.smsPacksVatIncluded} ₺$priceWithTax',
                         style: const TextStyle(
                             fontWeight: FontWeight.w700, fontSize: 14),
                         overflow: TextOverflow.ellipsis,
@@ -1828,42 +1837,46 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
           ),
         ),
         const SizedBox(height: 8),
-        Text('SMS: $smsCount'),
+        Text('${loc.smsPacksSmsLabel}: $smsCount'),
         if (_companyController.text.trim().isNotEmpty)
-          Text('Şirket: ${_companyController.text.trim()}'),
+          Text('${loc.smsPacksCompanyLabel}: ${_companyController.text.trim()}'),
         const SizedBox(height: 8),
         const SizedBox(height: 16),
-        const Text(
-          'Satın Alma Bilgileri',
-          style: TextStyle(fontWeight: FontWeight.w700),
+        Text(
+          loc.smsPacksSummaryPurchaseInfo,
+          style: const TextStyle(fontWeight: FontWeight.w700),
         ),
         const SizedBox(height: 8),
-        Text('Ad Soyad: ${_nameController.text} ${_lastNameController.text}'),
-        Text('E-posta: ${_emailController.text}'),
+        Text(
+            '${loc.smsPacksBuyerLabel}: ${_nameController.text} ${_lastNameController.text}'),
+        Text('${loc.smsPacksEmailLabel}: ${_emailController.text}'),
         if (_selectedCountryId != null)
-          Text('Ülke: ${_getNameById(_countries, _selectedCountryId)}'),
+          Text(
+              '${loc.smsPacksCountryLabel}: ${_getNameById(_countries, _selectedCountryId)}'),
         if (_selectedCityId != null)
-          Text('İl: ${_getNameById(_cities, _selectedCityId)}'),
+          Text(
+              '${loc.smsPacksCityLabel}: ${_getNameById(_cities, _selectedCityId)}'),
         if (_selectedDistrictId != null)
-          Text('İlçe: ${_getNameById(_districts, _selectedDistrictId)}'),
+          Text(
+              '${loc.smsPacksDistrictLabel}: ${_getNameById(_districts, _selectedDistrictId)}'),
         if (_phoneController.text.isNotEmpty)
           Text(
-            'Telefon: ${_selectedPhoneCode != null && _selectedPhoneCode!.isNotEmpty ? '+$_selectedPhoneCode ' : ''}${_phoneController.text}',
+            '${loc.smsPacksPhoneLabel}: ${_selectedPhoneCode != null && _selectedPhoneCode!.isNotEmpty ? '+$_selectedPhoneCode ' : ''}${_phoneController.text}',
           ),
-        Text('Ödeme: $paymentLabel'),
+        Text('${loc.smsPacksPaymentLabel}: $paymentLabel'),
         if (_taxNumberController.text.isNotEmpty)
-          Text('Vergi No: ${_taxNumberController.text}'),
+          Text('${loc.smsPacksTaxNumberLabel}: ${_taxNumberController.text}'),
         if (_taxOfficeController.text.isNotEmpty)
-          Text('Vergi Dairesi: ${_taxOfficeController.text}'),
+          Text('${loc.smsPacksTaxOfficeLabel}: ${_taxOfficeController.text}'),
         if (_identityController.text.isNotEmpty)
-          Text('Kimlik No: ${_identityController.text}'),
+          Text('${loc.smsPacksIdentityLabel}: ${_identityController.text}'),
         if (_addressController.text.isNotEmpty) ...[
           const SizedBox(height: 8),
-          Text('Adres: ${_addressController.text}'),
+          Text('${loc.smsPacksAddressLabel}: ${_addressController.text}'),
         ],
         if (_noteController.text.trim().isNotEmpty) ...[
           const SizedBox(height: 8),
-          Text('Not: ${_noteController.text.trim()}'),
+          Text('${loc.smsPacksNoteLabel}: ${_noteController.text.trim()}'),
         ],
         const SizedBox(height: 20),
         SizedBox(
@@ -1877,7 +1890,8 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
                     child: CircularProgressIndicator(strokeWidth: 2),
                   )
                 : const Icon(Icons.check_circle),
-            label: Text(_purchasing ? 'Gönderiliyor...' : 'Satın Al'),
+            label: Text(
+                _purchasing ? loc.smsPacksSubmitting : loc.smsPacksSubmitLabel),
           ),
         ),
       ],
@@ -1887,7 +1901,7 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
   List<Step> _buildSteps() {
     return [
       Step(
-        title: const Text('Paket'),
+        title: Text(loc.smsPacksStepPack),
         isActive: _currentStep >= 0,
         state: _currentStep > 0
             ? StepState.complete
@@ -1902,7 +1916,7 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
         ),
       ),
       Step(
-        title: const Text('Bilgiler'),
+        title: Text(loc.smsPacksStepInfo),
         isActive: _currentStep >= 1,
         state: _currentStep > 1
             ? StepState.complete
@@ -1910,7 +1924,7 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
         content: _buildBuyerForm(),
       ),
       Step(
-        title: const Text('Özet'),
+        title: Text(loc.smsPacksStepSummary),
         isActive: _currentStep >= 2,
         state: _currentStep == 2 ? StepState.editing : StepState.indexed,
         content: _buildSummary(),
@@ -1949,7 +1963,7 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('SMS Paketleri'),
+        title: Text(loc.smsPacksTitle),
         leading: IconButton(
           icon: const Icon(Icons.home_outlined),
           onPressed: () {
@@ -1982,7 +1996,7 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
                           ElevatedButton.icon(
                             onPressed: _loadPacks,
                             icon: const Icon(Icons.refresh),
-                            label: const Text('Tekrar Dene'),
+                            label: Text(loc.smsPacksRetry),
                           ),
                         ],
                       ),
@@ -2018,13 +2032,15 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
                                         : details.onStepContinue,
                                     child: Text(
                                       _purchasing
-                                          ? '...'
-                                          : (isLast ? 'Satın Al' : 'Devam'),
+                                          ? loc.smsPacksSubmitting
+                                          : (isLast
+                                              ? loc.smsPacksBuy
+                                              : loc.smsPacksNext),
                                     ),
                                   ),
                                   OutlinedButton(
                                     onPressed: details.onStepCancel,
-                                    child: const Text('Geri'),
+                                    child: Text(loc.smsPacksBack),
                                   ),
                                 ],
                               ),
@@ -2055,7 +2071,7 @@ class _PaymentPage extends StatelessWidget {
       },
       child: Scaffold(
         appBar: AppBar(
-          title: const Text('Ödeme'),
+          title: Text(AppLocalizations.of(context)!.smsPacksPaymentLabel),
           actions: [
             IconButton(
               icon: const Icon(Icons.close),

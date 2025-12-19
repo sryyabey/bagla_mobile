@@ -752,4 +752,368 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get themesFallbackName => 'Theme';
+
+  @override
+  String get smsPacksTitle => 'SMS Packs';
+
+  @override
+  String get smsPacksSessionMissing =>
+      'Session not found. Please log in again.';
+
+  @override
+  String get smsPacksSessionExpired => 'Session expired, please log in again.';
+
+  @override
+  String smsPacksLoadFailedStatus(Object status) {
+    return 'Packages could not be fetched (HTTP $status).';
+  }
+
+  @override
+  String smsPacksLoadFailed(Object error) {
+    return 'Packages could not be fetched: $error';
+  }
+
+  @override
+  String smsPacksCountriesFailedStatus(Object status) {
+    return 'Countries could not be fetched (HTTP $status).';
+  }
+
+  @override
+  String smsPacksCountriesFailed(Object error) {
+    return 'Countries could not be fetched: $error';
+  }
+
+  @override
+  String smsPacksCitiesFailedStatus(Object status) {
+    return 'Cities could not be fetched (HTTP $status).';
+  }
+
+  @override
+  String smsPacksCitiesFailed(Object error) {
+    return 'Cities could not be fetched: $error';
+  }
+
+  @override
+  String smsPacksDistrictsFailedStatus(Object status) {
+    return 'Districts could not be fetched (HTTP $status).';
+  }
+
+  @override
+  String smsPacksDistrictsFailed(Object error) {
+    return 'Districts could not be fetched: $error';
+  }
+
+  @override
+  String smsPacksAddressesFailedStatus(Object status) {
+    return 'Addresses could not be fetched (HTTP $status).';
+  }
+
+  @override
+  String smsPacksAddressesFailed(Object error) {
+    return 'Addresses could not be fetched: $error';
+  }
+
+  @override
+  String get smsPacksContentMissing => 'Content not found.';
+
+  @override
+  String get smsPacksContract => 'Agreement';
+
+  @override
+  String get smsPacksClose => 'Close';
+
+  @override
+  String get smsPacksFeatures => 'Features';
+
+  @override
+  String get smsPacksPlanMonthly => 'Monthly';
+
+  @override
+  String get smsPacksPlanAnnual => 'Annual';
+
+  @override
+  String get smsPacksSelectPack => 'Please select a pack.';
+
+  @override
+  String get smsPacksSelectCountry => 'Please select a country.';
+
+  @override
+  String get smsPacksSelectCity => 'Please select a city.';
+
+  @override
+  String get smsPacksSelectDistrict => 'Please select a district.';
+
+  @override
+  String get smsPacksNameRequired => 'Name cannot be empty.';
+
+  @override
+  String get smsPacksLastNameRequired => 'Last name cannot be empty.';
+
+  @override
+  String get smsPacksPhoneRequired => 'Phone cannot be empty.';
+
+  @override
+  String get smsPacksAddressRequired => 'Address cannot be empty.';
+
+  @override
+  String get smsPacksAgreementRequired =>
+      'You must accept the purchase agreement.';
+
+  @override
+  String get smsPacksPurchaseSuccess =>
+      'Order created, redirecting to payment.';
+
+  @override
+  String smsPacksPurchaseFailedStatus(Object status) {
+    return 'Purchase failed (HTTP $status).';
+  }
+
+  @override
+  String smsPacksPurchaseError(Object error) {
+    return 'An error occurred during purchase: $error';
+  }
+
+  @override
+  String get smsPacksPaymentStartInvalid =>
+      'Payment page could not be opened, invalid response.';
+
+  @override
+  String smsPacksPaymentStartFailedStatus(Object status) {
+    return 'Payment could not be started (HTTP $status).';
+  }
+
+  @override
+  String smsPacksPaymentStartError(Object error) {
+    return 'An error occurred while starting payment: $error';
+  }
+
+  @override
+  String get smsPacksPaymentPending =>
+      'Payment is being confirmed, please wait.';
+
+  @override
+  String get smsPacksPaymentVerify403 => 'Payment could not be verified (403).';
+
+  @override
+  String get smsPacksPaymentVerify404 => 'Transaction not found (404).';
+
+  @override
+  String smsPacksPaymentVerifyFailedStatus(Object status) {
+    return 'Payment could not be verified (HTTP $status).';
+  }
+
+  @override
+  String smsPacksPaymentVerifyError(Object error) {
+    return 'Payment could not be verified: $error';
+  }
+
+  @override
+  String get smsPacksPaymentSuccessTitle => 'Payment Successful';
+
+  @override
+  String get smsPacksPaymentPendingTitle => 'Payment Pending';
+
+  @override
+  String get smsPacksPaymentFailedTitle => 'Payment Failed';
+
+  @override
+  String get smsPacksPaymentLabel => 'Payment';
+
+  @override
+  String get smsPacksPackLabel => 'Pack';
+
+  @override
+  String get smsPacksTypeLabel => 'Type';
+
+  @override
+  String get smsPacksAmountLabel => 'Amount';
+
+  @override
+  String get smsPacksInvoiceLabel => 'Invoice No';
+
+  @override
+  String get smsPacksPaymentVerifying => 'Verifying payment...';
+
+  @override
+  String get smsPacksGoHome => 'Go to home';
+
+  @override
+  String get smsPacksRetry => 'Retry';
+
+  @override
+  String get smsPacksStepPack => 'Pack';
+
+  @override
+  String get smsPacksStepInfo => 'Info';
+
+  @override
+  String get smsPacksStepSummary => 'Summary';
+
+  @override
+  String get smsPacksStepPayment => 'Payment';
+
+  @override
+  String get smsPacksNext => 'Next';
+
+  @override
+  String get smsPacksBack => 'Back';
+
+  @override
+  String get smsPacksBuy => 'Buy';
+
+  @override
+  String get smsPacksDetails => 'See Features';
+
+  @override
+  String get smsPacksSelectButton => 'Select Pack';
+
+  @override
+  String get smsPacksSelected => 'Selected';
+
+  @override
+  String get smsPacksRefresh => 'Refresh';
+
+  @override
+  String get smsPacksSavedAddresses => 'Saved Addresses';
+
+  @override
+  String get smsPacksNewAddress => 'New Address';
+
+  @override
+  String get smsPacksAddressTitle => 'Address Title';
+
+  @override
+  String get smsPacksFirstName => 'First Name';
+
+  @override
+  String get smsPacksLastName => 'Last Name';
+
+  @override
+  String get smsPacksCompany => 'Company (optional)';
+
+  @override
+  String get smsPacksEmail => 'Email';
+
+  @override
+  String get smsPacksCountry => 'Country';
+
+  @override
+  String get smsPacksCity => 'City';
+
+  @override
+  String get smsPacksDistrict => 'District';
+
+  @override
+  String get smsPacksPhone => 'Phone';
+
+  @override
+  String get smsPacksIdentity => 'Identity No (optional)';
+
+  @override
+  String get smsPacksTaxNumber => 'Tax No (optional)';
+
+  @override
+  String get smsPacksTaxOffice => 'Tax Office';
+
+  @override
+  String get smsPacksAddress => 'Address';
+
+  @override
+  String get smsPacksPaymentMethod => 'Payment Method';
+
+  @override
+  String get smsPacksNote => 'Note';
+
+  @override
+  String get smsPacksNoteHint => 'Note or special requests to add to invoice';
+
+  @override
+  String get smsPacksAgreementTitle =>
+      'I have read and accept the purchase agreement.';
+
+  @override
+  String get smsPacksSummaryTitle => 'Purchase Summary';
+
+  @override
+  String get smsPacksSummaryPurchaseInfo => 'Purchase Information';
+
+  @override
+  String get smsPacksSmsLabel => 'SMS';
+
+  @override
+  String get smsPacksCompanyLabel => 'Company';
+
+  @override
+  String get smsPacksBuyerLabel => 'Name Surname';
+
+  @override
+  String get smsPacksEmailLabel => 'Email';
+
+  @override
+  String get smsPacksCountryLabel => 'Country';
+
+  @override
+  String get smsPacksCityLabel => 'City';
+
+  @override
+  String get smsPacksDistrictLabel => 'District';
+
+  @override
+  String get smsPacksPhoneLabel => 'Phone';
+
+  @override
+  String get smsPacksTaxNumberLabel => 'Tax No';
+
+  @override
+  String get smsPacksTaxOfficeLabel => 'Tax Office';
+
+  @override
+  String get smsPacksIdentityLabel => 'Identity No';
+
+  @override
+  String get smsPacksAddressLabel => 'Address';
+
+  @override
+  String get smsPacksNoteLabel => 'Note';
+
+  @override
+  String get smsPacksSubmitLabel => 'Submit';
+
+  @override
+  String get smsPacksNoPacksForType => 'No packs available for this type.';
+
+  @override
+  String smsPacksPriceWithTax(Object price) {
+    return 'Incl. VAT ₺$price';
+  }
+
+  @override
+  String smsPacksSmsCount(Object count) {
+    return '$count SMS';
+  }
+
+  @override
+  String get smsPacksSelectPackForSummary =>
+      'Please select a pack to see the summary.';
+
+  @override
+  String get smsPacksRefreshing => 'Refreshing...';
+
+  @override
+  String get smsPacksSavedAddressesLabel => 'Saved Addresses';
+
+  @override
+  String get smsPacksSelectAddress => 'Select';
+
+  @override
+  String get smsPacksPlanLabel => 'Plan';
+
+  @override
+  String get smsPacksPriceLabel => 'Price';
+
+  @override
+  String get smsPacksVatIncluded => 'VAT Included';
+
+  @override
+  String get smsPacksSubmitting => 'Submitting...';
 }

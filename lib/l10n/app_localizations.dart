@@ -1471,6 +1471,648 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Theme'**
   String get themesFallbackName;
+
+  /// No description provided for @smsPacksTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'SMS Packs'**
+  String get smsPacksTitle;
+
+  /// No description provided for @smsPacksSessionMissing.
+  ///
+  /// In en, this message translates to:
+  /// **'Session not found. Please log in again.'**
+  String get smsPacksSessionMissing;
+
+  /// No description provided for @smsPacksSessionExpired.
+  ///
+  /// In en, this message translates to:
+  /// **'Session expired, please log in again.'**
+  String get smsPacksSessionExpired;
+
+  /// No description provided for @smsPacksLoadFailedStatus.
+  ///
+  /// In en, this message translates to:
+  /// **'Packages could not be fetched (HTTP {status}).'**
+  String smsPacksLoadFailedStatus(Object status);
+
+  /// No description provided for @smsPacksLoadFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Packages could not be fetched: {error}'**
+  String smsPacksLoadFailed(Object error);
+
+  /// No description provided for @smsPacksCountriesFailedStatus.
+  ///
+  /// In en, this message translates to:
+  /// **'Countries could not be fetched (HTTP {status}).'**
+  String smsPacksCountriesFailedStatus(Object status);
+
+  /// No description provided for @smsPacksCountriesFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Countries could not be fetched: {error}'**
+  String smsPacksCountriesFailed(Object error);
+
+  /// No description provided for @smsPacksCitiesFailedStatus.
+  ///
+  /// In en, this message translates to:
+  /// **'Cities could not be fetched (HTTP {status}).'**
+  String smsPacksCitiesFailedStatus(Object status);
+
+  /// No description provided for @smsPacksCitiesFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Cities could not be fetched: {error}'**
+  String smsPacksCitiesFailed(Object error);
+
+  /// No description provided for @smsPacksDistrictsFailedStatus.
+  ///
+  /// In en, this message translates to:
+  /// **'Districts could not be fetched (HTTP {status}).'**
+  String smsPacksDistrictsFailedStatus(Object status);
+
+  /// No description provided for @smsPacksDistrictsFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Districts could not be fetched: {error}'**
+  String smsPacksDistrictsFailed(Object error);
+
+  /// No description provided for @smsPacksAddressesFailedStatus.
+  ///
+  /// In en, this message translates to:
+  /// **'Addresses could not be fetched (HTTP {status}).'**
+  String smsPacksAddressesFailedStatus(Object status);
+
+  /// No description provided for @smsPacksAddressesFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Addresses could not be fetched: {error}'**
+  String smsPacksAddressesFailed(Object error);
+
+  /// No description provided for @smsPacksContentMissing.
+  ///
+  /// In en, this message translates to:
+  /// **'Content not found.'**
+  String get smsPacksContentMissing;
+
+  /// No description provided for @smsPacksContract.
+  ///
+  /// In en, this message translates to:
+  /// **'Agreement'**
+  String get smsPacksContract;
+
+  /// No description provided for @smsPacksClose.
+  ///
+  /// In en, this message translates to:
+  /// **'Close'**
+  String get smsPacksClose;
+
+  /// No description provided for @smsPacksFeatures.
+  ///
+  /// In en, this message translates to:
+  /// **'Features'**
+  String get smsPacksFeatures;
+
+  /// No description provided for @smsPacksPlanMonthly.
+  ///
+  /// In en, this message translates to:
+  /// **'Monthly'**
+  String get smsPacksPlanMonthly;
+
+  /// No description provided for @smsPacksPlanAnnual.
+  ///
+  /// In en, this message translates to:
+  /// **'Annual'**
+  String get smsPacksPlanAnnual;
+
+  /// No description provided for @smsPacksSelectPack.
+  ///
+  /// In en, this message translates to:
+  /// **'Please select a pack.'**
+  String get smsPacksSelectPack;
+
+  /// No description provided for @smsPacksSelectCountry.
+  ///
+  /// In en, this message translates to:
+  /// **'Please select a country.'**
+  String get smsPacksSelectCountry;
+
+  /// No description provided for @smsPacksSelectCity.
+  ///
+  /// In en, this message translates to:
+  /// **'Please select a city.'**
+  String get smsPacksSelectCity;
+
+  /// No description provided for @smsPacksSelectDistrict.
+  ///
+  /// In en, this message translates to:
+  /// **'Please select a district.'**
+  String get smsPacksSelectDistrict;
+
+  /// No description provided for @smsPacksNameRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Name cannot be empty.'**
+  String get smsPacksNameRequired;
+
+  /// No description provided for @smsPacksLastNameRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Last name cannot be empty.'**
+  String get smsPacksLastNameRequired;
+
+  /// No description provided for @smsPacksPhoneRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Phone cannot be empty.'**
+  String get smsPacksPhoneRequired;
+
+  /// No description provided for @smsPacksAddressRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Address cannot be empty.'**
+  String get smsPacksAddressRequired;
+
+  /// No description provided for @smsPacksAgreementRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'You must accept the purchase agreement.'**
+  String get smsPacksAgreementRequired;
+
+  /// No description provided for @smsPacksPurchaseSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Order created, redirecting to payment.'**
+  String get smsPacksPurchaseSuccess;
+
+  /// No description provided for @smsPacksPurchaseFailedStatus.
+  ///
+  /// In en, this message translates to:
+  /// **'Purchase failed (HTTP {status}).'**
+  String smsPacksPurchaseFailedStatus(Object status);
+
+  /// No description provided for @smsPacksPurchaseError.
+  ///
+  /// In en, this message translates to:
+  /// **'An error occurred during purchase: {error}'**
+  String smsPacksPurchaseError(Object error);
+
+  /// No description provided for @smsPacksPaymentStartInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'Payment page could not be opened, invalid response.'**
+  String get smsPacksPaymentStartInvalid;
+
+  /// No description provided for @smsPacksPaymentStartFailedStatus.
+  ///
+  /// In en, this message translates to:
+  /// **'Payment could not be started (HTTP {status}).'**
+  String smsPacksPaymentStartFailedStatus(Object status);
+
+  /// No description provided for @smsPacksPaymentStartError.
+  ///
+  /// In en, this message translates to:
+  /// **'An error occurred while starting payment: {error}'**
+  String smsPacksPaymentStartError(Object error);
+
+  /// No description provided for @smsPacksPaymentPending.
+  ///
+  /// In en, this message translates to:
+  /// **'Payment is being confirmed, please wait.'**
+  String get smsPacksPaymentPending;
+
+  /// No description provided for @smsPacksPaymentVerify403.
+  ///
+  /// In en, this message translates to:
+  /// **'Payment could not be verified (403).'**
+  String get smsPacksPaymentVerify403;
+
+  /// No description provided for @smsPacksPaymentVerify404.
+  ///
+  /// In en, this message translates to:
+  /// **'Transaction not found (404).'**
+  String get smsPacksPaymentVerify404;
+
+  /// No description provided for @smsPacksPaymentVerifyFailedStatus.
+  ///
+  /// In en, this message translates to:
+  /// **'Payment could not be verified (HTTP {status}).'**
+  String smsPacksPaymentVerifyFailedStatus(Object status);
+
+  /// No description provided for @smsPacksPaymentVerifyError.
+  ///
+  /// In en, this message translates to:
+  /// **'Payment could not be verified: {error}'**
+  String smsPacksPaymentVerifyError(Object error);
+
+  /// No description provided for @smsPacksPaymentSuccessTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Payment Successful'**
+  String get smsPacksPaymentSuccessTitle;
+
+  /// No description provided for @smsPacksPaymentPendingTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Payment Pending'**
+  String get smsPacksPaymentPendingTitle;
+
+  /// No description provided for @smsPacksPaymentFailedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Payment Failed'**
+  String get smsPacksPaymentFailedTitle;
+
+  /// No description provided for @smsPacksPaymentLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Payment'**
+  String get smsPacksPaymentLabel;
+
+  /// No description provided for @smsPacksPackLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Pack'**
+  String get smsPacksPackLabel;
+
+  /// No description provided for @smsPacksTypeLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Type'**
+  String get smsPacksTypeLabel;
+
+  /// No description provided for @smsPacksAmountLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Amount'**
+  String get smsPacksAmountLabel;
+
+  /// No description provided for @smsPacksInvoiceLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Invoice No'**
+  String get smsPacksInvoiceLabel;
+
+  /// No description provided for @smsPacksPaymentVerifying.
+  ///
+  /// In en, this message translates to:
+  /// **'Verifying payment...'**
+  String get smsPacksPaymentVerifying;
+
+  /// No description provided for @smsPacksGoHome.
+  ///
+  /// In en, this message translates to:
+  /// **'Go to home'**
+  String get smsPacksGoHome;
+
+  /// No description provided for @smsPacksRetry.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry'**
+  String get smsPacksRetry;
+
+  /// No description provided for @smsPacksStepPack.
+  ///
+  /// In en, this message translates to:
+  /// **'Pack'**
+  String get smsPacksStepPack;
+
+  /// No description provided for @smsPacksStepInfo.
+  ///
+  /// In en, this message translates to:
+  /// **'Info'**
+  String get smsPacksStepInfo;
+
+  /// No description provided for @smsPacksStepSummary.
+  ///
+  /// In en, this message translates to:
+  /// **'Summary'**
+  String get smsPacksStepSummary;
+
+  /// No description provided for @smsPacksStepPayment.
+  ///
+  /// In en, this message translates to:
+  /// **'Payment'**
+  String get smsPacksStepPayment;
+
+  /// No description provided for @smsPacksNext.
+  ///
+  /// In en, this message translates to:
+  /// **'Next'**
+  String get smsPacksNext;
+
+  /// No description provided for @smsPacksBack.
+  ///
+  /// In en, this message translates to:
+  /// **'Back'**
+  String get smsPacksBack;
+
+  /// No description provided for @smsPacksBuy.
+  ///
+  /// In en, this message translates to:
+  /// **'Buy'**
+  String get smsPacksBuy;
+
+  /// No description provided for @smsPacksDetails.
+  ///
+  /// In en, this message translates to:
+  /// **'See Features'**
+  String get smsPacksDetails;
+
+  /// No description provided for @smsPacksSelectButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Select Pack'**
+  String get smsPacksSelectButton;
+
+  /// No description provided for @smsPacksSelected.
+  ///
+  /// In en, this message translates to:
+  /// **'Selected'**
+  String get smsPacksSelected;
+
+  /// No description provided for @smsPacksRefresh.
+  ///
+  /// In en, this message translates to:
+  /// **'Refresh'**
+  String get smsPacksRefresh;
+
+  /// No description provided for @smsPacksSavedAddresses.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved Addresses'**
+  String get smsPacksSavedAddresses;
+
+  /// No description provided for @smsPacksNewAddress.
+  ///
+  /// In en, this message translates to:
+  /// **'New Address'**
+  String get smsPacksNewAddress;
+
+  /// No description provided for @smsPacksAddressTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Address Title'**
+  String get smsPacksAddressTitle;
+
+  /// No description provided for @smsPacksFirstName.
+  ///
+  /// In en, this message translates to:
+  /// **'First Name'**
+  String get smsPacksFirstName;
+
+  /// No description provided for @smsPacksLastName.
+  ///
+  /// In en, this message translates to:
+  /// **'Last Name'**
+  String get smsPacksLastName;
+
+  /// No description provided for @smsPacksCompany.
+  ///
+  /// In en, this message translates to:
+  /// **'Company (optional)'**
+  String get smsPacksCompany;
+
+  /// No description provided for @smsPacksEmail.
+  ///
+  /// In en, this message translates to:
+  /// **'Email'**
+  String get smsPacksEmail;
+
+  /// No description provided for @smsPacksCountry.
+  ///
+  /// In en, this message translates to:
+  /// **'Country'**
+  String get smsPacksCountry;
+
+  /// No description provided for @smsPacksCity.
+  ///
+  /// In en, this message translates to:
+  /// **'City'**
+  String get smsPacksCity;
+
+  /// No description provided for @smsPacksDistrict.
+  ///
+  /// In en, this message translates to:
+  /// **'District'**
+  String get smsPacksDistrict;
+
+  /// No description provided for @smsPacksPhone.
+  ///
+  /// In en, this message translates to:
+  /// **'Phone'**
+  String get smsPacksPhone;
+
+  /// No description provided for @smsPacksIdentity.
+  ///
+  /// In en, this message translates to:
+  /// **'Identity No (optional)'**
+  String get smsPacksIdentity;
+
+  /// No description provided for @smsPacksTaxNumber.
+  ///
+  /// In en, this message translates to:
+  /// **'Tax No (optional)'**
+  String get smsPacksTaxNumber;
+
+  /// No description provided for @smsPacksTaxOffice.
+  ///
+  /// In en, this message translates to:
+  /// **'Tax Office'**
+  String get smsPacksTaxOffice;
+
+  /// No description provided for @smsPacksAddress.
+  ///
+  /// In en, this message translates to:
+  /// **'Address'**
+  String get smsPacksAddress;
+
+  /// No description provided for @smsPacksPaymentMethod.
+  ///
+  /// In en, this message translates to:
+  /// **'Payment Method'**
+  String get smsPacksPaymentMethod;
+
+  /// No description provided for @smsPacksNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Note'**
+  String get smsPacksNote;
+
+  /// No description provided for @smsPacksNoteHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Note or special requests to add to invoice'**
+  String get smsPacksNoteHint;
+
+  /// No description provided for @smsPacksAgreementTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'I have read and accept the purchase agreement.'**
+  String get smsPacksAgreementTitle;
+
+  /// No description provided for @smsPacksSummaryTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Purchase Summary'**
+  String get smsPacksSummaryTitle;
+
+  /// No description provided for @smsPacksSummaryPurchaseInfo.
+  ///
+  /// In en, this message translates to:
+  /// **'Purchase Information'**
+  String get smsPacksSummaryPurchaseInfo;
+
+  /// No description provided for @smsPacksSmsLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'SMS'**
+  String get smsPacksSmsLabel;
+
+  /// No description provided for @smsPacksCompanyLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Company'**
+  String get smsPacksCompanyLabel;
+
+  /// No description provided for @smsPacksBuyerLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Name Surname'**
+  String get smsPacksBuyerLabel;
+
+  /// No description provided for @smsPacksEmailLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Email'**
+  String get smsPacksEmailLabel;
+
+  /// No description provided for @smsPacksCountryLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Country'**
+  String get smsPacksCountryLabel;
+
+  /// No description provided for @smsPacksCityLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'City'**
+  String get smsPacksCityLabel;
+
+  /// No description provided for @smsPacksDistrictLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'District'**
+  String get smsPacksDistrictLabel;
+
+  /// No description provided for @smsPacksPhoneLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Phone'**
+  String get smsPacksPhoneLabel;
+
+  /// No description provided for @smsPacksTaxNumberLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Tax No'**
+  String get smsPacksTaxNumberLabel;
+
+  /// No description provided for @smsPacksTaxOfficeLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Tax Office'**
+  String get smsPacksTaxOfficeLabel;
+
+  /// No description provided for @smsPacksIdentityLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Identity No'**
+  String get smsPacksIdentityLabel;
+
+  /// No description provided for @smsPacksAddressLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Address'**
+  String get smsPacksAddressLabel;
+
+  /// No description provided for @smsPacksNoteLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Note'**
+  String get smsPacksNoteLabel;
+
+  /// No description provided for @smsPacksSubmitLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Submit'**
+  String get smsPacksSubmitLabel;
+
+  /// No description provided for @smsPacksNoPacksForType.
+  ///
+  /// In en, this message translates to:
+  /// **'No packs available for this type.'**
+  String get smsPacksNoPacksForType;
+
+  /// No description provided for @smsPacksPriceWithTax.
+  ///
+  /// In en, this message translates to:
+  /// **'Incl. VAT ₺{price}'**
+  String smsPacksPriceWithTax(Object price);
+
+  /// No description provided for @smsPacksSmsCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} SMS'**
+  String smsPacksSmsCount(Object count);
+
+  /// No description provided for @smsPacksSelectPackForSummary.
+  ///
+  /// In en, this message translates to:
+  /// **'Please select a pack to see the summary.'**
+  String get smsPacksSelectPackForSummary;
+
+  /// No description provided for @smsPacksRefreshing.
+  ///
+  /// In en, this message translates to:
+  /// **'Refreshing...'**
+  String get smsPacksRefreshing;
+
+  /// No description provided for @smsPacksSavedAddressesLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved Addresses'**
+  String get smsPacksSavedAddressesLabel;
+
+  /// No description provided for @smsPacksSelectAddress.
+  ///
+  /// In en, this message translates to:
+  /// **'Select'**
+  String get smsPacksSelectAddress;
+
+  /// No description provided for @smsPacksPlanLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Plan'**
+  String get smsPacksPlanLabel;
+
+  /// No description provided for @smsPacksPriceLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Price'**
+  String get smsPacksPriceLabel;
+
+  /// No description provided for @smsPacksVatIncluded.
+  ///
+  /// In en, this message translates to:
+  /// **'VAT Included'**
+  String get smsPacksVatIncluded;
+
+  /// No description provided for @smsPacksSubmitting.
+  ///
+  /// In en, this message translates to:
+  /// **'Submitting...'**
+  String get smsPacksSubmitting;
 }
 
 class _AppLocalizationsDelegate
