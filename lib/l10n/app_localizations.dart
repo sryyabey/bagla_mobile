@@ -739,6 +739,186 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Could not fetch appointments: {error}'**
   String appointmentsFetchFailed(Object error);
+
+  /// No description provided for @calendarSessionMissing.
+  ///
+  /// In en, this message translates to:
+  /// **'Session not found.'**
+  String get calendarSessionMissing;
+
+  /// No description provided for @calendarFetchFailedStatus.
+  ///
+  /// In en, this message translates to:
+  /// **'Weekly calendar could not be loaded (HTTP {status}).'**
+  String calendarFetchFailedStatus(Object status);
+
+  /// No description provided for @calendarFetchFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Weekly calendar could not be loaded: {error}'**
+  String calendarFetchFailed(Object error);
+
+  /// No description provided for @calendarUnexpected.
+  ///
+  /// In en, this message translates to:
+  /// **'Unexpected response format.'**
+  String get calendarUnexpected;
+
+  /// No description provided for @calendarClosed.
+  ///
+  /// In en, this message translates to:
+  /// **'Closed'**
+  String get calendarClosed;
+
+  /// No description provided for @calendarCustomer.
+  ///
+  /// In en, this message translates to:
+  /// **'Customer'**
+  String get calendarCustomer;
+
+  /// No description provided for @calendarWorkingHoursPrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'Please set your working hours.'**
+  String get calendarWorkingHoursPrompt;
+
+  /// No description provided for @calendarWorkingHoursButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Set working hours'**
+  String get calendarWorkingHoursButton;
+
+  /// No description provided for @calendarSessionExpired.
+  ///
+  /// In en, this message translates to:
+  /// **'Session expired, please log in again.'**
+  String get calendarSessionExpired;
+
+  /// No description provided for @calendarTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Weekly Calendar'**
+  String get calendarTitle;
+
+  /// No description provided for @calendarPrev.
+  ///
+  /// In en, this message translates to:
+  /// **'Previous'**
+  String get calendarPrev;
+
+  /// No description provided for @calendarToday.
+  ///
+  /// In en, this message translates to:
+  /// **'Today'**
+  String get calendarToday;
+
+  /// No description provided for @calendarNext.
+  ///
+  /// In en, this message translates to:
+  /// **'Next'**
+  String get calendarNext;
+
+  /// No description provided for @calendarLoading.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading...'**
+  String get calendarLoading;
+
+  /// No description provided for @calendarNoData.
+  ///
+  /// In en, this message translates to:
+  /// **'No data for this week.'**
+  String get calendarNoData;
+
+  /// No description provided for @dayMonShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Mon'**
+  String get dayMonShort;
+
+  /// No description provided for @dayTueShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Tue'**
+  String get dayTueShort;
+
+  /// No description provided for @dayWedShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Wed'**
+  String get dayWedShort;
+
+  /// No description provided for @dayThuShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Thu'**
+  String get dayThuShort;
+
+  /// No description provided for @dayFriShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Fri'**
+  String get dayFriShort;
+
+  /// No description provided for @daySatShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Sat'**
+  String get daySatShort;
+
+  /// No description provided for @daySunShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Sun'**
+  String get daySunShort;
+
+  /// No description provided for @dayMonFull.
+  ///
+  /// In en, this message translates to:
+  /// **'Monday'**
+  String get dayMonFull;
+
+  /// No description provided for @dayTueFull.
+  ///
+  /// In en, this message translates to:
+  /// **'Tuesday'**
+  String get dayTueFull;
+
+  /// No description provided for @dayWedFull.
+  ///
+  /// In en, this message translates to:
+  /// **'Wednesday'**
+  String get dayWedFull;
+
+  /// No description provided for @dayThuFull.
+  ///
+  /// In en, this message translates to:
+  /// **'Thursday'**
+  String get dayThuFull;
+
+  /// No description provided for @dayFriFull.
+  ///
+  /// In en, this message translates to:
+  /// **'Friday'**
+  String get dayFriFull;
+
+  /// No description provided for @daySatFull.
+  ///
+  /// In en, this message translates to:
+  /// **'Saturday'**
+  String get daySatFull;
+
+  /// No description provided for @daySunFull.
+  ///
+  /// In en, this message translates to:
+  /// **'Sunday'**
+  String get daySunFull;
+
+  /// No description provided for @calendarTimeLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Time'**
+  String get calendarTimeLabel;
 }
 
 class _AppLocalizationsDelegate

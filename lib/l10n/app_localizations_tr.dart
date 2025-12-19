@@ -355,4 +355,100 @@ class AppLocalizationsTr extends AppLocalizations {
   String appointmentsFetchFailed(Object error) {
     return 'Randevular alınamadı: $error';
   }
+
+  @override
+  String get calendarSessionMissing => 'Oturum bulunamadı.';
+
+  @override
+  String calendarFetchFailedStatus(Object status) {
+    return 'Haftalık takvim alınamadı (HTTP $status).';
+  }
+
+  @override
+  String calendarFetchFailed(Object error) {
+    return 'Haftalık takvim alınamadı: $error';
+  }
+
+  @override
+  String get calendarUnexpected => 'Beklenmedik yanıt formatı.';
+
+  @override
+  String get calendarClosed => 'Kapalı';
+
+  @override
+  String get calendarCustomer => 'Müşteri';
+
+  @override
+  String get calendarWorkingHoursPrompt =>
+      'Lütfen çalışma saatlerinizi ayarlayınız.';
+
+  @override
+  String get calendarWorkingHoursButton => 'Çalışma saati ayarla';
+
+  @override
+  String get calendarSessionExpired =>
+      'Oturum süresi doldu, lütfen tekrar giriş yapın.';
+
+  @override
+  String get calendarTitle => 'Haftalık Takvim';
+
+  @override
+  String get calendarPrev => 'Önceki';
+
+  @override
+  String get calendarToday => 'Bugün';
+
+  @override
+  String get calendarNext => 'Sonraki';
+
+  @override
+  String get calendarLoading => 'Yükleniyor...';
+
+  @override
+  String get calendarNoData => 'Bu hafta için veri yok.';
+
+  @override
+  String get dayMonShort => 'Pzt';
+
+  @override
+  String get dayTueShort => 'Sal';
+
+  @override
+  String get dayWedShort => 'Çar';
+
+  @override
+  String get dayThuShort => 'Per';
+
+  @override
+  String get dayFriShort => 'Cum';
+
+  @override
+  String get daySatShort => 'Cmt';
+
+  @override
+  String get daySunShort => 'Paz';
+
+  @override
+  String get dayMonFull => 'Pazartesi';
+
+  @override
+  String get dayTueFull => 'Salı';
+
+  @override
+  String get dayWedFull => 'Çarşamba';
+
+  @override
+  String get dayThuFull => 'Perşembe';
+
+  @override
+  String get dayFriFull => 'Cuma';
+
+  @override
+  String get daySatFull => 'Cumartesi';
+
+  @override
+  String get daySunFull => 'Pazar';
+
+  @override
+  String get calendarTimeLabel => 'Saat';
 }

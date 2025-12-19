@@ -355,4 +355,98 @@ class AppLocalizationsEn extends AppLocalizations {
   String appointmentsFetchFailed(Object error) {
     return 'Could not fetch appointments: $error';
   }
+
+  @override
+  String get calendarSessionMissing => 'Session not found.';
+
+  @override
+  String calendarFetchFailedStatus(Object status) {
+    return 'Weekly calendar could not be loaded (HTTP $status).';
+  }
+
+  @override
+  String calendarFetchFailed(Object error) {
+    return 'Weekly calendar could not be loaded: $error';
+  }
+
+  @override
+  String get calendarUnexpected => 'Unexpected response format.';
+
+  @override
+  String get calendarClosed => 'Closed';
+
+  @override
+  String get calendarCustomer => 'Customer';
+
+  @override
+  String get calendarWorkingHoursPrompt => 'Please set your working hours.';
+
+  @override
+  String get calendarWorkingHoursButton => 'Set working hours';
+
+  @override
+  String get calendarSessionExpired => 'Session expired, please log in again.';
+
+  @override
+  String get calendarTitle => 'Weekly Calendar';
+
+  @override
+  String get calendarPrev => 'Previous';
+
+  @override
+  String get calendarToday => 'Today';
+
+  @override
+  String get calendarNext => 'Next';
+
+  @override
+  String get calendarLoading => 'Loading...';
+
+  @override
+  String get calendarNoData => 'No data for this week.';
+
+  @override
+  String get dayMonShort => 'Mon';
+
+  @override
+  String get dayTueShort => 'Tue';
+
+  @override
+  String get dayWedShort => 'Wed';
+
+  @override
+  String get dayThuShort => 'Thu';
+
+  @override
+  String get dayFriShort => 'Fri';
+
+  @override
+  String get daySatShort => 'Sat';
+
+  @override
+  String get daySunShort => 'Sun';
+
+  @override
+  String get dayMonFull => 'Monday';
+
+  @override
+  String get dayTueFull => 'Tuesday';
+
+  @override
+  String get dayWedFull => 'Wednesday';
+
+  @override
+  String get dayThuFull => 'Thursday';
+
+  @override
+  String get dayFriFull => 'Friday';
+
+  @override
+  String get daySatFull => 'Saturday';
+
+  @override
+  String get daySunFull => 'Sunday';
+
+  @override
+  String get calendarTimeLabel => 'Time';
 }

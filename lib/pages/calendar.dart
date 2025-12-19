@@ -7,8 +7,10 @@ import 'package:bagla_mobile/pages/working_preferences.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../widgets/main_nav.dart';
+import 'package:bagla_mobile/l10n/app_localizations.dart';
 
 DateTime _startOfWeek(DateTime date) {
   final weekday = date.weekday; // 1 = Mon
@@ -291,6 +293,8 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
   static const Color _backgroundColor = Color(0xFFF7F9FC);
   static const Color _primaryColor = Color(0xFF6366F1);
 
+  AppLocalizations get loc => AppLocalizations.of(context)!;
+
   @override
   void initState() {
     super.initState();
@@ -327,6 +331,46 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
     return day.isWorking && prefWorking;
   }
 
+  String _dayShortLabel(WeekDayInfo day) {
+    switch (day.dayOfWeekIso) {
+      case 1:
+        return loc.dayMonShort;
+      case 2:
+        return loc.dayTueShort;
+      case 3:
+        return loc.dayWedShort;
+      case 4:
+        return loc.dayThuShort;
+      case 5:
+        return loc.dayFriShort;
+      case 6:
+        return loc.daySatShort;
+      case 7:
+      default:
+        return loc.daySunShort;
+    }
+  }
+
+  String _dayFullLabel(WeekDayInfo day) {
+    switch (day.dayOfWeekIso) {
+      case 1:
+        return loc.dayMonFull;
+      case 2:
+        return loc.dayTueFull;
+      case 3:
+        return loc.dayWedFull;
+      case 4:
+        return loc.dayThuFull;
+      case 5:
+        return loc.dayFriFull;
+      case 6:
+        return loc.daySatFull;
+      case 7:
+      default:
+        return loc.daySunFull;
+    }
+  }
+
   Widget _buildDayChips(List<WeekDayInfo> days) {
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
@@ -339,7 +383,7 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
               label: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text(d.shortLabel),
+                  Text(_dayShortLabel(d)),
                   Text(
                     d.displayDate,
                     style: const TextStyle(fontWeight: FontWeight.bold),
@@ -383,10 +427,10 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
             border: Border.all(color: Colors.grey.shade200),
             borderRadius: BorderRadius.circular(8),
           ),
-          child: const Center(
+          child: Center(
             child: Text(
-              'Kapalı',
-              style: TextStyle(color: Colors.grey),
+              loc.calendarClosed,
+              style: const TextStyle(color: Colors.grey),
             ),
           ),
         );
@@ -417,7 +461,7 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                fullName.isNotEmpty ? fullName : 'Müşteri',
+                fullName.isNotEmpty ? fullName : loc.calendarCustomer,
                 style:
                     const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
                 overflow: TextOverflow.ellipsis,
@@ -506,9 +550,9 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
                                 topLeft: Radius.circular(14),
                               ),
                             ),
-                            child: const Text(
-                              'Saat',
-                              style: TextStyle(fontWeight: FontWeight.bold),
+                            child: Text(
+                              loc.calendarTimeLabel,
+                              style: const TextStyle(fontWeight: FontWeight.bold),
                             ),
                           ),
                           ...days.map((d) {
@@ -518,23 +562,23 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
                               color: d.isToday
                                   ? _primaryColor.withOpacity(0.08)
                                   : Colors.grey.shade50,
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    d.label,
-                                    style: const TextStyle(
-                                        fontWeight: FontWeight.bold),
-                                  ),
-                                  Text(
-                                    d.displayDate,
-                                    style:
-                                        const TextStyle(color: Colors.black54),
-                                  ),
-                                ],
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                _dayFullLabel(d),
+                                style: const TextStyle(
+                                    fontWeight: FontWeight.bold),
                               ),
-                            );
-                          }),
+                              Text(
+                                d.displayDate,
+                                style:
+                                    const TextStyle(color: Colors.black54),
+                              ),
+                            ],
+                          ),
+                        );
+                      }),
                         ],
                       );
                     }
@@ -606,10 +650,10 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
         children: [
           Icon(Icons.info_outline, color: _primaryColor),
           const SizedBox(width: 10),
-          const Expanded(
+          Expanded(
             child: Text(
-              'Lütfen çalışma saatlerinizi ayarlayınız.',
-              style: TextStyle(fontWeight: FontWeight.w600),
+              loc.calendarWorkingHoursPrompt,
+              style: const TextStyle(fontWeight: FontWeight.w600),
             ),
           ),
           ElevatedButton(
@@ -621,7 +665,7 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
                 ),
               );
             },
-            child: const Text('Çalışma saati ayarla'),
+            child: Text(loc.calendarWorkingHoursButton),
           ),
         ],
       ),
@@ -640,7 +684,7 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
             WidgetsBinding.instance.addPostFrameCallback((_) {
               if (!mounted) return;
               if (msg.contains('unauthorized') || msg.contains('401')) {
-                _showSnack('Oturum süresi doldu, lütfen tekrar giriş yapın.');
+                _showSnack(loc.calendarSessionExpired);
               } else {
                 _showSnack(msg);
               }
@@ -654,7 +698,7 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Haftalık Takvim'),
+        title: Text(loc.calendarTitle),
         actions: widget.showBottomNav
             ? [
                 IconButton(
@@ -682,16 +726,16 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
                 ElevatedButton.icon(
                   onPressed: () => _changeWeek(-1),
                   icon: const Icon(Icons.chevron_left),
-                  label: const Text('Önceki'),
+                  label: Text(loc.calendarPrev),
                 ),
                 ElevatedButton(
                   onPressed: _goToday,
-                  child: const Text('Bugün'),
+                  child: Text(loc.calendarToday),
                 ),
                 ElevatedButton.icon(
                   onPressed: () => _changeWeek(1),
                   icon: const Icon(Icons.chevron_right),
-                  label: const Text('Sonraki'),
+                  label: Text(loc.calendarNext),
                 ),
                 asyncData.when(
                   data: (d) => Padding(
@@ -702,9 +746,9 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
                           fontWeight: FontWeight.bold, fontSize: 16),
                     ),
                   ),
-                  loading: () => const Padding(
-                    padding: EdgeInsets.only(left: 8),
-                    child: Text('Yükleniyor...'),
+                  loading: () => Padding(
+                    padding: const EdgeInsets.only(left: 8),
+                    child: Text(loc.calendarLoading),
                   ),
                   error: (_, __) => const SizedBox.shrink(),
                 ),
@@ -735,7 +779,7 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
             asyncData.when(
               data: (d) {
                 if (d.timeGrid.isEmpty || d.weekDays.isEmpty) {
-                  return const Text('Bu hafta için veri yok.');
+                  return Text(loc.calendarNoData);
                 }
                 return _buildGrid(d);
               },
