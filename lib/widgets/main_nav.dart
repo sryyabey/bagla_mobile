@@ -5,6 +5,7 @@ import '../pages/appointments.dart';
 import '../pages/calendar.dart';
 import '../pages/profile.dart';
 import 'package:bagla_mobile/l10n/app_localizations.dart';
+import 'package:flutter/services.dart';
 
 class MainNavBar extends StatelessWidget {
   final int currentIndex;
@@ -18,6 +19,7 @@ class MainNavBar extends StatelessWidget {
 
   void _onTap(BuildContext context, int index) {
     if (index == currentIndex) return;
+    Feedback.forTap(context);
     if (onIndexSelected != null) {
       onIndexSelected!(index);
       return;
