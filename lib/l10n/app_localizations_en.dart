@@ -1,0 +1,358 @@
+// ignore: unused_import
+import 'package:intl/intl.dart' as intl;
+import 'app_localizations.dart';
+
+// ignore_for_file: type=lint
+
+/// The translations for English (`en`).
+class AppLocalizationsEn extends AppLocalizations {
+  AppLocalizationsEn([String locale = 'en']) : super(locale);
+
+  @override
+  String get loginTitle => 'Login';
+
+  @override
+  String get emailLabel => 'Email';
+
+  @override
+  String get passwordLabel => 'Password';
+
+  @override
+  String get facebookLogin => 'Continue with Facebook';
+
+  @override
+  String get googleLogin => 'Continue with Google';
+
+  @override
+  String get onboardTitle1 => 'Build your bio link & share';
+
+  @override
+  String get onboardDesc1 =>
+      'Launch a single bio link, add socials and share it everywhere with QR or one tap.';
+
+  @override
+  String get onboardTitle2 => 'Appointments + SMS alerts';
+
+  @override
+  String get onboardDesc2 =>
+      'Book appointments, send confirmations by SMS, and keep the whole schedule in one place.';
+
+  @override
+  String get onboardTitle3 => 'Bio link is free to start';
+
+  @override
+  String get onboardDesc3 =>
+      'Begin free, publish your bio link instantly, upgrade only when you need extras.';
+
+  @override
+  String get menuTitle => 'Menu';
+
+  @override
+  String get myLinks => 'My Links';
+
+  @override
+  String get themes => 'Themes';
+
+  @override
+  String get profile => 'Profile';
+
+  @override
+  String get support => 'Support';
+
+  @override
+  String get exit => 'Logout';
+
+  @override
+  String get loginButton => 'Login';
+
+  @override
+  String get dashboardTitle => 'Admin Panel';
+
+  @override
+  String get dashboardHeroSubtitle =>
+      'Manage your links and appointments in one place.';
+
+  @override
+  String get dashboardDrawerSubtitle =>
+      'Manage your appointments and contacts here';
+
+  @override
+  String get dashboardTopClicks => 'Total Clicks';
+
+  @override
+  String get dashboardRemainingSms => 'Remaining SMS';
+
+  @override
+  String get dashboardBioPage => 'Your Bio Page';
+
+  @override
+  String get dashboardLinkCopied => 'Link copied.';
+
+  @override
+  String get dashboardShare => 'Share';
+
+  @override
+  String get dashboardDownload => 'Download';
+
+  @override
+  String get dashboardQr => 'QR';
+
+  @override
+  String get dashboardPackageInfo => 'Package Info';
+
+  @override
+  String get dashboardPackageName => 'Package name';
+
+  @override
+  String get dashboardStart => 'Start';
+
+  @override
+  String get dashboardEnd => 'End';
+
+  @override
+  String get dashboardDailyClicks => 'Daily Clicks';
+
+  @override
+  String get dashboardTopLinks => 'Top Clicked Links';
+
+  @override
+  String get dashboardNoClicks => 'No click data yet.';
+
+  @override
+  String get dashboardNoLinkClicks => 'No link clicks yet.';
+
+  @override
+  String get dashboardTodayAppointments => 'Today\'s Appointments';
+
+  @override
+  String dashboardTodayCount(Object count) {
+    return '$count today';
+  }
+
+  @override
+  String get dashboardNoAppointmentsData => 'No appointment data for today.';
+
+  @override
+  String get dashboardNoAppointments => 'No appointments for today.';
+
+  @override
+  String dashboardCustomerFallback(Object id) {
+    return 'Customer #$id';
+  }
+
+  @override
+  String get dashboardCalendar => 'Calendar';
+
+  @override
+  String get dashboardAppointments => 'Appointments';
+
+  @override
+  String get dashboardHome => 'Home';
+
+  @override
+  String get dashboardWeeklyCalendar => 'Weekly Calendar';
+
+  @override
+  String get dashboardSmsPacks => 'SMS Packs';
+
+  @override
+  String get dashboardOrders => 'Orders';
+
+  @override
+  String get dashboardWorkingHours => 'Working Hours';
+
+  @override
+  String get dashboardSmsTemplates => 'SMS Templates';
+
+  @override
+  String get dashboardRetry => 'Retry';
+
+  @override
+  String get dashboardNoInternet => 'Please check your internet connection.';
+
+  @override
+  String get dashboardSessionMissing =>
+      'Session not found. Please log in again.';
+
+  @override
+  String dashboardLoadFailedWithStatus(Object status) {
+    return 'Dashboard could not be loaded (HTTP $status).';
+  }
+
+  @override
+  String dashboardLoadFailed(Object error) {
+    return 'Dashboard could not be loaded: $error';
+  }
+
+  @override
+  String get dashboardQrTitle => 'Bio Link QR';
+
+  @override
+  String dashboardShareFailed(Object error) {
+    return 'Share failed: $error';
+  }
+
+  @override
+  String dashboardQrDownloadFailed(Object error) {
+    return 'QR could not be downloaded: $error';
+  }
+
+  @override
+  String get dashboardWhatsAppFailed => 'WhatsApp could not be opened.';
+
+  @override
+  String dashboardWhatsAppFailedWithError(Object error) {
+    return 'WhatsApp could not be opened: $error';
+  }
+
+  @override
+  String get dashboardShareBio => 'Bagla bio link';
+
+  @override
+  String get dashboardWhatsappSupport => 'WhatsApp Support';
+
+  @override
+  String get appointmentManagement => 'Appointment Management';
+
+  @override
+  String get appointmentSubtitle =>
+      'Track your daily appointments and create new ones quickly.';
+
+  @override
+  String get refresh => 'Refresh';
+
+  @override
+  String get today => 'Today';
+
+  @override
+  String get total => 'Total';
+
+  @override
+  String get quickAppointment => 'Quick Appointment';
+
+  @override
+  String get showFilter => 'Filter';
+
+  @override
+  String get hideFilter => 'Hide filter';
+
+  @override
+  String get refreshList => 'Refresh List';
+
+  @override
+  String get statusPending => 'Pending';
+
+  @override
+  String get statusConfirmed => 'Confirmed';
+
+  @override
+  String get statusRescheduled => 'Rescheduled';
+
+  @override
+  String get statusCompleted => 'Completed';
+
+  @override
+  String get statusCancelled => 'Cancelled';
+
+  @override
+  String get statusNoShow => 'No-show';
+
+  @override
+  String get customerPreview => 'Customer Preview';
+
+  @override
+  String get recentAppointments => 'Recent Appointments';
+
+  @override
+  String get reschedule => 'Reschedule';
+
+  @override
+  String get date => 'Date';
+
+  @override
+  String get timeSelect => 'Time (choose)';
+
+  @override
+  String get note => 'Note';
+
+  @override
+  String get disableSms => 'Disable SMS';
+
+  @override
+  String get smsOffForAppointment => 'SMS is disabled for this appointment.';
+
+  @override
+  String get disableReminder => 'Disable Reminder';
+
+  @override
+  String get reminderOffForAppointment =>
+      'Reminder notification is disabled for this appointment.';
+
+  @override
+  String get rescheduleAppointment => 'Reschedule Appointment';
+
+  @override
+  String get editAppointment => 'Edit Appointment';
+
+  @override
+  String get status => 'Status';
+
+  @override
+  String get save => 'Save';
+
+  @override
+  String get quickAppointmentTitle => 'Quick Appointment';
+
+  @override
+  String get quickAppointmentSubtitle =>
+      'Fill customer and appointment info on one screen and save quickly.';
+
+  @override
+  String get customerInfo => 'Customer Info';
+
+  @override
+  String get appointmentInfo => 'Appointment Info';
+
+  @override
+  String get getAvailableTimes => 'Get Available Times';
+
+  @override
+  String get setWorkingHours => 'Set Working Hours';
+
+  @override
+  String get sendSms => 'Send SMS';
+
+  @override
+  String get doNotSendSms => 'Do not send SMS';
+
+  @override
+  String get sendReminder => 'Send Reminder';
+
+  @override
+  String get doNotSendReminder => 'Do not send reminder';
+
+  @override
+  String get googleLoginButton => 'Sign in with Google';
+
+  @override
+  String get googleConnecting => 'Connecting...';
+
+  @override
+  String get createAccountEmail => 'Create account with email';
+
+  @override
+  String get appointmentsTitle => 'Appointments';
+
+  @override
+  String get appointmentsEmpty => 'No appointments yet.';
+
+  @override
+  String appointmentsFetchFailedStatus(Object status) {
+    return 'Could not fetch appointments (HTTP $status).';
+  }
+
+  @override
+  String appointmentsFetchFailed(Object error) {
+    return 'Could not fetch appointments: $error';
+  }
+}

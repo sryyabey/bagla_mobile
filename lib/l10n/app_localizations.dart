@@ -1,0 +1,775 @@
+import 'dart:async';
+
+import 'package:flutter/foundation.dart';
+import 'package:flutter/widgets.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:intl/intl.dart' as intl;
+
+import 'app_localizations_en.dart';
+import 'app_localizations_tr.dart';
+
+// ignore_for_file: type=lint
+
+/// Callers can lookup localized strings with an instance of AppLocalizations
+/// returned by `AppLocalizations.of(context)`.
+///
+/// Applications need to include `AppLocalizations.delegate()` in their app's
+/// `localizationDelegates` list, and the locales they support in the app's
+/// `supportedLocales` list. For example:
+///
+/// ```dart
+/// import 'l10n/app_localizations.dart';
+///
+/// return MaterialApp(
+///   localizationsDelegates: AppLocalizations.localizationsDelegates,
+///   supportedLocales: AppLocalizations.supportedLocales,
+///   home: MyApplicationHome(),
+/// );
+/// ```
+///
+/// ## Update pubspec.yaml
+///
+/// Please make sure to update your pubspec.yaml to include the following
+/// packages:
+///
+/// ```yaml
+/// dependencies:
+///   # Internationalization support.
+///   flutter_localizations:
+///     sdk: flutter
+///   intl: any # Use the pinned version from flutter_localizations
+///
+///   # Rest of dependencies
+/// ```
+///
+/// ## iOS Applications
+///
+/// iOS applications define key application metadata, including supported
+/// locales, in an Info.plist file that is built into the application bundle.
+/// To configure the locales supported by your app, you’ll need to edit this
+/// file.
+///
+/// First, open your project’s ios/Runner.xcworkspace Xcode workspace file.
+/// Then, in the Project Navigator, open the Info.plist file under the Runner
+/// project’s Runner folder.
+///
+/// Next, select the Information Property List item, select Add Item from the
+/// Editor menu, then select Localizations from the pop-up menu.
+///
+/// Select and expand the newly-created Localizations item then, for each
+/// locale your application supports, add a new item and select the locale
+/// you wish to add from the pop-up menu in the Value field. This list should
+/// be consistent with the languages listed in the AppLocalizations.supportedLocales
+/// property.
+abstract class AppLocalizations {
+  AppLocalizations(String locale)
+      : localeName = intl.Intl.canonicalizedLocale(locale.toString());
+
+  final String localeName;
+
+  static AppLocalizations of(BuildContext context) {
+    return Localizations.of<AppLocalizations>(context, AppLocalizations)!;
+  }
+
+  static const LocalizationsDelegate<AppLocalizations> delegate =
+      _AppLocalizationsDelegate();
+
+  /// A list of this localizations delegate along with the default localizations
+  /// delegates.
+  ///
+  /// Returns a list of localizations delegates containing this delegate along with
+  /// GlobalMaterialLocalizations.delegate, GlobalCupertinoLocalizations.delegate,
+  /// and GlobalWidgetsLocalizations.delegate.
+  ///
+  /// Additional delegates can be added by appending to this list in
+  /// MaterialApp. This list does not have to be used at all if a custom list
+  /// of delegates is preferred or required.
+  static const List<LocalizationsDelegate<dynamic>> localizationsDelegates =
+      <LocalizationsDelegate<dynamic>>[
+    delegate,
+    GlobalMaterialLocalizations.delegate,
+    GlobalCupertinoLocalizations.delegate,
+    GlobalWidgetsLocalizations.delegate,
+  ];
+
+  /// A list of this localizations delegate's supported locales.
+  static const List<Locale> supportedLocales = <Locale>[
+    Locale('en'),
+    Locale('tr')
+  ];
+
+  /// No description provided for @loginTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Login'**
+  String get loginTitle;
+
+  /// No description provided for @emailLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Email'**
+  String get emailLabel;
+
+  /// No description provided for @passwordLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Password'**
+  String get passwordLabel;
+
+  /// No description provided for @facebookLogin.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue with Facebook'**
+  String get facebookLogin;
+
+  /// No description provided for @googleLogin.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue with Google'**
+  String get googleLogin;
+
+  /// No description provided for @onboardTitle1.
+  ///
+  /// In en, this message translates to:
+  /// **'Build your bio link & share'**
+  String get onboardTitle1;
+
+  /// No description provided for @onboardDesc1.
+  ///
+  /// In en, this message translates to:
+  /// **'Launch a single bio link, add socials and share it everywhere with QR or one tap.'**
+  String get onboardDesc1;
+
+  /// No description provided for @onboardTitle2.
+  ///
+  /// In en, this message translates to:
+  /// **'Appointments + SMS alerts'**
+  String get onboardTitle2;
+
+  /// No description provided for @onboardDesc2.
+  ///
+  /// In en, this message translates to:
+  /// **'Book appointments, send confirmations by SMS, and keep the whole schedule in one place.'**
+  String get onboardDesc2;
+
+  /// No description provided for @onboardTitle3.
+  ///
+  /// In en, this message translates to:
+  /// **'Bio link is free to start'**
+  String get onboardTitle3;
+
+  /// No description provided for @onboardDesc3.
+  ///
+  /// In en, this message translates to:
+  /// **'Begin free, publish your bio link instantly, upgrade only when you need extras.'**
+  String get onboardDesc3;
+
+  /// No description provided for @menuTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Menu'**
+  String get menuTitle;
+
+  /// No description provided for @myLinks.
+  ///
+  /// In en, this message translates to:
+  /// **'My Links'**
+  String get myLinks;
+
+  /// No description provided for @themes.
+  ///
+  /// In en, this message translates to:
+  /// **'Themes'**
+  String get themes;
+
+  /// No description provided for @profile.
+  ///
+  /// In en, this message translates to:
+  /// **'Profile'**
+  String get profile;
+
+  /// No description provided for @support.
+  ///
+  /// In en, this message translates to:
+  /// **'Support'**
+  String get support;
+
+  /// No description provided for @exit.
+  ///
+  /// In en, this message translates to:
+  /// **'Logout'**
+  String get exit;
+
+  /// No description provided for @loginButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Login'**
+  String get loginButton;
+
+  /// No description provided for @dashboardTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Admin Panel'**
+  String get dashboardTitle;
+
+  /// No description provided for @dashboardHeroSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Manage your links and appointments in one place.'**
+  String get dashboardHeroSubtitle;
+
+  /// No description provided for @dashboardDrawerSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Manage your appointments and contacts here'**
+  String get dashboardDrawerSubtitle;
+
+  /// No description provided for @dashboardTopClicks.
+  ///
+  /// In en, this message translates to:
+  /// **'Total Clicks'**
+  String get dashboardTopClicks;
+
+  /// No description provided for @dashboardRemainingSms.
+  ///
+  /// In en, this message translates to:
+  /// **'Remaining SMS'**
+  String get dashboardRemainingSms;
+
+  /// No description provided for @dashboardBioPage.
+  ///
+  /// In en, this message translates to:
+  /// **'Your Bio Page'**
+  String get dashboardBioPage;
+
+  /// No description provided for @dashboardLinkCopied.
+  ///
+  /// In en, this message translates to:
+  /// **'Link copied.'**
+  String get dashboardLinkCopied;
+
+  /// No description provided for @dashboardShare.
+  ///
+  /// In en, this message translates to:
+  /// **'Share'**
+  String get dashboardShare;
+
+  /// No description provided for @dashboardDownload.
+  ///
+  /// In en, this message translates to:
+  /// **'Download'**
+  String get dashboardDownload;
+
+  /// No description provided for @dashboardQr.
+  ///
+  /// In en, this message translates to:
+  /// **'QR'**
+  String get dashboardQr;
+
+  /// No description provided for @dashboardPackageInfo.
+  ///
+  /// In en, this message translates to:
+  /// **'Package Info'**
+  String get dashboardPackageInfo;
+
+  /// No description provided for @dashboardPackageName.
+  ///
+  /// In en, this message translates to:
+  /// **'Package name'**
+  String get dashboardPackageName;
+
+  /// No description provided for @dashboardStart.
+  ///
+  /// In en, this message translates to:
+  /// **'Start'**
+  String get dashboardStart;
+
+  /// No description provided for @dashboardEnd.
+  ///
+  /// In en, this message translates to:
+  /// **'End'**
+  String get dashboardEnd;
+
+  /// No description provided for @dashboardDailyClicks.
+  ///
+  /// In en, this message translates to:
+  /// **'Daily Clicks'**
+  String get dashboardDailyClicks;
+
+  /// No description provided for @dashboardTopLinks.
+  ///
+  /// In en, this message translates to:
+  /// **'Top Clicked Links'**
+  String get dashboardTopLinks;
+
+  /// No description provided for @dashboardNoClicks.
+  ///
+  /// In en, this message translates to:
+  /// **'No click data yet.'**
+  String get dashboardNoClicks;
+
+  /// No description provided for @dashboardNoLinkClicks.
+  ///
+  /// In en, this message translates to:
+  /// **'No link clicks yet.'**
+  String get dashboardNoLinkClicks;
+
+  /// No description provided for @dashboardTodayAppointments.
+  ///
+  /// In en, this message translates to:
+  /// **'Today\'s Appointments'**
+  String get dashboardTodayAppointments;
+
+  /// No description provided for @dashboardTodayCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} today'**
+  String dashboardTodayCount(Object count);
+
+  /// No description provided for @dashboardNoAppointmentsData.
+  ///
+  /// In en, this message translates to:
+  /// **'No appointment data for today.'**
+  String get dashboardNoAppointmentsData;
+
+  /// No description provided for @dashboardNoAppointments.
+  ///
+  /// In en, this message translates to:
+  /// **'No appointments for today.'**
+  String get dashboardNoAppointments;
+
+  /// No description provided for @dashboardCustomerFallback.
+  ///
+  /// In en, this message translates to:
+  /// **'Customer #{id}'**
+  String dashboardCustomerFallback(Object id);
+
+  /// No description provided for @dashboardCalendar.
+  ///
+  /// In en, this message translates to:
+  /// **'Calendar'**
+  String get dashboardCalendar;
+
+  /// No description provided for @dashboardAppointments.
+  ///
+  /// In en, this message translates to:
+  /// **'Appointments'**
+  String get dashboardAppointments;
+
+  /// No description provided for @dashboardHome.
+  ///
+  /// In en, this message translates to:
+  /// **'Home'**
+  String get dashboardHome;
+
+  /// No description provided for @dashboardWeeklyCalendar.
+  ///
+  /// In en, this message translates to:
+  /// **'Weekly Calendar'**
+  String get dashboardWeeklyCalendar;
+
+  /// No description provided for @dashboardSmsPacks.
+  ///
+  /// In en, this message translates to:
+  /// **'SMS Packs'**
+  String get dashboardSmsPacks;
+
+  /// No description provided for @dashboardOrders.
+  ///
+  /// In en, this message translates to:
+  /// **'Orders'**
+  String get dashboardOrders;
+
+  /// No description provided for @dashboardWorkingHours.
+  ///
+  /// In en, this message translates to:
+  /// **'Working Hours'**
+  String get dashboardWorkingHours;
+
+  /// No description provided for @dashboardSmsTemplates.
+  ///
+  /// In en, this message translates to:
+  /// **'SMS Templates'**
+  String get dashboardSmsTemplates;
+
+  /// No description provided for @dashboardRetry.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry'**
+  String get dashboardRetry;
+
+  /// No description provided for @dashboardNoInternet.
+  ///
+  /// In en, this message translates to:
+  /// **'Please check your internet connection.'**
+  String get dashboardNoInternet;
+
+  /// No description provided for @dashboardSessionMissing.
+  ///
+  /// In en, this message translates to:
+  /// **'Session not found. Please log in again.'**
+  String get dashboardSessionMissing;
+
+  /// No description provided for @dashboardLoadFailedWithStatus.
+  ///
+  /// In en, this message translates to:
+  /// **'Dashboard could not be loaded (HTTP {status}).'**
+  String dashboardLoadFailedWithStatus(Object status);
+
+  /// No description provided for @dashboardLoadFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Dashboard could not be loaded: {error}'**
+  String dashboardLoadFailed(Object error);
+
+  /// No description provided for @dashboardQrTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Bio Link QR'**
+  String get dashboardQrTitle;
+
+  /// No description provided for @dashboardShareFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Share failed: {error}'**
+  String dashboardShareFailed(Object error);
+
+  /// No description provided for @dashboardQrDownloadFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'QR could not be downloaded: {error}'**
+  String dashboardQrDownloadFailed(Object error);
+
+  /// No description provided for @dashboardWhatsAppFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'WhatsApp could not be opened.'**
+  String get dashboardWhatsAppFailed;
+
+  /// No description provided for @dashboardWhatsAppFailedWithError.
+  ///
+  /// In en, this message translates to:
+  /// **'WhatsApp could not be opened: {error}'**
+  String dashboardWhatsAppFailedWithError(Object error);
+
+  /// No description provided for @dashboardShareBio.
+  ///
+  /// In en, this message translates to:
+  /// **'Bagla bio link'**
+  String get dashboardShareBio;
+
+  /// No description provided for @dashboardWhatsappSupport.
+  ///
+  /// In en, this message translates to:
+  /// **'WhatsApp Support'**
+  String get dashboardWhatsappSupport;
+
+  /// No description provided for @appointmentManagement.
+  ///
+  /// In en, this message translates to:
+  /// **'Appointment Management'**
+  String get appointmentManagement;
+
+  /// No description provided for @appointmentSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Track your daily appointments and create new ones quickly.'**
+  String get appointmentSubtitle;
+
+  /// No description provided for @refresh.
+  ///
+  /// In en, this message translates to:
+  /// **'Refresh'**
+  String get refresh;
+
+  /// No description provided for @today.
+  ///
+  /// In en, this message translates to:
+  /// **'Today'**
+  String get today;
+
+  /// No description provided for @total.
+  ///
+  /// In en, this message translates to:
+  /// **'Total'**
+  String get total;
+
+  /// No description provided for @quickAppointment.
+  ///
+  /// In en, this message translates to:
+  /// **'Quick Appointment'**
+  String get quickAppointment;
+
+  /// No description provided for @showFilter.
+  ///
+  /// In en, this message translates to:
+  /// **'Filter'**
+  String get showFilter;
+
+  /// No description provided for @hideFilter.
+  ///
+  /// In en, this message translates to:
+  /// **'Hide filter'**
+  String get hideFilter;
+
+  /// No description provided for @refreshList.
+  ///
+  /// In en, this message translates to:
+  /// **'Refresh List'**
+  String get refreshList;
+
+  /// No description provided for @statusPending.
+  ///
+  /// In en, this message translates to:
+  /// **'Pending'**
+  String get statusPending;
+
+  /// No description provided for @statusConfirmed.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirmed'**
+  String get statusConfirmed;
+
+  /// No description provided for @statusRescheduled.
+  ///
+  /// In en, this message translates to:
+  /// **'Rescheduled'**
+  String get statusRescheduled;
+
+  /// No description provided for @statusCompleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Completed'**
+  String get statusCompleted;
+
+  /// No description provided for @statusCancelled.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancelled'**
+  String get statusCancelled;
+
+  /// No description provided for @statusNoShow.
+  ///
+  /// In en, this message translates to:
+  /// **'No-show'**
+  String get statusNoShow;
+
+  /// No description provided for @customerPreview.
+  ///
+  /// In en, this message translates to:
+  /// **'Customer Preview'**
+  String get customerPreview;
+
+  /// No description provided for @recentAppointments.
+  ///
+  /// In en, this message translates to:
+  /// **'Recent Appointments'**
+  String get recentAppointments;
+
+  /// No description provided for @reschedule.
+  ///
+  /// In en, this message translates to:
+  /// **'Reschedule'**
+  String get reschedule;
+
+  /// No description provided for @date.
+  ///
+  /// In en, this message translates to:
+  /// **'Date'**
+  String get date;
+
+  /// No description provided for @timeSelect.
+  ///
+  /// In en, this message translates to:
+  /// **'Time (choose)'**
+  String get timeSelect;
+
+  /// No description provided for @note.
+  ///
+  /// In en, this message translates to:
+  /// **'Note'**
+  String get note;
+
+  /// No description provided for @disableSms.
+  ///
+  /// In en, this message translates to:
+  /// **'Disable SMS'**
+  String get disableSms;
+
+  /// No description provided for @smsOffForAppointment.
+  ///
+  /// In en, this message translates to:
+  /// **'SMS is disabled for this appointment.'**
+  String get smsOffForAppointment;
+
+  /// No description provided for @disableReminder.
+  ///
+  /// In en, this message translates to:
+  /// **'Disable Reminder'**
+  String get disableReminder;
+
+  /// No description provided for @reminderOffForAppointment.
+  ///
+  /// In en, this message translates to:
+  /// **'Reminder notification is disabled for this appointment.'**
+  String get reminderOffForAppointment;
+
+  /// No description provided for @rescheduleAppointment.
+  ///
+  /// In en, this message translates to:
+  /// **'Reschedule Appointment'**
+  String get rescheduleAppointment;
+
+  /// No description provided for @editAppointment.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit Appointment'**
+  String get editAppointment;
+
+  /// No description provided for @status.
+  ///
+  /// In en, this message translates to:
+  /// **'Status'**
+  String get status;
+
+  /// No description provided for @save.
+  ///
+  /// In en, this message translates to:
+  /// **'Save'**
+  String get save;
+
+  /// No description provided for @quickAppointmentTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Quick Appointment'**
+  String get quickAppointmentTitle;
+
+  /// No description provided for @quickAppointmentSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Fill customer and appointment info on one screen and save quickly.'**
+  String get quickAppointmentSubtitle;
+
+  /// No description provided for @customerInfo.
+  ///
+  /// In en, this message translates to:
+  /// **'Customer Info'**
+  String get customerInfo;
+
+  /// No description provided for @appointmentInfo.
+  ///
+  /// In en, this message translates to:
+  /// **'Appointment Info'**
+  String get appointmentInfo;
+
+  /// No description provided for @getAvailableTimes.
+  ///
+  /// In en, this message translates to:
+  /// **'Get Available Times'**
+  String get getAvailableTimes;
+
+  /// No description provided for @setWorkingHours.
+  ///
+  /// In en, this message translates to:
+  /// **'Set Working Hours'**
+  String get setWorkingHours;
+
+  /// No description provided for @sendSms.
+  ///
+  /// In en, this message translates to:
+  /// **'Send SMS'**
+  String get sendSms;
+
+  /// No description provided for @doNotSendSms.
+  ///
+  /// In en, this message translates to:
+  /// **'Do not send SMS'**
+  String get doNotSendSms;
+
+  /// No description provided for @sendReminder.
+  ///
+  /// In en, this message translates to:
+  /// **'Send Reminder'**
+  String get sendReminder;
+
+  /// No description provided for @doNotSendReminder.
+  ///
+  /// In en, this message translates to:
+  /// **'Do not send reminder'**
+  String get doNotSendReminder;
+
+  /// No description provided for @googleLoginButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in with Google'**
+  String get googleLoginButton;
+
+  /// No description provided for @googleConnecting.
+  ///
+  /// In en, this message translates to:
+  /// **'Connecting...'**
+  String get googleConnecting;
+
+  /// No description provided for @createAccountEmail.
+  ///
+  /// In en, this message translates to:
+  /// **'Create account with email'**
+  String get createAccountEmail;
+
+  /// No description provided for @appointmentsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Appointments'**
+  String get appointmentsTitle;
+
+  /// No description provided for @appointmentsEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No appointments yet.'**
+  String get appointmentsEmpty;
+
+  /// No description provided for @appointmentsFetchFailedStatus.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not fetch appointments (HTTP {status}).'**
+  String appointmentsFetchFailedStatus(Object status);
+
+  /// No description provided for @appointmentsFetchFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not fetch appointments: {error}'**
+  String appointmentsFetchFailed(Object error);
+}
+
+class _AppLocalizationsDelegate
+    extends LocalizationsDelegate<AppLocalizations> {
+  const _AppLocalizationsDelegate();
+
+  @override
+  Future<AppLocalizations> load(Locale locale) {
+    return SynchronousFuture<AppLocalizations>(lookupAppLocalizations(locale));
+  }
+
+  @override
+  bool isSupported(Locale locale) =>
+      <String>['en', 'tr'].contains(locale.languageCode);
+
+  @override
+  bool shouldReload(_AppLocalizationsDelegate old) => false;
+}
+
+AppLocalizations lookupAppLocalizations(Locale locale) {
+  // Lookup logic when only language code is specified.
+  switch (locale.languageCode) {
+    case 'en':
+      return AppLocalizationsEn();
+    case 'tr':
+      return AppLocalizationsTr();
+  }
+
+  throw FlutterError(
+      'AppLocalizations.delegate failed to load unsupported locale "$locale". This is likely '
+      'an issue with the localizations generation tool. Please file an issue '
+      'on GitHub with a reproducible sample app and the gen-l10n configuration '
+      'that was used.');
+}

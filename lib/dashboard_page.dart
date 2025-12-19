@@ -4,7 +4,7 @@ import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'app_localizations.dart';
+import 'package:bagla_mobile/l10n/app_localizations.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart' as http;
 import 'package:share_plus/share_plus.dart';
@@ -63,6 +63,7 @@ class _DashboardPageState extends State<DashboardPage> {
   }
 
   Future<void> _fetchDashboard({bool force = false}) async {
+    final loc = AppLocalizations.of(context)!;
     if (_hasDashboardLoaded && !force) {
       setState(() {
         _loading = false;
@@ -79,7 +80,7 @@ class _DashboardPageState extends State<DashboardPage> {
     if (token == null || token.isEmpty) {
       setState(() {
         _loading = false;
-        _error = 'Oturum bulunamadı. Lütfen tekrar giriş yapın.';
+        _error = loc.dashboardSessionMissing;
       });
       return;
     }
@@ -101,7 +102,8 @@ class _DashboardPageState extends State<DashboardPage> {
           _hasDashboardLoaded = true;
         });
       } else {
-        String message = 'Dashboard alınamadı (HTTP ${response.statusCode}).';
+        String message =
+            loc.dashboardLoadFailedWithStatus(response.statusCode.toString());
         try {
           final decoded = jsonDecode(response.body);
           message = decoded['message']?.toString() ?? message;
@@ -115,7 +117,9 @@ class _DashboardPageState extends State<DashboardPage> {
         _noInternet = e is SocketException ||
             e.toString().contains('SocketException') ||
             e.toString().contains('Failed host lookup');
-        _error = _noInternet ? 'İnternet bağlantınızı kontrol ediniz.' : 'Dashboard alınamadı: $e';
+        _error = _noInternet
+            ? loc.dashboardNoInternet
+            : loc.dashboardLoadFailed(e.toString());
       });
     } finally {
       if (mounted) {
@@ -168,6 +172,7 @@ class _DashboardPageState extends State<DashboardPage> {
   }
 
   Future<void> _downloadQr(String link) async {
+    final loc = AppLocalizations.of(context)!;
     try {
       final painter = QrPainter(
         data: link,
@@ -184,35 +189,39 @@ class _DashboardPageState extends State<DashboardPage> {
       final file = File('${dir.path}/bagla_qr.png');
       await file.writeAsBytes(bytes);
 
-      await Share.shareXFiles([XFile(file.path)], text: 'Bagla.bio QR');
+      await Share.shareXFiles([XFile(file.path)],
+          text: loc.dashboardShareBio);
     } catch (e) {
-      _showSnack('QR indirilemedi: $e');
+      _showSnack(loc.dashboardQrDownloadFailed(e.toString()));
     }
   }
 
   Future<void> _openWhatsAppSupport() async {
+    final loc = AppLocalizations.of(context)!;
     const phone = '902589110241';
     final uri = Uri.parse('https://wa.me/$phone');
     try {
       final launched =
           await launchUrl(uri, mode: LaunchMode.externalApplication);
       if (!launched && mounted) {
-        _showSnack('WhatsApp açılamadı.');
+        _showSnack(loc.dashboardWhatsAppFailed);
       }
     } catch (e) {
-      _showSnack('WhatsApp açılamadı: $e');
+      _showSnack(loc.dashboardWhatsAppFailedWithError(e.toString()));
     }
   }
 
   Future<void> _shareBioSystem(String link) async {
+    final loc = AppLocalizations.of(context)!;
     try {
-      await Share.share(link, subject: 'Bagla bio link');
+      await Share.share(link, subject: loc.dashboardShareBio);
     } catch (e) {
-      _showSnack('Paylaşım başarısız: $e');
+      _showSnack(loc.dashboardShareFailed(e.toString()));
     }
   }
 
   void _showQrModal(String link) {
+    final loc = AppLocalizations.of(context)!;
     showModalBottomSheet(
       context: context,
       shape: const RoundedRectangleBorder(
@@ -233,9 +242,9 @@ class _DashboardPageState extends State<DashboardPage> {
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
-              const Text(
-                'Bio Link QR',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              Text(
+                loc.dashboardQrTitle,
+                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 12),
               QrImageView(
@@ -260,7 +269,7 @@ class _DashboardPageState extends State<DashboardPage> {
                         _shareBioSystem(link);
                       },
                       icon: const Icon(Icons.share),
-                      label: const Text('Paylaş'),
+                      label: Text(loc.dashboardShare),
                     ),
                   ),
                   const SizedBox(width: 8),
@@ -271,7 +280,7 @@ class _DashboardPageState extends State<DashboardPage> {
                         await _downloadQr(link);
                       },
                       icon: const Icon(Icons.download),
-                      label: const Text('İndir'),
+                      label: Text(loc.dashboardDownload),
                     ),
                   ),
                 ],
@@ -341,6 +350,7 @@ class _DashboardPageState extends State<DashboardPage> {
   }
 
   Widget _heroSection(Map<String, dynamic>? packInfo, String totalClicks) {
+    final loc = AppLocalizations.of(context)!;
     final remainingSms =
         packInfo != null ? (packInfo['remaining_sms'] ?? 0).toString() : '0';
     return Container(
@@ -364,25 +374,25 @@ class _DashboardPageState extends State<DashboardPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'Yönetim Paneli',
-            style: TextStyle(
+          Text(
+            loc.dashboardTitle,
+            style: const TextStyle(
               color: Colors.white,
               fontSize: 22,
               fontWeight: FontWeight.w800,
             ),
           ),
           const SizedBox(height: 6),
-          const Text(
-            'Linklerini ve randevularını tek yerden yönet.',
-            style: TextStyle(color: Colors.white70),
+          Text(
+            loc.dashboardHeroSubtitle,
+            style: const TextStyle(color: Colors.white70),
           ),
           const SizedBox(height: 14),
           Row(
             children: [
-              _miniPill('Toplam Tıklama', totalClicks, Icons.visibility),
+              _miniPill(loc.dashboardTopClicks, totalClicks, Icons.visibility),
               const SizedBox(width: 10),
-              _miniPill('Kalan SMS', remainingSms, Icons.sms),
+              _miniPill(loc.dashboardRemainingSms, remainingSms, Icons.sms),
             ],
           ),
         ],
@@ -429,6 +439,7 @@ class _DashboardPageState extends State<DashboardPage> {
   }
 
   Widget _buildBioCard(String? link) {
+    final loc = AppLocalizations.of(context)!;
     if (link == null || link.isEmpty) {
       return const SizedBox.shrink();
     }
@@ -449,9 +460,9 @@ class _DashboardPageState extends State<DashboardPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'Bio Sayfanız',
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+          Text(
+            loc.dashboardBioPage,
+            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 8),
           Row(
@@ -467,7 +478,7 @@ class _DashboardPageState extends State<DashboardPage> {
                 icon: const Icon(Icons.copy),
                 onPressed: () async {
                   await Clipboard.setData(ClipboardData(text: link));
-                  _showSnack('Bağlantı kopyalandı.', success: true);
+                  _showSnack(loc.dashboardLinkCopied, success: true);
                 },
               ),
             ],
@@ -480,12 +491,12 @@ class _DashboardPageState extends State<DashboardPage> {
               ElevatedButton.icon(
                 onPressed: () => _shareBioSystem(link),
                 icon: const Icon(Icons.share),
-                label: const Text('Paylaş'),
+                label: Text(loc.dashboardShare),
               ),
               OutlinedButton.icon(
                 onPressed: () => _showQrModal(link),
                 icon: const Icon(Icons.qr_code),
-                label: const Text('QR'),
+                label: Text(loc.dashboardQr),
               ),
             ],
           ),
@@ -495,6 +506,7 @@ class _DashboardPageState extends State<DashboardPage> {
   }
 
   Widget _buildPackInfo(Map<String, dynamic>? packInfo) {
+    final loc = AppLocalizations.of(context)!;
     if (packInfo == null) return const SizedBox.shrink();
     return Container(
       decoration: BoxDecoration(
@@ -513,9 +525,9 @@ class _DashboardPageState extends State<DashboardPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'Paket Bilgisi',
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+          Text(
+            loc.dashboardPackageInfo,
+            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 12),
           ListTile(
@@ -523,21 +535,21 @@ class _DashboardPageState extends State<DashboardPage> {
             contentPadding: EdgeInsets.zero,
             leading: const Icon(Icons.bolt, color: Colors.orange),
             title: Text(packInfo['pack_name']?.toString() ?? '-'),
-            subtitle: const Text('Paket adı'),
+            subtitle: Text(loc.dashboardPackageName),
           ),
           ListTile(
             dense: true,
             contentPadding: EdgeInsets.zero,
             leading: const Icon(Icons.play_circle_outline),
             title: Text(packInfo['activated_at']?.toString() ?? '-'),
-            subtitle: const Text('Başlangıç'),
+            subtitle: Text(loc.dashboardStart),
           ),
           ListTile(
             dense: true,
             contentPadding: EdgeInsets.zero,
             leading: const Icon(Icons.timer_off_outlined),
             title: Text(packInfo['expired_at']?.toString() ?? '-'),
-            subtitle: const Text('Bitiş'),
+            subtitle: Text(loc.dashboardEnd),
           ),
         ],
       ),
@@ -545,6 +557,7 @@ class _DashboardPageState extends State<DashboardPage> {
   }
 
   Widget _buildDailyClicks(Map<String, dynamic>? dailyClicks) {
+    final loc = AppLocalizations.of(context)!;
     final labels =
         (dailyClicks?['labels'] as List?)?.map((e) => e.toString()).toList() ??
             [];
@@ -556,7 +569,7 @@ class _DashboardPageState extends State<DashboardPage> {
         (firstDataset?['data'] as List?)?.map((e) => e ?? 0).toList() ?? [];
 
     if (labels.isEmpty || values.isEmpty) {
-      return const Text('Henüz tıklama verisi yok.');
+      return Text(loc.dashboardNoClicks);
     }
 
     final limitedLabels = labels.take(5).toList();
@@ -575,8 +588,9 @@ class _DashboardPageState extends State<DashboardPage> {
   }
 
   Widget _buildTopLinks(List<dynamic>? topLinks) {
+    final loc = AppLocalizations.of(context)!;
     if (topLinks == null || topLinks.isEmpty) {
-      return const Text('Henüz bağlantı tıklaması yok.');
+      return Text(loc.dashboardNoLinkClicks);
     }
     return Column(
       children: topLinks.map((link) {
@@ -611,8 +625,9 @@ class _DashboardPageState extends State<DashboardPage> {
 
   Widget _buildTodayAppointments(
       BuildContext context, Map<String, dynamic>? apptInfo) {
+    final loc = AppLocalizations.of(context)!;
     if (apptInfo == null) {
-      return const Text('Bugün için randevu verisi yok.');
+      return Text(loc.dashboardNoAppointmentsData);
     }
     final todayCount =
         apptInfo['todayAppointments'] ?? apptInfo['today_appointments'] ?? 0;
@@ -629,9 +644,9 @@ class _DashboardPageState extends State<DashboardPage> {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            const Text(
-              'Bugünkü Randevular',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            Text(
+              loc.dashboardTodayAppointments,
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
@@ -640,7 +655,7 @@ class _DashboardPageState extends State<DashboardPage> {
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Text(
-                '$todayCount bugün',
+                loc.dashboardTodayCount(todayCount.toString()),
                 style: const TextStyle(
                   color: Colors.green,
                   fontWeight: FontWeight.w700,
@@ -651,7 +666,7 @@ class _DashboardPageState extends State<DashboardPage> {
         ),
         const SizedBox(height: 8),
         if (list.isEmpty)
-          const Text('Bugün için randevu bulunamadı.')
+          Text(loc.dashboardNoAppointments)
         else
           Column(
             children: list.map((appt) {
@@ -689,7 +704,8 @@ class _DashboardPageState extends State<DashboardPage> {
                           Text(
                             name?.isNotEmpty == true
                                 ? name!
-                                : 'Müşteri #${appt['customer_id'] ?? ''}',
+                                : loc.dashboardCustomerFallback(
+                                    appt['customer_id']?.toString() ?? ''),
                             style: const TextStyle(
                                 fontWeight: FontWeight.w600, fontSize: 15),
                             overflow: TextOverflow.ellipsis,
@@ -741,7 +757,7 @@ class _DashboardPageState extends State<DashboardPage> {
                 );
               },
               icon: const Icon(Icons.calendar_month),
-              label: const Text('Takvim'),
+              label: Text(loc.dashboardCalendar),
             ),
             const SizedBox(width: 8),
             ElevatedButton.icon(
@@ -754,7 +770,7 @@ class _DashboardPageState extends State<DashboardPage> {
                 );
               },
               icon: const Icon(Icons.open_in_new),
-              label: const Text('Randevular'),
+              label: Text(loc.dashboardAppointments),
             ),
           ],
         ),
@@ -763,6 +779,7 @@ class _DashboardPageState extends State<DashboardPage> {
   }
 
   Widget _buildDashboardBody() {
+    final loc = AppLocalizations.of(context)!;
     final data = _dashboardData ?? {};
     final packInfo = data['pack_info'] is Map<String, dynamic>
         ? data['pack_info'] as Map<String, dynamic>
@@ -785,9 +802,11 @@ class _DashboardPageState extends State<DashboardPage> {
           const SizedBox(height: 12),
           Row(
             children: [
-              _buildStatCard('Toplam Tıklama', totalClicks, Icons.visibility),
+              _buildStatCard(loc.dashboardTopClicks, totalClicks,
+                  Icons.visibility),
               const SizedBox(width: 12),
-              _buildStatCard('Kalan SMS', remainingSms, Icons.sms),
+              _buildStatCard(
+                  loc.dashboardRemainingSms, remainingSms, Icons.sms),
             ],
           ),
           const SizedBox(height: 16),
@@ -814,9 +833,10 @@ class _DashboardPageState extends State<DashboardPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    'Günlük Tıklamalar',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  Text(
+                    loc.dashboardDailyClicks,
+                    style: const TextStyle(
+                        fontSize: 16, fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 8),
                   _buildDailyClicks(data['daily_clicks']),
@@ -835,9 +855,10 @@ class _DashboardPageState extends State<DashboardPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    'En Çok Tıklanan Linkler',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  Text(
+                    loc.dashboardTopLinks,
+                    style: const TextStyle(
+                        fontSize: 16, fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 8),
                   _buildTopLinks(data['top_links'] as List<dynamic>?),
@@ -859,14 +880,14 @@ class _DashboardPageState extends State<DashboardPage> {
         elevation: 0,
         backgroundColor: Colors.white,
         foregroundColor: Colors.black87,
-        title: const Text(
-          'Yönetim Paneli',
-          style: TextStyle(fontWeight: FontWeight.w700),
+        title: Text(
+          loc.dashboardTitle,
+          style: const TextStyle(fontWeight: FontWeight.w700),
         ),
         automaticallyImplyLeading: true,
         actions: [
           IconButton(
-            tooltip: 'WhatsApp Destek',
+            tooltip: loc.dashboardWhatsappSupport,
             icon: const Icon(Icons.chat, color: Colors.green),
             onPressed: _openWhatsAppSupport,
           ),
@@ -911,7 +932,7 @@ class _DashboardPageState extends State<DashboardPage> {
                   ),
                   const SizedBox(height: 16),
                   Text(
-                    'Yönetim Paneli',
+                    loc.dashboardTitle,
                     style: TextStyle(
                       color: Colors.white.withOpacity(0.9),
                       fontSize: 22,
@@ -920,7 +941,7 @@ class _DashboardPageState extends State<DashboardPage> {
                   ),
                   const SizedBox(height: 6),
                   Text(
-                    'Randevu ve iletişimlerinizi buradan yönetin',
+                    loc.dashboardDrawerSubtitle,
                     style: TextStyle(
                       color: Colors.white.withOpacity(0.7),
                       fontSize: 12,
@@ -931,7 +952,7 @@ class _DashboardPageState extends State<DashboardPage> {
             ),
             ListTile(
               leading: const Icon(Icons.home_outlined),
-              title: const Text('Anasayfa'),
+              title: Text(loc.dashboardHome),
               onTap: () {
                 Navigator.pushReplacement(
                   context,
@@ -977,35 +998,35 @@ class _DashboardPageState extends State<DashboardPage> {
             ),
             ListTile(
               leading: const Icon(Icons.event),
-              title: const Text('Randevular'),
+              title: Text(loc.dashboardAppointments),
               onTap: () {
                 _navigateToPage(const AppointmentsPage(), 'appointments');
               },
             ),
             ListTile(
               leading: const Icon(Icons.calendar_month),
-              title: const Text('Haftalık Takvim'),
+              title: Text(loc.dashboardWeeklyCalendar),
               onTap: () {
                 _navigateToPage(const CalendarPage(), 'calendar');
               },
             ),
             ListTile(
               leading: const Icon(Icons.sms_outlined),
-              title: const Text('SMS Paketleri'),
+              title: Text(loc.dashboardSmsPacks),
               onTap: () {
                 _navigateToPage(const SmsPacksPage(), 'sms_packs');
               },
             ),
             ListTile(
               leading: const Icon(Icons.receipt_long),
-              title: const Text('Siparişler'),
+              title: Text(loc.dashboardOrders),
               onTap: () {
                 _navigateToPage(const OrdersPage(), 'orders');
               },
             ),
             ListTile(
               leading: const Icon(Icons.schedule),
-              title: const Text('Çalışma Saatleri'),
+              title: Text(loc.dashboardWorkingHours),
               onTap: () {
                 _navigateToPage(
                     const WorkingPreferencesPage(), 'working_preferences');
@@ -1013,7 +1034,7 @@ class _DashboardPageState extends State<DashboardPage> {
             ),
             ListTile(
               leading: const Icon(Icons.sms),
-              title: const Text('SMS Şablonları'),
+              title: Text(loc.dashboardSmsTemplates),
               onTap: () {
                 _navigateToPage(const SmsTemplatesPage(), 'sms_templates');
               },
@@ -1080,10 +1101,10 @@ class _DashboardPageState extends State<DashboardPage> {
                                 const Icon(Icons.wifi_off,
                                     size: 64, color: Colors.redAccent),
                                 const SizedBox(height: 12),
-                                const Text(
-                                  'İnternet bağlantınızı kontrol ediniz.',
+                                Text(
+                                  loc.dashboardNoInternet,
                                   textAlign: TextAlign.center,
-                                  style: TextStyle(
+                                  style: const TextStyle(
                                     color: Colors.redAccent,
                                     fontWeight: FontWeight.w600,
                                   ),
@@ -1093,7 +1114,7 @@ class _DashboardPageState extends State<DashboardPage> {
                                   onPressed: () =>
                                       _fetchDashboard(force: true),
                                   icon: const Icon(Icons.refresh),
-                                  label: const Text('Tekrar Dene'),
+                                  label: Text(loc.dashboardRetry),
                                 ),
                               ],
                             )
@@ -1113,7 +1134,7 @@ class _DashboardPageState extends State<DashboardPage> {
                                   onPressed: () =>
                                       _fetchDashboard(force: true),
                                   icon: const Icon(Icons.refresh),
-                                  label: const Text('Tekrar Dene'),
+                                  label: Text(loc.dashboardRetry),
                                 ),
                               ],
                             ),

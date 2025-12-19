@@ -8,6 +8,9 @@ import '../dashboard_page.dart';
 import 'sms_packs.dart';
 import 'working_preferences.dart';
 import '../widgets/main_nav.dart';
+import 'package:bagla_mobile/l10n/app_localizations.dart';
+
+
 
 class AppointmentsPage extends StatefulWidget {
   final String? initialQuickDate;
@@ -30,6 +33,7 @@ class AppointmentsPage extends StatefulWidget {
 }
 
 class _AppointmentsPageState extends State<AppointmentsPage> {
+  AppLocalizations get loc => AppLocalizations.of(context)!;
   // Palette for consistent look
   static const Color primaryColor = Color(0xFF6366F1);
   static const Color secondaryColor = Color(0xFF8B5CF6);
@@ -262,6 +266,7 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
   Widget _buildHeaderHero() {
     final todayCount = _countToday();
     final totalCount = _appointments.length;
+    final loc = AppLocalizations.of(context);
     final buttonStyleOnLight = ElevatedButton.styleFrom(
       backgroundColor: Colors.white,
       foregroundColor: primaryColor,
@@ -297,26 +302,26 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
-                  children: const [
+                  children: [
                     Text(
-                      'Randevu Yönetimi',
-                      style: TextStyle(
+                      loc.appointmentManagement,
+                      style: const TextStyle(
                         fontSize: 22,
                         fontWeight: FontWeight.w800,
                         color: Colors.white,
                       ),
                     ),
-                    SizedBox(height: 6),
+                    const SizedBox(height: 6),
                     Text(
-                      'Günlük randevularını takip et, hızlıca yeni randevu oluştur.',
-                      style: TextStyle(color: Colors.white70),
+                      loc.appointmentSubtitle,
+                      style: const TextStyle(color: Colors.white70),
                     ),
                   ],
                 ),
               ),
               IconButton(
                 onPressed: _fetchAppointments,
-                tooltip: 'Yenile',
+                tooltip: loc.refresh,
                 icon: const Icon(Icons.refresh, color: Colors.white),
               ),
             ],
@@ -324,10 +329,10 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
           const SizedBox(height: 14),
           Row(
             children: [
-              _statPill('Bugün', '$todayCount', Icons.event_available,
+              _statPill(loc.today, '$todayCount', Icons.event_available,
                   Colors.white70.withOpacity(0.95)),
               const SizedBox(width: 12),
-              _statPill('Toplam', '$totalCount', Icons.calendar_today,
+              _statPill(loc.total, '$totalCount', Icons.calendar_today,
                   Colors.white70),
             ],
           ),
@@ -352,7 +357,7 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
                 },
                 style: buttonStyleOnLight,
                 icon: const Icon(Icons.flash_on),
-                label: const Text('Hızlı Randevu'),
+                label: Text(loc.quickAppointment),
               ),
               OutlinedButton.icon(
                 style: OutlinedButton.styleFrom(
@@ -374,7 +379,7 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
                   color: Colors.white,
                 ),
                 label: Text(
-                  _showFilters ? 'Filtreyi Gizle' : 'Filtrele',
+                  _showFilters ? loc.hideFilter : loc.showFilter,
                   style: const TextStyle(color: Colors.white),
                 ),
               ),
@@ -390,9 +395,9 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
                 ),
                 onPressed: _fetchAppointments,
                 icon: const Icon(Icons.sync, color: Colors.white),
-                label: const Text(
-                  'Listeyi Yenile',
-                  style: TextStyle(color: Colors.white),
+                label: Text(
+                  loc.refreshList,
+                  style: const TextStyle(color: Colors.white),
                 ),
               ),
             ],
@@ -544,13 +549,14 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
         });
       } else {
         setState(() {
-          _error = 'Randevular alınamadı (HTTP ${response.statusCode}).';
+          _error =
+              loc.appointmentsFetchFailedStatus(response.statusCode.toString());
           _loadingList = false;
         });
       }
     } catch (e) {
       setState(() {
-        _error = 'Randevular alınamadı: $e';
+        _error = loc.appointmentsFetchFailed(e.toString());
         _loadingList = false;
       });
     }
@@ -841,18 +847,19 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
 
   String _localizedStatusLabel(Map<String, dynamic> status) {
     final alias = status['alias']?.toString();
-    const trMap = {
-      'pending': 'Beklemede',
-      'confirmed': 'Onaylandı',
-      'rescheduled': 'Yeniden Planlandı',
-      'completed': 'Tamamlandı',
-      'cancelled': 'İptal',
-      'no_show': 'Gelmedi',
+    final loc = AppLocalizations.of(context);
+    final trMap = {
+      'pending': loc.statusPending,
+      'confirmed': loc.statusConfirmed,
+      'rescheduled': loc.statusRescheduled,
+      'completed': loc.statusCompleted,
+      'cancelled': loc.statusCancelled,
+      'no_show': loc.statusNoShow,
     };
     if (alias != null && trMap.containsKey(alias)) {
       return trMap[alias]!;
     }
-    return status['name']?.toString() ?? (alias ?? 'Durum');
+    return status['name']?.toString() ?? (alias ?? loc.status);
   }
 
   String _formatTime(dynamic time) {
@@ -1128,7 +1135,7 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
                 ),
               );
             },
-            child: const Text('Çalışma Saati Ayarla'),
+            child: Text(loc.setWorkingHours),
           ),
         ],
       ),
@@ -1475,24 +1482,24 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
                             child: TextField(
                               controller: dateCtrl,
                               readOnly: true,
-                              decoration: const InputDecoration(
-                                labelText: 'Tarih',
-                                hintText: 'Takvimden seçin',
-                              ),
+                           decoration: InputDecoration(
+                                 labelText: loc.date,
+                                 hintText: 'Takvimden seçin',
+                               ),
                               onTap: pickDate,
                             ),
                           ),
                           const SizedBox(width: 12),
                           Expanded(
-                            child: TextField(
-                              controller: timeCtrl,
-                              readOnly: true,
-                              decoration: const InputDecoration(
-                                labelText: 'Saat (seçim yapınız)',
-                                hintText: 'Slot seçin',
-                              ),
+                         child: TextField(
+                            controller: timeCtrl,
+                            readOnly: true,
+                            decoration: InputDecoration(
+                              labelText: loc.timeSelect,
+                              hintText: 'Slot seçin',
                             ),
                           ),
+                        ),
                         ],
                       ),
                       const SizedBox(height: 8),
@@ -1589,11 +1596,11 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
                           }).toList(),
                         ),
                       const SizedBox(height: 8),
-                      TextField(
-                        controller: notesCtrl,
-                        maxLines: 2,
-                        decoration: const InputDecoration(labelText: 'Not'),
-                      ),
+                     TextField(
+                       controller: notesCtrl,
+                       maxLines: 2,
+                       decoration: InputDecoration(labelText: loc.note),
+                     ),
                       const SizedBox(height: 8),
                       SwitchListTile(
                         title: const Text('SMS Gönderilmesin'),
@@ -1606,7 +1613,7 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
                         contentPadding: EdgeInsets.zero,
                       ),
                       SwitchListTile(
-                        title: const Text('Hatırlatıcı Gönderilmesin'),
+                        title: Text(loc.doNotSendReminder),
                         value: localNoReminder,
                         onChanged: (val) {
                           setModalState(() {
@@ -1760,11 +1767,11 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          const Text(
-                            'Müşteri Önizleme',
-                            style: TextStyle(
-                                fontSize: 16, fontWeight: FontWeight.bold),
-                          ),
+                       Text(
+                             loc.customerPreview,
+                             style: const TextStyle(
+                                 fontSize: 16, fontWeight: FontWeight.bold),
+                           ),
                           IconButton(
                             icon: const Icon(Icons.close),
                             onPressed: () => Navigator.of(ctx).pop(),
@@ -1853,17 +1860,17 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
                           ),
                         ),
                         const SizedBox(height: 12),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: const [
-                            Text(
-                              'Son Randevular',
-                              style: TextStyle(
-                                  fontSize: 14, fontWeight: FontWeight.bold),
-                            ),
-                            Icon(Icons.history, size: 18, color: Colors.grey),
-                          ],
-                        ),
+                         Row(
+                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                           children: [
+                             Text(
+                               loc.recentAppointments,
+                               style: const TextStyle(
+                                   fontSize: 14, fontWeight: FontWeight.bold),
+                             ),
+                             const Icon(Icons.history, size: 18, color: Colors.grey),
+                           ],
+                         ),
                         const SizedBox(height: 8),
                         if (recent.isEmpty)
                           const Text('Kayıt bulunamadı.')
@@ -2074,12 +2081,12 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text(
-                              'Yeniden Randevu Ver',
-                              style: TextStyle(
-                                  fontSize: 16, fontWeight: FontWeight.bold),
-                            ),
-                            const SizedBox(height: 4),
+                             Text(
+                               loc.reschedule,
+                               style: const TextStyle(
+                                   fontSize: 16, fontWeight: FontWeight.bold),
+                             ),
+                             const SizedBox(height: 4),
                             Text(
                               customerName,
                               style: const TextStyle(
@@ -2098,27 +2105,27 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
                     const SizedBox(height: 8),
                     Row(
                       children: [
-                        Expanded(
-                          child: TextField(
-                            controller: dateCtrl,
-                            readOnly: true,
-                            decoration: const InputDecoration(
-                              labelText: 'Tarih',
-                              hintText: 'Takvimden seçin',
-                            ),
-                            onTap: pickDate,
-                          ),
-                        ),
+                 Expanded(
+                   child: TextField(
+                     controller: dateCtrl,
+                     readOnly: true,
+                     decoration: InputDecoration(
+                       labelText: loc.date,
+                       hintText: 'Takvimden seçin',
+                     ),
+                     onTap: pickDate,
+                   ),
+                 ),
                         const SizedBox(width: 12),
                         Expanded(
-                          child: TextField(
-                            controller: timeCtrl,
-                            readOnly: true,
-                            decoration: const InputDecoration(
-                              labelText: 'Saat (seçim yapınız)',
-                              hintText: 'Slot seçin',
-                            ),
-                          ),
+                             child: TextField(
+                             controller: timeCtrl,
+                             readOnly: true,
+                             decoration: InputDecoration(
+                               labelText: loc.timeSelect,
+                               hintText: 'Slot seçin',
+                             ),
+                           ),
                         ),
                       ],
                     ),
@@ -2216,32 +2223,30 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
                     TextField(
                       controller: notesCtrl,
                       maxLines: 2,
-                      decoration: const InputDecoration(labelText: 'Not'),
+                      decoration: InputDecoration(labelText: loc.note),
                     ),
-                    SwitchListTile(
-                      contentPadding: EdgeInsets.zero,
-                      title: const Text('SMS gönderme'),
-                      subtitle:
-                          const Text('Bu randevu için SMS gönderimi kapalı'),
-                      value: localNoSms,
-                      onChanged: (val) {
-                        setModalState(() {
-                          localNoSms = val;
-                        });
-                      },
-                    ),
-                    SwitchListTile(
-                      contentPadding: EdgeInsets.zero,
-                      title: const Text('Hatırlatma gönderme'),
-                      subtitle: const Text(
-                          'Bu randevu için hatırlatma bildirimi kapalı'),
-                      value: localNoReminder,
-                      onChanged: (val) {
-                        setModalState(() {
-                          localNoReminder = val;
-                        });
-                      },
-                    ),
+                     SwitchListTile(
+                       contentPadding: EdgeInsets.zero,
+                       title: Text(loc.doNotSendSms),
+                       subtitle: Text(loc.smsOffForAppointment),
+                       value: localNoSms,
+                       onChanged: (val) {
+                         setModalState(() {
+                           localNoSms = val;
+                         });
+                       },
+                     ),
+                     SwitchListTile(
+                       contentPadding: EdgeInsets.zero,
+                       title: Text(loc.doNotSendReminder),
+                       subtitle: Text(loc.reminderOffForAppointment),
+                       value: localNoReminder,
+                       onChanged: (val) {
+                         setModalState(() {
+                           localNoReminder = val;
+                         });
+                       },
+                     ),
                     const SizedBox(height: 12),
                     Container(
                       padding: const EdgeInsets.symmetric(vertical: 10),
@@ -2455,18 +2460,18 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
     }
 
     if (_appointments.isEmpty) {
-      return const Padding(
-        padding: EdgeInsets.symmetric(vertical: 16),
-        child: Text('Henüz randevu yok.'),
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 16),
+        child: Text(loc.appointmentsEmpty),
       );
     }
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          'Randevular',
-          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+        Text(
+          loc.appointmentsTitle,
+          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 8),
         ..._appointments.map(_buildAppointmentCard).toList(),
@@ -2647,7 +2652,7 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
                   onPressed: _applyFilters,
                   icon: const Icon(Icons.search),
                   style: _mainButtonStyle(),
-                  label: const Text('Filtrele'),
+                  label: Text(loc.showFilter),
                 ),
               ),
               const SizedBox(width: 12),
@@ -2669,7 +2674,7 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
   Widget _buildQuickForm() {
     if (!_hasUserPack) {
       return _sectionCard(
-        title: 'Hızlı Randevu',
+      title: loc.quickAppointmentTitle,
         actions: [
           TextButton(
             onPressed: () {
@@ -2697,9 +2702,10 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text(
-                'Hızlı Randevu',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+              Text(
+                loc.quickAppointmentTitle,
+                style:
+                    const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
               ),
               IconButton(
                 tooltip: 'Kapat',
@@ -2719,22 +2725,22 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
               borderRadius: BorderRadius.circular(12),
             ),
             child: Row(
-              children: const [
-                Icon(Icons.tips_and_updates, color: Colors.blueGrey),
-                SizedBox(width: 10),
+              children: [
+                const Icon(Icons.tips_and_updates, color: Colors.blueGrey),
+                const SizedBox(width: 10),
                 Expanded(
-                  child: Text(
-                    'Müşteri ve randevu bilgilerini tek ekrandan doldurup kaydedin.',
-                    style: TextStyle(color: Colors.black87),
-                  ),
+                      child: Text(
+                        loc.quickAppointmentSubtitle,
+                        style: const TextStyle(color: Colors.black87),
+                      ),
                 ),
               ],
             ),
           ),
           const SizedBox(height: 12),
-          const Text(
-            'Müşteri Bilgisi',
-            style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
+          Text(
+            loc.customerInfo,
+            style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
           ),
           const SizedBox(height: 8),
           Container(
@@ -2830,9 +2836,9 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
             ),
           ),
           const SizedBox(height: 14),
-          const Text(
-            'Randevu Bilgisi',
-            style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
+          Text(
+            loc.appointmentInfo,
+            style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
           ),
           const SizedBox(height: 8),
           Container(
@@ -2886,7 +2892,7 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
                               ),
                             )
                           : const Icon(Icons.schedule),
-                      label: const Text('Uygun Saatleri Getir'),
+                      label: Text(loc.getAvailableTimes),
                     ),
                     const SizedBox(width: 12),
                     if (_slotsError != null)
@@ -2941,8 +2947,8 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
                 TextField(
                   controller: _quickNoteController,
                   maxLines: 2,
-                  decoration: const InputDecoration(
-                    labelText: 'Not',
+                  decoration: InputDecoration(
+                    labelText: loc.note,
                     hintText: 'Opsiyonel',
                   ),
                 ),
@@ -2959,7 +2965,7 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
                 ),
                 SwitchListTile(
                   contentPadding: EdgeInsets.zero,
-                  title: const Text('SMS gönderme'),
+                  title: Text(loc.doNotSendSms),
                   subtitle: const Text('Bu randevu için SMS gönderimi kapalı'),
                   value: _quickNoSms,
                   onChanged: (val) {
@@ -3028,9 +3034,9 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
               child: Icon(Icons.calendar_today, color: primaryColor),
             ),
             const SizedBox(width: 10),
-            const Text(
-              'Randevular',
-              style: TextStyle(fontWeight: FontWeight.w700),
+            Text(
+              loc.appointmentsTitle,
+              style: const TextStyle(fontWeight: FontWeight.w700),
             ),
           ],
         ),

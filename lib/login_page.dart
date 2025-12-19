@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'app_localizations.dart';
+import 'package:bagla_mobile/l10n/app_localizations.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -34,6 +34,32 @@ class _LoginPageState extends State<LoginPage> {
   bool _isLoading = false;
   bool _isGoogleLoading = false;
   String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    // Başlangıçta mevcut locale ile eşitle
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final current = Localizations.localeOf(context);
+      if (mounted && current != _locale) {
+        setState(() {
+          _locale = current;
+        });
+      }
+    });
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Üstteki MaterialApp locale değiştiyse dropdown ve metinleri senkronla
+    final current = Localizations.localeOf(context);
+    if (current != _locale) {
+      setState(() {
+        _locale = current;
+      });
+    }
+  }
 
   Future<void> _storeToken(String token, {String? refresh}) async {
     await saveTokens(accessToken: token, refreshToken: refresh);
@@ -191,187 +217,203 @@ class _LoginPageState extends State<LoginPage> {
 
   @override
   Widget build(BuildContext context) {
-    final loc = AppLocalizations.of(context)!;
-
-    return Scaffold(
-      body: Container(
-        color: const Color(0xFF0A84FF),
-        child: Center(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 32),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // Language Switcher Dropdown
-                Align(
-                  alignment: Alignment.topRight,
-                  child: DropdownButton<Locale>(
-                    dropdownColor: Colors.white,
-                    value: _locale,
-                    underline: const SizedBox(),
-                    iconEnabledColor: Colors.white,
-                    items: const [
-                      DropdownMenuItem(
-                        value: Locale('tr'),
-                        child: Text('TR'),
+    return Localizations.override(
+      context: context,
+      locale: _locale,
+      child: Builder(
+        builder: (ctx) {
+          final loc = AppLocalizations.of(ctx)!;
+          return Scaffold(
+            body: Container(
+              color: const Color(0xFF0A84FF),
+              child: Center(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.symmetric(horizontal: 32),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      // Language Switcher Dropdown
+                      /*
+                      Align(
+                        alignment: Alignment.topRight,
+                        child: DropdownButton<Locale>(
+                          dropdownColor: Colors.white,
+                          value: _locale,
+                          underline: const SizedBox(),
+                          iconEnabledColor: Colors.white,
+                          items: const [
+                            DropdownMenuItem(
+                              value: Locale('tr'),
+                              child: Text('TR'),
+                            ),
+                            DropdownMenuItem(
+                              value: Locale('en'),
+                              child: Text('EN'),
+                            ),
+                          ],
+                          onChanged: _onLocaleChanged,
+                        ),
                       ),
-                      DropdownMenuItem(
-                        value: Locale('en'),
-                        child: Text('EN'),
-                      ),
-                    ],
-                    onChanged: _onLocaleChanged,
-                  ),
-                ),
-                const SizedBox(height: 30),
-                Container(
-                  width: 120,
-                  height: 120,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: Colors.white.withOpacity(0.15),
-                  ),
-                  child: Center(
-                    child: ClipOval(
-                      child: Image.asset(
-                        'assets/mobile_logo.png',
-                        height: 96,
-                        width: 96,
-                        fit: BoxFit.cover,
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 24),
-                Text(
-                  loc.loginTitle,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 36,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 40),
-                TextField(
-                  controller: emailController,
-                  keyboardType: TextInputType.emailAddress,
-                  style: const TextStyle(color: Colors.white),
-                  decoration: InputDecoration(
-                    labelText: loc.emailLabel,
-                    labelStyle: const TextStyle(color: Colors.white70),
-                    filled: true,
-                    fillColor: Colors.white.withOpacity(0.2),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide.none,
-                    ),
-                    prefixIcon: const Icon(Icons.email, color: Colors.white70),
-                  ),
-                ),
-                const SizedBox(height: 20),
-                TextField(
-                  controller: passwordController,
-                  obscureText: true,
-                  style: const TextStyle(color: Colors.white),
-                  decoration: InputDecoration(
-                    labelText: loc.passwordLabel,
-                    labelStyle: const TextStyle(color: Colors.white70),
-                    filled: true,
-                    fillColor: Colors.white.withOpacity(0.2),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide.none,
-                    ),
-                    prefixIcon: const Icon(Icons.lock, color: Colors.white70),
-                  ),
-                ),
-                const SizedBox(height: 30),
-                SizedBox(
-                  width: double.infinity,
-                  height: 50,
-                  child: ElevatedButton(
-                    onPressed: _isLoading ? null : _loginWithEmail,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                    child: _isLoading
-                        ? const SizedBox(
-                            height: 20,
-                            width: 20,
-                            child: CircularProgressIndicator(strokeWidth: 2.5),
-                          )
-                        : Text(
-                            loc.loginTitle,
-                            style: const TextStyle(
-                              color: Color(0xFF2575FC),
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
+                      */
+                      const SizedBox(height: 30),
+                      Container(
+                        width: 120,
+                        height: 120,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: Colors.white.withOpacity(0.15),
+                        ),
+                        child: Center(
+                          child: ClipOval(
+                            child: Image.asset(
+                              'assets/mobile_logo.png',
+                              height: 96,
+                              width: 96,
+                              fit: BoxFit.cover,
                             ),
                           ),
-                  ),
-                ),
-                const SizedBox(height: 20),
-                if (_error != null)
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 12),
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+                      Text(
+                        loc.loginTitle,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 36,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 40),
+                      TextField(
+                        controller: emailController,
+                        keyboardType: TextInputType.emailAddress,
+                        style: const TextStyle(color: Colors.white),
+                        decoration: InputDecoration(
+                          labelText: loc.emailLabel,
+                          labelStyle: const TextStyle(color: Colors.white70),
+                          filled: true,
+                          fillColor: Colors.white.withOpacity(0.2),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide.none,
+                          ),
+                          prefixIcon:
+                              const Icon(Icons.email, color: Colors.white70),
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+                      TextField(
+                        controller: passwordController,
+                        obscureText: true,
+                        style: const TextStyle(color: Colors.white),
+                        decoration: InputDecoration(
+                          labelText: loc.passwordLabel,
+                          labelStyle: const TextStyle(color: Colors.white70),
+                          filled: true,
+                          fillColor: Colors.white.withOpacity(0.2),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide.none,
+                          ),
+                          prefixIcon:
+                              const Icon(Icons.lock, color: Colors.white70),
+                        ),
+                      ),
+                      const SizedBox(height: 30),
+                      SizedBox(
+                        width: double.infinity,
+                        height: 50,
+                        child: ElevatedButton(
+                          onPressed: _isLoading ? null : _loginWithEmail,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          child: _isLoading
+                              ? const SizedBox(
+                                  height: 20,
+                                  width: 20,
+                                  child: CircularProgressIndicator(
+                                      strokeWidth: 2.5),
+                                )
+                              : Text(
+                                  loc.loginTitle,
+                                  style: const TextStyle(
+                                    color: Color(0xFF2575FC),
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+                      if (_error != null)
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 12),
+                          child: Text(
+                            _error!,
+                            style: const TextStyle(color: Colors.yellowAccent),
+                          ),
+                        ),
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton.icon(
+                          onPressed:
+                              _isGoogleLoading ? null : _loginWithGoogle,
+                          icon: _isGoogleLoading
+                              ? const SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2.5,
+                                    valueColor:
+                                        AlwaysStoppedAnimation(Colors.black),
+                                  ),
+                                )
+                              : Image.asset(
+                                  'assets/google_icon.png',
+                                  height: 24,
+                                  width: 24,
+                                ),
+                      label: Text(
+                        _isGoogleLoading
+                            ? loc.googleConnecting
+                            : loc.googleLoginButton,
+                        style: const TextStyle(color: Colors.black87),
+                      ),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      TextButton(
+                        onPressed: () {
+                          Navigator.of(ctx).push(
+                            MaterialPageRoute(
+                              builder: (_) => const RegisterPage(),
+                            ),
+                          );
+                        },
                     child: Text(
-                      _error!,
-                      style: const TextStyle(color: Colors.yellowAccent),
+                      loc.createAccountEmail,
+                      style: const TextStyle(color: Colors.white70),
                     ),
                   ),
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton.icon(
-                    onPressed: _isGoogleLoading ? null : _loginWithGoogle,
-                    icon: _isGoogleLoading
-                        ? const SizedBox(
-                            width: 20,
-                            height: 20,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2.5,
-                              valueColor: AlwaysStoppedAnimation(Colors.black),
-                            ),
-                          )
-                        : Image.asset(
-                            'assets/google_icon.png',
-                            height: 24,
-                            width: 24,
-                          ),
-                    label: Text(
-                      _isGoogleLoading ? 'Bağlanıyor...' : 'Google ile giriş',
-                      style: const TextStyle(color: Colors.black87),
-                    ),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                    ),
+                      const SizedBox(height: 40),
+                    ],
                   ),
                 ),
-                const SizedBox(height: 16),
-                TextButton(
-                  onPressed: () {
-                    Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (_) => const RegisterPage(),
-                      ),
-                    );
-                  },
-                  child: const Text(
-                    'E-posta ile hesap oluştur',
-                    style: TextStyle(color: Colors.white70),
-                  ),
-                ),
-                const SizedBox(height: 40),
-              ],
+              ),
             ),
-          ),
-        ),
+          );
+        },
       ),
     );
   }

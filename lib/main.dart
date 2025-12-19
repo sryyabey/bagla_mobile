@@ -3,7 +3,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart'; // Added import for SharedPreferences
 import 'login_page.dart';
-import 'app_localizations.dart';
+import 'package:bagla_mobile/l10n/app_localizations.dart';
 import 'main_tabs_page.dart';
 
 void main() {
