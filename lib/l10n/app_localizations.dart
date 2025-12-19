@@ -2113,6 +2113,174 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Submitting...'**
   String get smsPacksSubmitting;
+
+  /// No description provided for @ordersTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Orders'**
+  String get ordersTitle;
+
+  /// No description provided for @ordersSessionExpired.
+  ///
+  /// In en, this message translates to:
+  /// **'Session expired, please log in again.'**
+  String get ordersSessionExpired;
+
+  /// No description provided for @ordersSessionMissing.
+  ///
+  /// In en, this message translates to:
+  /// **'Session not found. Please log in again.'**
+  String get ordersSessionMissing;
+
+  /// No description provided for @ordersFetchFailedStatus.
+  ///
+  /// In en, this message translates to:
+  /// **'Orders could not be fetched (HTTP {status}).'**
+  String ordersFetchFailedStatus(Object status);
+
+  /// No description provided for @ordersFetchFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Orders could not be fetched: {error}'**
+  String ordersFetchFailed(Object error);
+
+  /// No description provided for @ordersRetry.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry'**
+  String get ordersRetry;
+
+  /// No description provided for @ordersEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No orders yet.'**
+  String get ordersEmpty;
+
+  /// No description provided for @ordersFilterAll.
+  ///
+  /// In en, this message translates to:
+  /// **'All'**
+  String get ordersFilterAll;
+
+  /// No description provided for @ordersFilterPaid.
+  ///
+  /// In en, this message translates to:
+  /// **'Paid'**
+  String get ordersFilterPaid;
+
+  /// No description provided for @ordersFilterPending.
+  ///
+  /// In en, this message translates to:
+  /// **'Pending'**
+  String get ordersFilterPending;
+
+  /// No description provided for @ordersFilterFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed'**
+  String get ordersFilterFailed;
+
+  /// No description provided for @ordersPrev.
+  ///
+  /// In en, this message translates to:
+  /// **'Previous'**
+  String get ordersPrev;
+
+  /// No description provided for @ordersNext.
+  ///
+  /// In en, this message translates to:
+  /// **'Next'**
+  String get ordersNext;
+
+  /// No description provided for @ordersPageLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Page {current} / {total}'**
+  String ordersPageLabel(Object current, Object total);
+
+  /// No description provided for @ordersPack.
+  ///
+  /// In en, this message translates to:
+  /// **'Pack'**
+  String get ordersPack;
+
+  /// No description provided for @ordersType.
+  ///
+  /// In en, this message translates to:
+  /// **'Type'**
+  String get ordersType;
+
+  /// No description provided for @ordersStatus.
+  ///
+  /// In en, this message translates to:
+  /// **'Status'**
+  String get ordersStatus;
+
+  /// No description provided for @ordersAmount.
+  ///
+  /// In en, this message translates to:
+  /// **'Amount'**
+  String get ordersAmount;
+
+  /// No description provided for @ordersDate.
+  ///
+  /// In en, this message translates to:
+  /// **'Date'**
+  String get ordersDate;
+
+  /// No description provided for @ordersTxnId.
+  ///
+  /// In en, this message translates to:
+  /// **'Transaction ID'**
+  String get ordersTxnId;
+
+  /// No description provided for @ordersPrice.
+  ///
+  /// In en, this message translates to:
+  /// **'Price'**
+  String get ordersPrice;
+
+  /// No description provided for @ordersTax.
+  ///
+  /// In en, this message translates to:
+  /// **'Tax'**
+  String get ordersTax;
+
+  /// No description provided for @ordersTotal.
+  ///
+  /// In en, this message translates to:
+  /// **'Total'**
+  String get ordersTotal;
+
+  /// No description provided for @ordersDetailTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Order'**
+  String get ordersDetailTitle;
+
+  /// No description provided for @ordersStatusPaid.
+  ///
+  /// In en, this message translates to:
+  /// **'Paid'**
+  String get ordersStatusPaid;
+
+  /// No description provided for @ordersStatusPending.
+  ///
+  /// In en, this message translates to:
+  /// **'Pending'**
+  String get ordersStatusPending;
+
+  /// No description provided for @ordersStatusFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed'**
+  String get ordersStatusFailed;
+
+  /// No description provided for @ordersStatusCancelled.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancelled'**
+  String get ordersStatusCancelled;
 }
 
 class _AppLocalizationsDelegate

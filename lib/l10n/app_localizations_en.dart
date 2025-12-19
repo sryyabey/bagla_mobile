@@ -1116,4 +1116,94 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get smsPacksSubmitting => 'Submitting...';
+
+  @override
+  String get ordersTitle => 'Orders';
+
+  @override
+  String get ordersSessionExpired => 'Session expired, please log in again.';
+
+  @override
+  String get ordersSessionMissing => 'Session not found. Please log in again.';
+
+  @override
+  String ordersFetchFailedStatus(Object status) {
+    return 'Orders could not be fetched (HTTP $status).';
+  }
+
+  @override
+  String ordersFetchFailed(Object error) {
+    return 'Orders could not be fetched: $error';
+  }
+
+  @override
+  String get ordersRetry => 'Retry';
+
+  @override
+  String get ordersEmpty => 'No orders yet.';
+
+  @override
+  String get ordersFilterAll => 'All';
+
+  @override
+  String get ordersFilterPaid => 'Paid';
+
+  @override
+  String get ordersFilterPending => 'Pending';
+
+  @override
+  String get ordersFilterFailed => 'Failed';
+
+  @override
+  String get ordersPrev => 'Previous';
+
+  @override
+  String get ordersNext => 'Next';
+
+  @override
+  String ordersPageLabel(Object current, Object total) {
+    return 'Page $current / $total';
+  }
+
+  @override
+  String get ordersPack => 'Pack';
+
+  @override
+  String get ordersType => 'Type';
+
+  @override
+  String get ordersStatus => 'Status';
+
+  @override
+  String get ordersAmount => 'Amount';
+
+  @override
+  String get ordersDate => 'Date';
+
+  @override
+  String get ordersTxnId => 'Transaction ID';
+
+  @override
+  String get ordersPrice => 'Price';
+
+  @override
+  String get ordersTax => 'Tax';
+
+  @override
+  String get ordersTotal => 'Total';
+
+  @override
+  String get ordersDetailTitle => 'Order';
+
+  @override
+  String get ordersStatusPaid => 'Paid';
+
+  @override
+  String get ordersStatusPending => 'Pending';
+
+  @override
+  String get ordersStatusFailed => 'Failed';
+
+  @override
+  String get ordersStatusCancelled => 'Cancelled';
 }

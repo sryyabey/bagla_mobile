@@ -8,6 +8,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../config.dart';
 import '../login_page.dart';
 import '../auth.dart';
+import 'package:bagla_mobile/l10n/app_localizations.dart';
 
 class OrdersPage extends StatefulWidget {
   const OrdersPage({super.key});
@@ -17,6 +18,7 @@ class OrdersPage extends StatefulWidget {
 }
 
 class _OrdersPageState extends State<OrdersPage> {
+  AppLocalizations get loc => AppLocalizations.of(context)!;
   bool _loading = true;
   String? _error;
   List<Map<String, dynamic>> _orders = [];
@@ -42,8 +44,8 @@ class _OrdersPageState extends State<OrdersPage> {
     await prefs.remove('authToken');
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Oturum süresi doldu, lütfen tekrar giriş yapın.'),
+      SnackBar(
+        content: Text(loc.ordersSessionExpired),
         backgroundColor: Colors.red,
       ),
     );
@@ -65,7 +67,7 @@ class _OrdersPageState extends State<OrdersPage> {
     if (token == null || token.isEmpty) {
       setState(() {
         _loading = false;
-        _error = 'Oturum bulunamadı. Lütfen tekrar giriş yapın.';
+        _error = loc.ordersSessionMissing;
       });
       return;
     }
@@ -97,12 +99,12 @@ class _OrdersPageState extends State<OrdersPage> {
         });
       } else {
         setState(() {
-          _error = 'Siparişler alınamadı (HTTP ${response.statusCode}).';
+          _error = loc.ordersFetchFailedStatus(response.statusCode);
         });
       }
     } catch (e) {
       setState(() {
-        _error = 'Siparişler alınırken hata oluştu: $e';
+        _error = loc.ordersFetchFailed(e.toString());
       });
     } finally {
       if (mounted) {
@@ -151,6 +153,17 @@ class _OrdersPageState extends State<OrdersPage> {
       default:
         return Colors.grey.shade700;
     }
+  }
+
+  String _statusLabel(String status) {
+    final lower = status.toLowerCase();
+    if (lower == 'success' || lower == 'paid') return loc.ordersStatusPaid;
+    if (lower == 'pending') return loc.ordersStatusPending;
+    if (lower == 'failed') return loc.ordersStatusFailed;
+    if (lower == 'canceled' || lower == 'cancelled') {
+      return loc.ordersStatusCancelled;
+    }
+    return status;
   }
 
   String _formatDate(String? iso) {
@@ -224,7 +237,7 @@ class _OrdersPageState extends State<OrdersPage> {
                       Chip(
                         backgroundColor: _statusColor(status).withOpacity(0.12),
                         label: Text(
-                          status,
+                          _statusLabel(status),
                           style: TextStyle(
                             color: _statusColor(status),
                             fontWeight: FontWeight.w600,
@@ -235,11 +248,11 @@ class _OrdersPageState extends State<OrdersPage> {
                   ),
                   const SizedBox(height: 6),
                   Text(
-                    'Tip: ${order['pack_type'] ?? '-'}',
+                    '${loc.ordersType}: ${order['pack_type'] ?? '-'}',
                     style: const TextStyle(color: Colors.black54),
                   ),
                   Text(
-                    'Tarih: ${_formatDate(order['order_date']?.toString())}',
+                    '${loc.ordersDate}: ${_formatDate(order['order_date']?.toString())}',
                     style: const TextStyle(color: Colors.black54),
                   ),
                   const SizedBox(height: 8),
@@ -247,7 +260,7 @@ class _OrdersPageState extends State<OrdersPage> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
-                        'Tutar: ${order['total_price'] ?? '-'}',
+                        '${loc.ordersAmount}: ${order['total_price'] ?? '-'}',
                         style: const TextStyle(
                           fontWeight: FontWeight.w600,
                           fontSize: 15,
@@ -261,7 +274,7 @@ class _OrdersPageState extends State<OrdersPage> {
                   ),
                   const SizedBox(height: 6),
                   Text(
-                    'İşlem ID: ${order['transaction_id'] ?? '-'}',
+                    '${loc.ordersTxnId}: ${order['transaction_id'] ?? '-'}',
                     style: const TextStyle(color: Colors.black54),
                   ),
                 ],
@@ -274,22 +287,23 @@ class _OrdersPageState extends State<OrdersPage> {
   }
 
   Widget _buildPagination() {
-    final totalPages =
-        (_filteredOrders.length / _pageSize).ceil() == 0 ? 1 : (_filteredOrders.length / _pageSize).ceil();
+    final totalPages = (_filteredOrders.length / _pageSize).ceil() == 0
+        ? 1
+        : (_filteredOrders.length / _pageSize).ceil();
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.end,
         children: [
-          Text('Sayfa ${_page + 1} / $totalPages'),
+          Text(loc.ordersPageLabel(_page + 1, totalPages)),
           const SizedBox(width: 12),
           IconButton(
-            tooltip: 'Önceki',
+            tooltip: loc.ordersPrev,
             onPressed: _page > 0 ? _prevPage : null,
             icon: const Icon(Icons.chevron_left),
           ),
           IconButton(
-            tooltip: 'Sonraki',
+            tooltip: loc.ordersNext,
             onPressed: (_page + 1) * _pageSize < _filteredOrders.length ? _nextPage : null,
             icon: const Icon(Icons.chevron_right),
           ),
@@ -333,25 +347,25 @@ class _OrdersPageState extends State<OrdersPage> {
                       fontWeight: FontWeight.w700,
                     ),
                   ),
-                  Chip(
-                    backgroundColor: _statusColor(status).withOpacity(0.12),
-                    label: Text(
-                      status,
-                      style: TextStyle(
-                        color: _statusColor(status),
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
+          Chip(
+            backgroundColor: _statusColor(status).withOpacity(0.12),
+            label: Text(
+              _statusLabel(status),
+              style: TextStyle(
+                color: _statusColor(status),
+                fontWeight: FontWeight.w600,
+              ),
+            ),
                   ),
                 ],
               ),
               const SizedBox(height: 10),
-              _detailRow('İşlem ID', order['transaction_id']),
-              _detailRow('Paket Tipi', order['pack_type']),
-              _detailRow('Fiyat', order['price']),
-              _detailRow('Vergi', order['tax']),
-              _detailRow('Toplam', order['total_price']),
-              _detailRow('Tarih', _formatDate(order['order_date']?.toString())),
+              _detailRow(loc.ordersTxnId, order['transaction_id']),
+              _detailRow(loc.ordersType, order['pack_type']),
+              _detailRow(loc.ordersPrice, order['price']),
+              _detailRow(loc.ordersTax, order['tax']),
+              _detailRow(loc.ordersTotal, order['total_price']),
+              _detailRow(loc.ordersDate, _formatDate(order['order_date']?.toString())),
             ],
           ),
         );
@@ -379,11 +393,11 @@ class _OrdersPageState extends State<OrdersPage> {
   }
 
   Widget _buildFilters() {
-    const statuses = [
-      {'key': 'all', 'label': 'Hepsi'},
-      {'key': 'paid', 'label': 'Ödendi'},
-      {'key': 'pending', 'label': 'Bekliyor'},
-      {'key': 'failed', 'label': 'Başarısız'},
+    final statuses = [
+      {'key': 'all', 'label': loc.ordersFilterAll},
+      {'key': 'paid', 'label': loc.ordersFilterPaid},
+      {'key': 'pending', 'label': loc.ordersFilterPending},
+      {'key': 'failed', 'label': loc.ordersFilterFailed},
     ];
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
@@ -426,15 +440,15 @@ class _OrdersPageState extends State<OrdersPage> {
             const SizedBox(height: 12),
             ElevatedButton(
               onPressed: _loadOrders,
-              child: const Text('Tekrar Dene'),
+              child: Text(loc.ordersRetry),
             ),
           ],
         ),
       );
     }
     if (_orders.isEmpty) {
-      return const Center(
-        child: Text('Henüz sipariş bulunmuyor.'),
+      return Center(
+        child: Text(loc.ordersEmpty),
       );
     }
 
@@ -463,14 +477,14 @@ class _OrdersPageState extends State<OrdersPage> {
                         scrollDirection: Axis.horizontal,
                         child: DataTable(
                           headingRowColor: MaterialStateProperty.all(Colors.grey.shade200),
-                          columns: const [
-                            DataColumn(label: Text('#')),
-                            DataColumn(label: Text('Paket')),
-                            DataColumn(label: Text('Tip')),
-                            DataColumn(label: Text('Durum')),
-                            DataColumn(label: Text('Tutar')),
-                            DataColumn(label: Text('Tarih')),
-                            DataColumn(label: Text('İşlem ID')),
+                          columns: [
+                            const DataColumn(label: Text('#')),
+                            DataColumn(label: Text(loc.ordersPack)),
+                            DataColumn(label: Text(loc.ordersType)),
+                            DataColumn(label: Text(loc.ordersStatus)),
+                            DataColumn(label: Text(loc.ordersAmount)),
+                            DataColumn(label: Text(loc.ordersDate)),
+                            DataColumn(label: Text(loc.ordersTxnId)),
                           ],
                           rows: _pagedOrders.map((order) {
                             final status = order['payment_status']?.toString() ?? '-';
@@ -492,12 +506,12 @@ class _OrdersPageState extends State<OrdersPage> {
                                         width: 10,
                                         height: 10,
                                         margin: const EdgeInsets.only(right: 8),
-                                        decoration: BoxDecoration(
-                                          color: _statusColor(status),
-                                          shape: BoxShape.circle,
-                                        ),
+                                      decoration: BoxDecoration(
+                                        color: _statusColor(status),
+                                        shape: BoxShape.circle,
                                       ),
-                                      Text(status),
+                                    ),
+                                      Text(_statusLabel(status)),
                                     ],
                                   ),
                                 ),
@@ -525,10 +539,10 @@ class _OrdersPageState extends State<OrdersPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Siparişler'),
+        title: Text(loc.ordersTitle),
         actions: [
           IconButton(
-            tooltip: 'Yenile',
+            tooltip: loc.ordersRetry,
             onPressed: _loadOrders,
             icon: const Icon(Icons.refresh),
           ),

@@ -1119,4 +1119,96 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get smsPacksSubmitting => 'Gönderiliyor...';
+
+  @override
+  String get ordersTitle => 'Siparişler';
+
+  @override
+  String get ordersSessionExpired =>
+      'Oturum süresi doldu, lütfen tekrar giriş yapın.';
+
+  @override
+  String get ordersSessionMissing =>
+      'Oturum bulunamadı. Lütfen tekrar giriş yapın.';
+
+  @override
+  String ordersFetchFailedStatus(Object status) {
+    return 'Siparişler alınamadı (HTTP $status).';
+  }
+
+  @override
+  String ordersFetchFailed(Object error) {
+    return 'Siparişler alınamadı: $error';
+  }
+
+  @override
+  String get ordersRetry => 'Tekrar Dene';
+
+  @override
+  String get ordersEmpty => 'Henüz sipariş bulunmuyor.';
+
+  @override
+  String get ordersFilterAll => 'Hepsi';
+
+  @override
+  String get ordersFilterPaid => 'Ödendi';
+
+  @override
+  String get ordersFilterPending => 'Bekliyor';
+
+  @override
+  String get ordersFilterFailed => 'Başarısız';
+
+  @override
+  String get ordersPrev => 'Önceki';
+
+  @override
+  String get ordersNext => 'Sonraki';
+
+  @override
+  String ordersPageLabel(Object current, Object total) {
+    return 'Sayfa $current / $total';
+  }
+
+  @override
+  String get ordersPack => 'Paket';
+
+  @override
+  String get ordersType => 'Tip';
+
+  @override
+  String get ordersStatus => 'Durum';
+
+  @override
+  String get ordersAmount => 'Tutar';
+
+  @override
+  String get ordersDate => 'Tarih';
+
+  @override
+  String get ordersTxnId => 'İşlem ID';
+
+  @override
+  String get ordersPrice => 'Fiyat';
+
+  @override
+  String get ordersTax => 'Vergi';
+
+  @override
+  String get ordersTotal => 'Toplam';
+
+  @override
+  String get ordersDetailTitle => 'Sipariş';
+
+  @override
+  String get ordersStatusPaid => 'Ödendi';
+
+  @override
+  String get ordersStatusPending => 'Bekliyor';
+
+  @override
+  String get ordersStatusFailed => 'Başarısız';
+
+  @override
+  String get ordersStatusCancelled => 'İptal edildi';
 }
