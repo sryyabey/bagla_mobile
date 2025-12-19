@@ -1370,4 +1370,155 @@ class AppLocalizationsTr extends AppLocalizations {
   String smsTemplatesFallbackTitle(Object id) {
     return 'Şablon #$id';
   }
+
+  @override
+  String get supportTitle => 'Destek';
+
+  @override
+  String get supportSessionMissing =>
+      'Oturum bulunamadı. Lütfen tekrar giriş yapın.';
+
+  @override
+  String supportFetchFailedStatus(Object status) {
+    return 'Destek kayıtları alınamadı (HTTP $status).';
+  }
+
+  @override
+  String supportFetchFailed(Object error) {
+    return 'Destek kayıtları alınamadı: $error';
+  }
+
+  @override
+  String get supportCreateValidation => 'Başlık ve mesaj zorunludur.';
+
+  @override
+  String get supportCreateSuccess => 'Destek talebi oluşturuldu.';
+
+  @override
+  String supportCreateFailedStatus(Object status) {
+    return 'Talep oluşturulamadı (HTTP $status).';
+  }
+
+  @override
+  String supportCreateFailed(Object error) {
+    return 'Talep oluşturulamadı: $error';
+  }
+
+  @override
+  String get supportRetry => 'Tekrar dene';
+
+  @override
+  String get supportEmpty => 'Henüz destek talebiniz yok.';
+
+  @override
+  String get supportRefresh => 'Yenile';
+
+  @override
+  String get supportNewTicket => 'Yeni Destek Talebi';
+
+  @override
+  String get supportTitleLabel => 'Başlık';
+
+  @override
+  String get supportMessageLabel => 'Mesajınız';
+
+  @override
+  String get supportSending => 'Gönderiliyor...';
+
+  @override
+  String get supportSend => 'Gönder';
+
+  @override
+  String get supportTickets => 'Destek Kayıtları';
+
+  @override
+  String get supportMessagesCount => 'Mesaj';
+
+  @override
+  String get supportTicketDetail => 'Destek Detayı';
+
+  @override
+  String get supportTicketNotFound => 'Talep bulunamadı.';
+
+  @override
+  String get supportMessages => 'Mesajlar';
+
+  @override
+  String get supportStatusClosing => 'Kapatılıyor';
+
+  @override
+  String get supportCloseTicket => 'Talebi Kapat';
+
+  @override
+  String supportCreatedAt(Object date) {
+    return 'Oluşturulma: $date';
+  }
+
+  @override
+  String get supportSenderYou => 'Siz';
+
+  @override
+  String get supportSenderSupport => 'Destek';
+
+  @override
+  String get supportNoMessages => 'Henüz mesaj yok.';
+
+  @override
+  String get supportReplyPlaceholder => 'Mesajınız';
+
+  @override
+  String get supportReplyClosed =>
+      'Bu talep kapalı, yeni mesaj gönderemezsiniz.';
+
+  @override
+  String get supportReplySending => 'Gönderiliyor...';
+
+  @override
+  String get supportReplySend => 'Yanıt Gönder';
+
+  @override
+  String get supportReplyEmpty => 'Mesaj boş olamaz.';
+
+  @override
+  String get supportReplySuccess => 'Yanıt gönderildi.';
+
+  @override
+  String supportReplyFailedStatus(Object status) {
+    return 'Yanıt gönderilemedi (HTTP $status).';
+  }
+
+  @override
+  String supportReplyFailed(Object error) {
+    return 'Yanıt gönderilemedi: $error';
+  }
+
+  @override
+  String get supportCloseSuccess => 'Talep kapatıldı.';
+
+  @override
+  String supportCloseFailedStatus(Object status) {
+    return 'Talep kapatılamadı (HTTP $status).';
+  }
+
+  @override
+  String supportCloseFailed(Object error) {
+    return 'Talep kapatılamadı: $error';
+  }
+
+  @override
+  String supportMessagesMeta(Object count, Object date) {
+    return '$count mesaj • $date';
+  }
+
+  @override
+  String get supportStatusOpen => 'Açık';
+
+  @override
+  String get supportStatusPending => 'Beklemede';
+
+  @override
+  String get supportStatusClosed => 'Kapalı';
+
+  @override
+  String get supportPriority => 'Öncelik';
 }

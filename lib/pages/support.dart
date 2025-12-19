@@ -4,6 +4,7 @@ import 'package:bagla_mobile/config.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:bagla_mobile/l10n/app_localizations.dart';
 
 class SupportPage extends StatefulWidget {
   const SupportPage({super.key});
@@ -13,6 +14,7 @@ class SupportPage extends StatefulWidget {
 }
 
 class _SupportPageState extends State<SupportPage> {
+  AppLocalizations get loc => AppLocalizations.of(context)!;
   final TextEditingController _titleController = TextEditingController();
   final TextEditingController _messageController = TextEditingController();
   static const Color _backgroundColor = Color(0xFFF7F9FC);
@@ -53,7 +55,7 @@ class _SupportPageState extends State<SupportPage> {
     if (token == null || token.isEmpty) {
       setState(() {
         _loading = false;
-        _error = 'Oturum bulunamadı. Lütfen tekrar giriş yapın.';
+        _error = loc.supportSessionMissing;
       });
       return;
     }
@@ -80,13 +82,13 @@ class _SupportPageState extends State<SupportPage> {
         });
       } else {
         setState(() {
-          _error = 'Destek kayıtları alınamadı (${response.statusCode}).';
+          _error = loc.supportFetchFailedStatus(response.statusCode);
           _loading = false;
         });
       }
     } catch (e) {
       setState(() {
-        _error = 'Destek kayıtları alınamadı: $e';
+        _error = loc.supportFetchFailed(e.toString());
         _loading = false;
       });
     }
@@ -98,13 +100,13 @@ class _SupportPageState extends State<SupportPage> {
     final message = _messageController.text.trim();
 
     if (title.isEmpty || message.isEmpty) {
-      _showSnack('Başlık ve mesaj zorunludur.');
+      _showSnack(loc.supportCreateValidation);
       return;
     }
 
     final token = await _getToken();
     if (token == null || token.isEmpty) {
-      _showSnack('Oturum bulunamadı. Lütfen tekrar giriş yapın.');
+      _showSnack(loc.supportSessionMissing);
       return;
     }
 
@@ -127,12 +129,13 @@ class _SupportPageState extends State<SupportPage> {
       );
 
       if (response.statusCode == 200 || response.statusCode == 201) {
-        _showSnack('Destek talebi oluşturuldu.', success: true);
+        _showSnack(loc.supportCreateSuccess, success: true);
         _titleController.clear();
         _messageController.clear();
         await _fetchTickets();
       } else {
-        String message = 'Talep oluşturulamadı (${response.statusCode}).';
+        String message =
+            loc.supportCreateFailedStatus(response.statusCode);
         try {
           final decoded = jsonDecode(response.body);
           message = decoded['message']?.toString() ?? message;
@@ -140,7 +143,7 @@ class _SupportPageState extends State<SupportPage> {
         _showSnack(message);
       }
     } catch (e) {
-      _showSnack('Talep oluşturulamadı: $e');
+      _showSnack(loc.supportCreateFailed(e.toString()));
     } finally {
       if (mounted) {
         setState(() {
@@ -220,6 +223,19 @@ class _SupportPageState extends State<SupportPage> {
     }
   }
 
+  String _statusLabel(String? status) {
+    switch (status) {
+      case 'open':
+        return loc.supportStatusOpen;
+      case 'pending':
+        return loc.supportStatusPending;
+      case 'closed':
+        return loc.supportStatusClosed;
+      default:
+        return status ?? '';
+    }
+  }
+
   String _formatDate(String? isoString) {
     if (isoString == null) return '';
     try {
@@ -257,9 +273,9 @@ class _SupportPageState extends State<SupportPage> {
         elevation: 0,
         backgroundColor: Colors.white,
         foregroundColor: Colors.black87,
-        title: const Text(
-          'Destek',
-          style: TextStyle(fontWeight: FontWeight.w700),
+        title: Text(
+          loc.supportTitle,
+          style: const TextStyle(fontWeight: FontWeight.w700),
         ),
       ),
       body: RefreshIndicator(
@@ -291,14 +307,14 @@ class _SupportPageState extends State<SupportPage> {
                     OutlinedButton.icon(
                       onPressed: _fetchTickets,
                       icon: const Icon(Icons.refresh),
-                      label: const Text('Tekrar dene'),
+                      label: Text(loc.supportRetry),
                     ),
                   ],
                 ),
               )
             else if (_tickets.isEmpty)
               _sectionCard(
-                title: 'Henüz destek talebiniz yok.',
+                title: loc.supportEmpty,
                 child: const SizedBox.shrink(),
               )
             else
@@ -320,7 +336,9 @@ class _SupportPageState extends State<SupportPage> {
                   child: ListTile(
                     onTap: () => _openTicketDetail(ticket['id'] as int),
                     title: Text(
-                      ticket['title']?.toString() ?? 'Başlıksız',
+                      ticket['title']?.toString() ??
+                          loc.smsTemplatesFallbackTitle(
+                              ticket['id']?.toString() ?? ''),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(fontWeight: FontWeight.bold),
@@ -342,8 +360,8 @@ class _SupportPageState extends State<SupportPage> {
                               ),
                               child: Text(
                                 ticket['status_label']?.toString() ??
-                                    ticket['status']?.toString() ??
-                                    '',
+                                    _statusLabel(
+                                        ticket['status']?.toString()),
                                 style: TextStyle(
                                   color: _statusColor(
                                       ticket['status']?.toString()),
@@ -365,7 +383,10 @@ class _SupportPageState extends State<SupportPage> {
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          'Mesaj: ${ticket['message_count'] ?? 0} • ${_formatDate(ticket['created_at']?.toString())}',
+                          loc.supportMessagesMeta(
+                              (ticket['message_count'] ?? 0).toString(),
+                              _formatDate(
+                                  ticket['created_at']?.toString())),
                           style: const TextStyle(fontSize: 12),
                         ),
                       ],
@@ -383,14 +404,14 @@ class _SupportPageState extends State<SupportPage> {
 
   Widget _buildCreateCard() {
     return _sectionCard(
-      title: 'Yeni Destek Talebi',
+      title: loc.supportNewTicket,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           TextField(
             controller: _titleController,
             decoration: InputDecoration(
-              labelText: 'Başlık',
+              labelText: loc.supportTitleLabel,
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(10),
               ),
@@ -402,7 +423,7 @@ class _SupportPageState extends State<SupportPage> {
             minLines: 3,
             maxLines: 4,
             decoration: InputDecoration(
-              labelText: 'Mesajınız',
+              labelText: loc.supportMessageLabel,
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(10),
               ),
@@ -429,7 +450,8 @@ class _SupportPageState extends State<SupportPage> {
                       child: CircularProgressIndicator(strokeWidth: 2),
                     )
                   : const Icon(Icons.send),
-              label: Text(_creating ? 'Gönderiliyor...' : 'Gönder'),
+              label: Text(
+                  _creating ? loc.supportSending : loc.supportSend),
             ),
           ),
         ],
@@ -456,11 +478,25 @@ class _TicketDetailSheet extends StatefulWidget {
 }
 
 class _TicketDetailSheetState extends State<_TicketDetailSheet> {
+  AppLocalizations get loc => AppLocalizations.of(context)!;
   Map<String, dynamic>? _ticket;
   bool _loading = true;
   bool _replying = false;
   bool _closing = false;
   final TextEditingController _replyController = TextEditingController();
+
+  String _statusLabel(String? status) {
+    switch (status) {
+      case 'open':
+        return loc.supportStatusOpen;
+      case 'pending':
+        return loc.supportStatusPending;
+      case 'closed':
+        return loc.supportStatusClosed;
+      default:
+        return status ?? '';
+    }
+  }
 
   @override
   void initState() {
@@ -495,7 +531,7 @@ class _TicketDetailSheetState extends State<_TicketDetailSheet> {
       setState(() {
         _loading = false;
       });
-      _showSnack('Oturum bulunamadı. Lütfen tekrar giriş yapın.');
+      _showSnack(loc.supportSessionMissing);
       return;
     }
 
@@ -517,7 +553,7 @@ class _TicketDetailSheetState extends State<_TicketDetailSheet> {
           _loading = false;
         });
       } else {
-        _showSnack('Talep alınamadı (${response.statusCode}).');
+        _showSnack(loc.supportFetchFailedStatus(response.statusCode));
         if (mounted) {
           setState(() {
             _loading = false;
@@ -525,7 +561,7 @@ class _TicketDetailSheetState extends State<_TicketDetailSheet> {
         }
       }
     } catch (e) {
-      _showSnack('Talep alınamadı: $e');
+      _showSnack(loc.supportFetchFailed(e.toString()));
       if (mounted) {
         setState(() {
           _loading = false;
@@ -538,13 +574,13 @@ class _TicketDetailSheetState extends State<_TicketDetailSheet> {
     if (_replying) return;
     final message = _replyController.text.trim();
     if (message.isEmpty) {
-      _showSnack('Mesaj boş olamaz.');
+      _showSnack(loc.supportReplyEmpty);
       return;
     }
 
     final token = await widget.tokenGetter();
     if (token == null || token.isEmpty) {
-      _showSnack('Oturum bulunamadı. Lütfen tekrar giriş yapın.');
+      _showSnack(loc.supportSessionMissing);
       return;
     }
 
@@ -568,9 +604,10 @@ class _TicketDetailSheetState extends State<_TicketDetailSheet> {
         _replyController.clear();
         await widget.onUpdated();
         await _loadTicket();
-        _showSnack('Yanıt gönderildi.', success: true);
+        _showSnack(loc.supportReplySuccess, success: true);
       } else {
-        String msg = 'Yanıt gönderilemedi (${response.statusCode}).';
+        String msg =
+            loc.supportReplyFailedStatus(response.statusCode);
         try {
           final decoded = jsonDecode(response.body);
           msg = decoded['message']?.toString() ?? msg;
@@ -578,7 +615,7 @@ class _TicketDetailSheetState extends State<_TicketDetailSheet> {
         _showSnack(msg);
       }
     } catch (e) {
-      _showSnack('Yanıt gönderilemedi: $e');
+      _showSnack(loc.supportReplyFailed(e.toString()));
     } finally {
       if (mounted) {
         setState(() {
@@ -593,7 +630,7 @@ class _TicketDetailSheetState extends State<_TicketDetailSheet> {
 
     final token = await widget.tokenGetter();
     if (token == null || token.isEmpty) {
-      _showSnack('Oturum bulunamadı. Lütfen tekrar giriş yapın.');
+      _showSnack(loc.supportSessionMissing);
       return;
     }
 
@@ -614,12 +651,12 @@ class _TicketDetailSheetState extends State<_TicketDetailSheet> {
       if (response.statusCode == 200) {
         await widget.onUpdated();
         await _loadTicket();
-        _showSnack('Talep kapatıldı.', success: true);
+        _showSnack(loc.supportCloseSuccess, success: true);
       } else {
-        _showSnack('Talep kapatılamadı (${response.statusCode}).');
+        _showSnack(loc.supportCloseFailedStatus(response.statusCode));
       }
     } catch (e) {
-      _showSnack('Talep kapatılamadı: $e');
+      _showSnack(loc.supportCloseFailed(e.toString()));
     } finally {
       if (mounted) {
         setState(() {
@@ -665,10 +702,10 @@ class _TicketDetailSheetState extends State<_TicketDetailSheet> {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text(
-                      'Destek Detayı',
+                    Text(
+                      loc.supportTicketDetail,
                       style:
-                          TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                          const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                     ),
                     IconButton(
                       onPressed: () => Navigator.of(context).pop(),
@@ -682,15 +719,15 @@ class _TicketDetailSheetState extends State<_TicketDetailSheet> {
                 child: _loading
                     ? const Center(child: CircularProgressIndicator())
                     : _ticket == null
-                        ? const Center(child: Text('Talep bulunamadı.'))
+                    ? Center(child: Text(loc.supportTicketNotFound))
                         : ListView(
                             padding: const EdgeInsets.all(16),
                             children: [
                               _buildHeader(),
-                              const SizedBox(height: 12),
-                              const Text(
-                                'Mesajlar',
-                                style: TextStyle(
+                            const SizedBox(height: 12),
+                              Text(
+                                loc.supportMessages,
+                                style: const TextStyle(
                                     fontSize: 15, fontWeight: FontWeight.bold),
                               ),
                               const SizedBox(height: 8),
@@ -712,7 +749,9 @@ class _TicketDetailSheetState extends State<_TicketDetailSheet> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          _ticket?['title']?.toString() ?? 'Başlıksız',
+          _ticket?['title']?.toString() ??
+              loc.smsTemplatesFallbackTitle(
+                  _ticket?['id']?.toString() ?? ''),
           style: const TextStyle(fontSize: 17, fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 6),
@@ -728,8 +767,7 @@ class _TicketDetailSheetState extends State<_TicketDetailSheet> {
               ),
               child: Text(
                 _ticket?['status_label']?.toString() ??
-                    _ticket?['status']?.toString() ??
-                    '',
+                    _statusLabel(_ticket?['status']?.toString()),
                 style: TextStyle(
                   color: widget.statusColor(_ticket?['status']?.toString()),
                   fontWeight: FontWeight.w600,
@@ -739,7 +777,7 @@ class _TicketDetailSheetState extends State<_TicketDetailSheet> {
             ),
             const SizedBox(width: 8),
             Text(
-              _ticket?['priority']?.toString().toUpperCase() ?? '',
+          _ticket?['priority']?.toString().toUpperCase() ?? '',
               style: const TextStyle(color: Colors.grey, fontSize: 12),
             ),
             const Spacer(),
@@ -753,13 +791,15 @@ class _TicketDetailSheetState extends State<_TicketDetailSheet> {
                         child: CircularProgressIndicator(strokeWidth: 2),
                       )
                     : const Icon(Icons.check_circle_outline),
-                label: Text(_closing ? 'Kapatılıyor' : 'Talebi Kapat'),
+                label: Text(
+                    _closing ? loc.supportStatusClosing : loc.supportCloseTicket),
               ),
           ],
         ),
         const SizedBox(height: 4),
         Text(
-          'Oluşturulma: ${_formatDate(_ticket?['created_at']?.toString())}',
+          loc.supportCreatedAt(
+              _formatDate(_ticket?['created_at']?.toString())),
           style: const TextStyle(fontSize: 12, color: Colors.grey),
         ),
       ],
@@ -770,9 +810,9 @@ class _TicketDetailSheetState extends State<_TicketDetailSheet> {
     final messages = _ticket?['messages'];
     if (messages is! List || messages.isEmpty) {
       return [
-        const Padding(
-          padding: EdgeInsets.symmetric(vertical: 12),
-          child: Text('Henüz mesaj yok.'),
+        Padding(
+          padding: const EdgeInsets.symmetric(vertical: 12),
+          child: Text(loc.supportNoMessages),
         ),
       ];
     }
@@ -803,7 +843,7 @@ class _TicketDetailSheetState extends State<_TicketDetailSheet> {
               children: [
                 Text(
                   sender?['name']?.toString() ??
-                      (isOwner ? 'Siz' : 'Destek'),
+                      (isOwner ? loc.supportSenderYou : loc.supportSenderSupport),
                   style: TextStyle(
                     fontWeight: FontWeight.w600,
                     color: isOwner ? Colors.blue : Colors.black87,
@@ -850,8 +890,8 @@ class _TicketDetailSheetState extends State<_TicketDetailSheet> {
             enabled: !isClosed,
             decoration: InputDecoration(
               hintText: isClosed
-                  ? 'Bu talep kapalı, yeni mesaj gönderemezsiniz.'
-                  : 'Mesajınız',
+                  ? loc.supportReplyClosed
+                  : loc.supportReplyPlaceholder,
               border: const OutlineInputBorder(),
               filled: true,
               fillColor: Colors.white,
@@ -870,7 +910,9 @@ class _TicketDetailSheetState extends State<_TicketDetailSheet> {
                           child: CircularProgressIndicator(strokeWidth: 2),
                         )
                       : const Icon(Icons.send),
-                  label: Text(_replying ? 'Gönderiliyor...' : 'Yanıt Gönder'),
+                  label: Text(_replying
+                      ? loc.supportReplySending
+                      : loc.supportReplySend),
                 ),
               ),
             ],

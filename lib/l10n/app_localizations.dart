@@ -2551,6 +2551,264 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Template #{id}'**
   String smsTemplatesFallbackTitle(Object id);
+
+  /// No description provided for @supportTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Support'**
+  String get supportTitle;
+
+  /// No description provided for @supportSessionMissing.
+  ///
+  /// In en, this message translates to:
+  /// **'Session not found. Please log in again.'**
+  String get supportSessionMissing;
+
+  /// No description provided for @supportFetchFailedStatus.
+  ///
+  /// In en, this message translates to:
+  /// **'Support tickets could not be loaded (HTTP {status}).'**
+  String supportFetchFailedStatus(Object status);
+
+  /// No description provided for @supportFetchFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Support tickets could not be loaded: {error}'**
+  String supportFetchFailed(Object error);
+
+  /// No description provided for @supportCreateValidation.
+  ///
+  /// In en, this message translates to:
+  /// **'Title and message are required.'**
+  String get supportCreateValidation;
+
+  /// No description provided for @supportCreateSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Support ticket created.'**
+  String get supportCreateSuccess;
+
+  /// No description provided for @supportCreateFailedStatus.
+  ///
+  /// In en, this message translates to:
+  /// **'Ticket could not be created (HTTP {status}).'**
+  String supportCreateFailedStatus(Object status);
+
+  /// No description provided for @supportCreateFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Ticket could not be created: {error}'**
+  String supportCreateFailed(Object error);
+
+  /// No description provided for @supportRetry.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry'**
+  String get supportRetry;
+
+  /// No description provided for @supportEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'You don\'t have any support tickets yet.'**
+  String get supportEmpty;
+
+  /// No description provided for @supportRefresh.
+  ///
+  /// In en, this message translates to:
+  /// **'Refresh'**
+  String get supportRefresh;
+
+  /// No description provided for @supportNewTicket.
+  ///
+  /// In en, this message translates to:
+  /// **'New Support Ticket'**
+  String get supportNewTicket;
+
+  /// No description provided for @supportTitleLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Title'**
+  String get supportTitleLabel;
+
+  /// No description provided for @supportMessageLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Your message'**
+  String get supportMessageLabel;
+
+  /// No description provided for @supportSending.
+  ///
+  /// In en, this message translates to:
+  /// **'Sending...'**
+  String get supportSending;
+
+  /// No description provided for @supportSend.
+  ///
+  /// In en, this message translates to:
+  /// **'Send'**
+  String get supportSend;
+
+  /// No description provided for @supportTickets.
+  ///
+  /// In en, this message translates to:
+  /// **'Support Tickets'**
+  String get supportTickets;
+
+  /// No description provided for @supportMessagesCount.
+  ///
+  /// In en, this message translates to:
+  /// **'Messages'**
+  String get supportMessagesCount;
+
+  /// No description provided for @supportTicketDetail.
+  ///
+  /// In en, this message translates to:
+  /// **'Support Detail'**
+  String get supportTicketDetail;
+
+  /// No description provided for @supportTicketNotFound.
+  ///
+  /// In en, this message translates to:
+  /// **'Ticket not found.'**
+  String get supportTicketNotFound;
+
+  /// No description provided for @supportMessages.
+  ///
+  /// In en, this message translates to:
+  /// **'Messages'**
+  String get supportMessages;
+
+  /// No description provided for @supportStatusClosing.
+  ///
+  /// In en, this message translates to:
+  /// **'Closing'**
+  String get supportStatusClosing;
+
+  /// No description provided for @supportCloseTicket.
+  ///
+  /// In en, this message translates to:
+  /// **'Close Ticket'**
+  String get supportCloseTicket;
+
+  /// No description provided for @supportCreatedAt.
+  ///
+  /// In en, this message translates to:
+  /// **'Created: {date}'**
+  String supportCreatedAt(Object date);
+
+  /// No description provided for @supportSenderYou.
+  ///
+  /// In en, this message translates to:
+  /// **'You'**
+  String get supportSenderYou;
+
+  /// No description provided for @supportSenderSupport.
+  ///
+  /// In en, this message translates to:
+  /// **'Support'**
+  String get supportSenderSupport;
+
+  /// No description provided for @supportNoMessages.
+  ///
+  /// In en, this message translates to:
+  /// **'No messages yet.'**
+  String get supportNoMessages;
+
+  /// No description provided for @supportReplyPlaceholder.
+  ///
+  /// In en, this message translates to:
+  /// **'Your message'**
+  String get supportReplyPlaceholder;
+
+  /// No description provided for @supportReplyClosed.
+  ///
+  /// In en, this message translates to:
+  /// **'This ticket is closed; you cannot send new messages.'**
+  String get supportReplyClosed;
+
+  /// No description provided for @supportReplySending.
+  ///
+  /// In en, this message translates to:
+  /// **'Sending...'**
+  String get supportReplySending;
+
+  /// No description provided for @supportReplySend.
+  ///
+  /// In en, this message translates to:
+  /// **'Send Reply'**
+  String get supportReplySend;
+
+  /// No description provided for @supportReplyEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'Message cannot be empty.'**
+  String get supportReplyEmpty;
+
+  /// No description provided for @supportReplySuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Reply sent.'**
+  String get supportReplySuccess;
+
+  /// No description provided for @supportReplyFailedStatus.
+  ///
+  /// In en, this message translates to:
+  /// **'Reply could not be sent (HTTP {status}).'**
+  String supportReplyFailedStatus(Object status);
+
+  /// No description provided for @supportReplyFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Reply could not be sent: {error}'**
+  String supportReplyFailed(Object error);
+
+  /// No description provided for @supportCloseSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Ticket closed.'**
+  String get supportCloseSuccess;
+
+  /// No description provided for @supportCloseFailedStatus.
+  ///
+  /// In en, this message translates to:
+  /// **'Ticket could not be closed (HTTP {status}).'**
+  String supportCloseFailedStatus(Object status);
+
+  /// No description provided for @supportCloseFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Ticket could not be closed: {error}'**
+  String supportCloseFailed(Object error);
+
+  /// No description provided for @supportMessagesMeta.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} messages • {date}'**
+  String supportMessagesMeta(Object count, Object date);
+
+  /// No description provided for @supportStatusOpen.
+  ///
+  /// In en, this message translates to:
+  /// **'Open'**
+  String get supportStatusOpen;
+
+  /// No description provided for @supportStatusPending.
+  ///
+  /// In en, this message translates to:
+  /// **'Pending'**
+  String get supportStatusPending;
+
+  /// No description provided for @supportStatusClosed.
+  ///
+  /// In en, this message translates to:
+  /// **'Closed'**
+  String get supportStatusClosed;
+
+  /// No description provided for @supportPriority.
+  ///
+  /// In en, this message translates to:
+  /// **'Priority'**
+  String get supportPriority;
 }
 
 class _AppLocalizationsDelegate

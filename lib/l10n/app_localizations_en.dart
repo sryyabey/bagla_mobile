@@ -1365,4 +1365,154 @@ class AppLocalizationsEn extends AppLocalizations {
   String smsTemplatesFallbackTitle(Object id) {
     return 'Template #$id';
   }
+
+  @override
+  String get supportTitle => 'Support';
+
+  @override
+  String get supportSessionMissing => 'Session not found. Please log in again.';
+
+  @override
+  String supportFetchFailedStatus(Object status) {
+    return 'Support tickets could not be loaded (HTTP $status).';
+  }
+
+  @override
+  String supportFetchFailed(Object error) {
+    return 'Support tickets could not be loaded: $error';
+  }
+
+  @override
+  String get supportCreateValidation => 'Title and message are required.';
+
+  @override
+  String get supportCreateSuccess => 'Support ticket created.';
+
+  @override
+  String supportCreateFailedStatus(Object status) {
+    return 'Ticket could not be created (HTTP $status).';
+  }
+
+  @override
+  String supportCreateFailed(Object error) {
+    return 'Ticket could not be created: $error';
+  }
+
+  @override
+  String get supportRetry => 'Retry';
+
+  @override
+  String get supportEmpty => 'You don\'t have any support tickets yet.';
+
+  @override
+  String get supportRefresh => 'Refresh';
+
+  @override
+  String get supportNewTicket => 'New Support Ticket';
+
+  @override
+  String get supportTitleLabel => 'Title';
+
+  @override
+  String get supportMessageLabel => 'Your message';
+
+  @override
+  String get supportSending => 'Sending...';
+
+  @override
+  String get supportSend => 'Send';
+
+  @override
+  String get supportTickets => 'Support Tickets';
+
+  @override
+  String get supportMessagesCount => 'Messages';
+
+  @override
+  String get supportTicketDetail => 'Support Detail';
+
+  @override
+  String get supportTicketNotFound => 'Ticket not found.';
+
+  @override
+  String get supportMessages => 'Messages';
+
+  @override
+  String get supportStatusClosing => 'Closing';
+
+  @override
+  String get supportCloseTicket => 'Close Ticket';
+
+  @override
+  String supportCreatedAt(Object date) {
+    return 'Created: $date';
+  }
+
+  @override
+  String get supportSenderYou => 'You';
+
+  @override
+  String get supportSenderSupport => 'Support';
+
+  @override
+  String get supportNoMessages => 'No messages yet.';
+
+  @override
+  String get supportReplyPlaceholder => 'Your message';
+
+  @override
+  String get supportReplyClosed =>
+      'This ticket is closed; you cannot send new messages.';
+
+  @override
+  String get supportReplySending => 'Sending...';
+
+  @override
+  String get supportReplySend => 'Send Reply';
+
+  @override
+  String get supportReplyEmpty => 'Message cannot be empty.';
+
+  @override
+  String get supportReplySuccess => 'Reply sent.';
+
+  @override
+  String supportReplyFailedStatus(Object status) {
+    return 'Reply could not be sent (HTTP $status).';
+  }
+
+  @override
+  String supportReplyFailed(Object error) {
+    return 'Reply could not be sent: $error';
+  }
+
+  @override
+  String get supportCloseSuccess => 'Ticket closed.';
+
+  @override
+  String supportCloseFailedStatus(Object status) {
+    return 'Ticket could not be closed (HTTP $status).';
+  }
+
+  @override
+  String supportCloseFailed(Object error) {
+    return 'Ticket could not be closed: $error';
+  }
+
+  @override
+  String supportMessagesMeta(Object count, Object date) {
+    return '$count messages • $date';
+  }
+
+  @override
+  String get supportStatusOpen => 'Open';
+
+  @override
+  String get supportStatusPending => 'Pending';
+
+  @override
+  String get supportStatusClosed => 'Closed';
+
+  @override
+  String get supportPriority => 'Priority';
 }

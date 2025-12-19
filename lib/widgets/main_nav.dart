@@ -4,6 +4,7 @@ import '../dashboard_page.dart';
 import '../pages/appointments.dart';
 import '../pages/calendar.dart';
 import '../pages/profile.dart';
+import 'package:bagla_mobile/l10n/app_localizations.dart';
 
 class MainNavBar extends StatelessWidget {
   final int currentIndex;
@@ -45,26 +46,27 @@ class MainNavBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final loc = AppLocalizations.of(context)!;
     return BottomNavigationBar(
       type: BottomNavigationBarType.fixed,
       currentIndex: currentIndex,
       onTap: (i) => _onTap(context, i),
-      items: const [
+      items: [
         BottomNavigationBarItem(
-          icon: Icon(Icons.dashboard_outlined),
-          label: 'Anasayfa',
+          icon: const Icon(Icons.dashboard_outlined),
+          label: loc.dashboardHome,
         ),
         BottomNavigationBarItem(
-          icon: Icon(Icons.event_note_outlined),
-          label: 'Randevular',
+          icon: const Icon(Icons.event_note_outlined),
+          label: loc.appointmentsTitle,
         ),
         BottomNavigationBarItem(
-          icon: Icon(Icons.calendar_today_outlined),
-          label: 'Takvim',
+          icon: const Icon(Icons.calendar_today_outlined),
+          label: loc.dashboardCalendar,
         ),
         BottomNavigationBarItem(
-          icon: Icon(Icons.person_outline),
-          label: 'Profil',
+          icon: const Icon(Icons.person_outline),
+          label: loc.profileTitle,
         ),
       ],
     );
