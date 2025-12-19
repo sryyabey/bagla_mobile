@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:bagla_mobile/config.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:bagla_mobile/l10n/app_localizations.dart';
 
 class MyLinksPage extends StatefulWidget {
   const MyLinksPage({super.key});
@@ -12,6 +13,7 @@ class MyLinksPage extends StatefulWidget {
 }
 
 class _MyLinksPageState extends State<MyLinksPage> {
+  AppLocalizations get loc => AppLocalizations.of(context)!;
   static const Color _backgroundColor = Color(0xFFF7F9FC);
   static const Color _primaryColor = Color(0xFF6366F1);
 
@@ -172,7 +174,7 @@ class _MyLinksPageState extends State<MyLinksPage> {
         linkTypes.firstWhere((item) => item['id'] == typeId, orElse: () => {});
     return match['name'] ??
         match['title'] ??
-        (match.isNotEmpty ? 'Tip ${match['id']}' : '');
+        (match.isNotEmpty ? loc.myLinksTypeFallback(match['id']) : '');
   }
 
   String? _resolveTypeValue(dynamic typeId) {
@@ -189,7 +191,7 @@ class _MyLinksPageState extends State<MyLinksPage> {
     return match['name'] ??
         match['title'] ??
         match['color'] ??
-        (match.isNotEmpty ? 'Renk ${match['id']}' : '');
+        (match.isNotEmpty ? loc.myLinksColorFallback(match['id']) : '');
   }
 
   Color _parseColor(String? hex) {
@@ -206,7 +208,8 @@ class _MyLinksPageState extends State<MyLinksPage> {
   }
 
   Widget _buildColorDropdownItem(Map<String, dynamic> color) {
-    final name = color['name'] ?? color['title'] ?? 'Renk';
+    final name =
+        color['name'] ?? color['title'] ?? loc.myLinksColorLabel;
     final code = color['color']?.toString();
     return Row(
       mainAxisSize: MainAxisSize.min,
@@ -295,8 +298,8 @@ class _MyLinksPageState extends State<MyLinksPage> {
 
     if (token == null || token.isEmpty || typeId == null || colorId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Link eklemek için token, tip ve renk gerekli.'),
+        SnackBar(
+          content: Text(loc.myLinksCreateRequired),
           backgroundColor: Colors.red,
         ),
       );
@@ -333,8 +336,8 @@ class _MyLinksPageState extends State<MyLinksPage> {
         linkTitleController.clear();
         linkUrlController.clear();
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Link eklendi.'),
+          SnackBar(
+            content: Text(loc.myLinksCreateSuccess),
             backgroundColor: Colors.green,
           ),
         );
@@ -342,7 +345,7 @@ class _MyLinksPageState extends State<MyLinksPage> {
         final decoded = jsonDecode(response.body);
         final message = decoded['message'] ??
             (decoded['errors'] != null ? decoded['errors'].toString() : null) ??
-            'Link eklenemedi.';
+            loc.myLinksCreateFailed;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(message),
@@ -353,8 +356,8 @@ class _MyLinksPageState extends State<MyLinksPage> {
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Link eklenirken hata oluştu.'),
+        SnackBar(
+          content: Text(loc.myLinksCreateError),
           backgroundColor: Colors.red,
         ),
       );
@@ -370,8 +373,8 @@ class _MyLinksPageState extends State<MyLinksPage> {
     final token = await _getToken();
     if (token == null || token.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Token bulunamadı.'),
+        SnackBar(
+          content: Text(loc.myLinksTokenMissing),
           backgroundColor: Colors.red,
         ),
       );
@@ -398,8 +401,8 @@ class _MyLinksPageState extends State<MyLinksPage> {
       if (response.statusCode == 200 || response.statusCode == 204) {
         await fetchProfileData();
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Link silindi.'),
+          SnackBar(
+            content: Text(loc.myLinksDeleteSuccess),
             backgroundColor: Colors.green,
           ),
         );
@@ -407,7 +410,7 @@ class _MyLinksPageState extends State<MyLinksPage> {
         final decoded = jsonDecode(response.body);
         final message = decoded['message'] ??
             (decoded['errors'] != null ? decoded['errors'].toString() : null) ??
-            'Link silinemedi.';
+            loc.myLinksDeleteFailed;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(message),
@@ -418,8 +421,8 @@ class _MyLinksPageState extends State<MyLinksPage> {
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Link silinirken hata oluştu.'),
+        SnackBar(
+          content: Text(loc.myLinksDeleteError),
           backgroundColor: Colors.red,
         ),
       );
@@ -442,8 +445,8 @@ class _MyLinksPageState extends State<MyLinksPage> {
     final token = await _getToken();
     if (token == null || token.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Token bulunamadı.'),
+        SnackBar(
+          content: Text(loc.myLinksTokenMissing),
           backgroundColor: Colors.red,
         ),
       );
@@ -474,8 +477,8 @@ class _MyLinksPageState extends State<MyLinksPage> {
       if (response.statusCode == 200) {
         await fetchProfileData();
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Link güncellendi.'),
+          SnackBar(
+            content: Text(loc.myLinksUpdateSuccess),
             backgroundColor: Colors.green,
           ),
         );
@@ -483,7 +486,7 @@ class _MyLinksPageState extends State<MyLinksPage> {
         final decoded = jsonDecode(response.body);
         final message = decoded['message'] ??
             (decoded['errors'] != null ? decoded['errors'].toString() : null) ??
-            'Link güncellenemedi.';
+            loc.myLinksUpdateFailed;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(message),
@@ -494,8 +497,8 @@ class _MyLinksPageState extends State<MyLinksPage> {
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Link güncellenirken hata oluştu.'),
+        SnackBar(
+          content: Text(loc.myLinksUpdateError),
           backgroundColor: Colors.red,
         ),
       );
@@ -561,14 +564,22 @@ class _MyLinksPageState extends State<MyLinksPage> {
     if (linkTypes.isEmpty && typeId != null) {
       setState(() {
         linkTypes = [
-          {'id': typeId, 'name': 'Tip #$typeId', 'type': link['type']}
+          {
+            'id': typeId,
+            'name': loc.myLinksTypeFallback(typeId!),
+            'type': link['type']
+          }
         ];
       });
     }
     if (colors.isEmpty && colorId != null) {
       setState(() {
         colors = [
-          {'id': colorId, 'name': 'Renk #$colorId', 'color': link['color']}
+          {
+            'id': colorId,
+            'name': loc.myLinksColorFallback(colorId!),
+            'color': link['color']
+          }
         ];
       });
     }
@@ -602,16 +613,16 @@ class _MyLinksPageState extends State<MyLinksPage> {
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      'Link Düzenle',
-                      style:
-                          TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                    Text(
+                      loc.myLinksEditTitle,
+                      style: const TextStyle(
+                          fontWeight: FontWeight.bold, fontSize: 16),
                     ),
                     const SizedBox(height: 12),
                     TextField(
-                      decoration: const InputDecoration(
-                        labelText: 'Link tipi ara',
-                        prefixIcon: Icon(Icons.search),
+                      decoration: InputDecoration(
+                        labelText: loc.myLinksSearchType,
+                        prefixIcon: const Icon(Icons.search),
                       ),
                       onChanged: (value) {
                         setModalState(() {
@@ -627,15 +638,16 @@ class _MyLinksPageState extends State<MyLinksPage> {
                               .map(
                                 (type) => DropdownMenuItem<int>(
                                   value: type['id'],
-                                  child: Text(
-                                      type['name'] ?? type['title'] ?? 'Tip'),
+                                  child: Text(type['name'] ??
+                                      type['title'] ??
+                                      loc.myLinksLinkType),
                                 ),
                               )
                               .toList()
-                          : const [
+                          : [
                               DropdownMenuItem<int>(
                                 value: null,
-                                child: Text('Sonuç bulunamadı'),
+                                child: Text(loc.myLinksNoResults),
                               ),
                             ],
                       onChanged: modalFilteredTypes.isEmpty
@@ -645,18 +657,20 @@ class _MyLinksPageState extends State<MyLinksPage> {
                                 typeId = value;
                               });
                             },
-                      decoration: const InputDecoration(labelText: 'Link Tipi'),
+                      decoration:
+                          InputDecoration(labelText: loc.myLinksLinkType),
                     ),
                     const SizedBox(height: 12),
                     TextField(
                       controller: titleController,
-                      decoration: const InputDecoration(labelText: 'Başlık'),
+                      decoration:
+                          InputDecoration(labelText: loc.myLinksTitleLabel),
                     ),
                     const SizedBox(height: 12),
                     TextField(
                       controller: urlController,
                       decoration: InputDecoration(
-                        labelText: 'URL',
+                        labelText: loc.myLinksUrlLabel,
                         hintText: getPlaceholderForType(
                           _resolveTypeValue(typeId) ?? 'link',
                         ),
@@ -678,7 +692,8 @@ class _MyLinksPageState extends State<MyLinksPage> {
                           colorId = value;
                         });
                       },
-                      decoration: const InputDecoration(labelText: 'Renk'),
+                      decoration:
+                          InputDecoration(labelText: loc.myLinksColorLabel),
                     ),
                     const SizedBox(height: 16),
                     SizedBox(
@@ -696,7 +711,7 @@ class _MyLinksPageState extends State<MyLinksPage> {
                                   colorId: colorId!,
                                 );
                               },
-                        child: const Text('Güncelle'),
+                        child: Text(loc.myLinksUpdateButton),
                       ),
                     ),
                     const SizedBox(height: 8),
@@ -728,14 +743,14 @@ class _MyLinksPageState extends State<MyLinksPage> {
             : null;
 
     return _sectionCard(
-      title: 'Yeni Link',
+      title: loc.myLinksNewLink,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           TextField(
-            decoration: const InputDecoration(
-              labelText: 'Link tipi ara',
-              prefixIcon: Icon(Icons.search),
+            decoration: InputDecoration(
+              labelText: loc.myLinksSearchType,
+              prefixIcon: const Icon(Icons.search),
             ),
             onChanged: (value) {
               setState(() {
@@ -752,14 +767,14 @@ class _MyLinksPageState extends State<MyLinksPage> {
                       (type) => DropdownMenuItem<int>(
                         value: type['id'],
                         child:
-                            Text(type['name'] ?? type['title'] ?? 'Link Tipi'),
+                            Text(type['name'] ?? type['title'] ?? loc.myLinksLinkType),
                       ),
                     )
                     .toList()
-                : const [
+                : [
                     DropdownMenuItem<int>(
                       value: null,
-                      child: Text('Sonuç bulunamadı'),
+                      child: Text(loc.myLinksNoResults),
                     ),
                   ],
             onChanged: filteredTypes.isEmpty
@@ -769,26 +784,27 @@ class _MyLinksPageState extends State<MyLinksPage> {
                       selectedLinkTypeId = value;
                     });
                   },
-            decoration: const InputDecoration(labelText: 'Link Tipi'),
+            decoration: InputDecoration(labelText: loc.myLinksLinkType),
           ),
           if (linkTypes.isEmpty)
-            const Padding(
-              padding: EdgeInsets.only(top: 8),
+            Padding(
+              padding: const EdgeInsets.only(top: 8),
               child: Text(
-                'Link tipi bulunamadı, lütfen ayarları kontrol edin.',
-                style: TextStyle(fontSize: 12, color: Colors.redAccent),
+                loc.myLinksTypeMissing,
+                style:
+                    const TextStyle(fontSize: 12, color: Colors.redAccent),
               ),
             ),
           const SizedBox(height: 12),
           TextField(
             controller: linkTitleController,
-            decoration: const InputDecoration(labelText: 'Başlık'),
+            decoration: InputDecoration(labelText: loc.myLinksTitleLabel),
           ),
           const SizedBox(height: 12),
           TextField(
             controller: linkUrlController,
             decoration: InputDecoration(
-              labelText: 'URL',
+              labelText: loc.myLinksUrlLabel,
               hintText: getPlaceholderForType(
                 _resolveTypeValue(selectedLinkTypeId) ?? 'link',
               ),
@@ -810,14 +826,15 @@ class _MyLinksPageState extends State<MyLinksPage> {
                 selectedColorId = value;
               });
             },
-            decoration: const InputDecoration(labelText: 'Renk'),
+            decoration: InputDecoration(labelText: loc.myLinksColorLabel),
           ),
           if (colors.isEmpty)
-            const Padding(
-              padding: EdgeInsets.only(top: 8),
+            Padding(
+              padding: const EdgeInsets.only(top: 8),
               child: Text(
-                'Renk listesi bulunamadı.',
-                style: TextStyle(fontSize: 12, color: Colors.redAccent),
+                loc.myLinksColorMissing,
+                style:
+                    const TextStyle(fontSize: 12, color: Colors.redAccent),
               ),
             ),
           const SizedBox(height: 16),
@@ -845,7 +862,7 @@ class _MyLinksPageState extends State<MyLinksPage> {
                       child: CircularProgressIndicator(strokeWidth: 2),
                     )
                   : const Icon(Icons.add),
-              label: Text(isSubmitting ? 'Kaydediliyor...' : 'Link Ekle'),
+              label: Text(isSubmitting ? loc.myLinksSaving : loc.myLinksAddLink),
             ),
           ),
         ],
@@ -977,8 +994,8 @@ class _MyLinksPageState extends State<MyLinksPage> {
     if (links.isEmpty) {
       return Center(
         child: _sectionCard(
-          title: 'Henüz link yok',
-          subtitle: 'Yeni link ekleyerek başla',
+          title: loc.myLinksNoLinksTitle,
+          subtitle: loc.myLinksNoLinksSubtitle,
           child: const SizedBox.shrink(),
         ),
       );
@@ -1013,20 +1030,20 @@ class _MyLinksPageState extends State<MyLinksPage> {
     List<String> errors = [];
 
     if (links.isEmpty) {
-      errors.add("⚠️ API'den hiç link gelmedi.");
+      errors.add(loc.myLinksDebugNoLinks);
     }
     if (linkTypes.isEmpty) {
-      errors.add("⚠️ Link tipleri boş geldi.");
+      errors.add(loc.myLinksDebugNoTypes);
     }
     if (colors.isEmpty) {
-      errors.add("⚠️ Renk listesi boş geldi.");
+      errors.add(loc.myLinksDebugNoColors);
     }
 
     if (errors.isEmpty) return const SizedBox.shrink();
 
     return _sectionCard(
-      title: 'Eksik veriler',
-      subtitle: 'API’den beklenen listeler gelmedi',
+      title: loc.myLinksDebugTitle,
+      subtitle: loc.myLinksDebugSubtitle,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: errors
@@ -1056,9 +1073,9 @@ class _MyLinksPageState extends State<MyLinksPage> {
         elevation: 0,
         backgroundColor: Colors.white,
         foregroundColor: Colors.black87,
-        title: const Text(
-          'Linklerim',
-          style: TextStyle(fontWeight: FontWeight.w700),
+        title: Text(
+          loc.myLinksTitle,
+          style: const TextStyle(fontWeight: FontWeight.w700),
         ),
       ),
       body: SafeArea(
@@ -1073,9 +1090,9 @@ class _MyLinksPageState extends State<MyLinksPage> {
                     ),
                   ),
                   if (isSavingOrder)
-                    const Padding(
-                      padding: EdgeInsets.only(bottom: 4),
-                      child: Text('Sıralama kaydediliyor...'),
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 4),
+                      child: Text(loc.myLinksOrderSaving),
                     ),
                   SafeArea(
                     top: false,
@@ -1099,8 +1116,8 @@ class _MyLinksPageState extends State<MyLinksPage> {
                             ),
                           ),
                           icon: Icon(showForm ? Icons.close : Icons.add),
-                          label:
-                              Text(showForm ? 'Formu Gizle' : 'Yeni Link Ekle'),
+                          label: Text(
+                              showForm ? loc.myLinksHideForm : loc.myLinksShowForm),
                         ),
                         AnimatedSwitcher(
                           duration: const Duration(milliseconds: 250),

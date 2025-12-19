@@ -1141,6 +1141,228 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'SMS: {count}'**
   String profileSmsCount(Object count);
+
+  /// No description provided for @myLinksTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'My Links'**
+  String get myLinksTitle;
+
+  /// No description provided for @myLinksNewLink.
+  ///
+  /// In en, this message translates to:
+  /// **'New Link'**
+  String get myLinksNewLink;
+
+  /// No description provided for @myLinksSearchType.
+  ///
+  /// In en, this message translates to:
+  /// **'Search link type'**
+  String get myLinksSearchType;
+
+  /// No description provided for @myLinksNoResults.
+  ///
+  /// In en, this message translates to:
+  /// **'No results found'**
+  String get myLinksNoResults;
+
+  /// No description provided for @myLinksLinkType.
+  ///
+  /// In en, this message translates to:
+  /// **'Link Type'**
+  String get myLinksLinkType;
+
+  /// No description provided for @myLinksTypeMissing.
+  ///
+  /// In en, this message translates to:
+  /// **'No link types found, please check settings.'**
+  String get myLinksTypeMissing;
+
+  /// No description provided for @myLinksTitleLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Title'**
+  String get myLinksTitleLabel;
+
+  /// No description provided for @myLinksUrlLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'URL'**
+  String get myLinksUrlLabel;
+
+  /// No description provided for @myLinksColorLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Color'**
+  String get myLinksColorLabel;
+
+  /// No description provided for @myLinksColorMissing.
+  ///
+  /// In en, this message translates to:
+  /// **'No color list found.'**
+  String get myLinksColorMissing;
+
+  /// No description provided for @myLinksAddLink.
+  ///
+  /// In en, this message translates to:
+  /// **'Add Link'**
+  String get myLinksAddLink;
+
+  /// No description provided for @myLinksSaving.
+  ///
+  /// In en, this message translates to:
+  /// **'Saving...'**
+  String get myLinksSaving;
+
+  /// No description provided for @myLinksCreateRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Token, type, and color are required to add a link.'**
+  String get myLinksCreateRequired;
+
+  /// No description provided for @myLinksCreateSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Link added.'**
+  String get myLinksCreateSuccess;
+
+  /// No description provided for @myLinksCreateFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Link could not be added.'**
+  String get myLinksCreateFailed;
+
+  /// No description provided for @myLinksCreateError.
+  ///
+  /// In en, this message translates to:
+  /// **'An error occurred while adding the link.'**
+  String get myLinksCreateError;
+
+  /// No description provided for @myLinksTokenMissing.
+  ///
+  /// In en, this message translates to:
+  /// **'Token not found.'**
+  String get myLinksTokenMissing;
+
+  /// No description provided for @myLinksDeleteSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Link deleted.'**
+  String get myLinksDeleteSuccess;
+
+  /// No description provided for @myLinksDeleteFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Link could not be deleted.'**
+  String get myLinksDeleteFailed;
+
+  /// No description provided for @myLinksDeleteError.
+  ///
+  /// In en, this message translates to:
+  /// **'An error occurred while deleting the link.'**
+  String get myLinksDeleteError;
+
+  /// No description provided for @myLinksUpdateSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Link updated.'**
+  String get myLinksUpdateSuccess;
+
+  /// No description provided for @myLinksUpdateFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Link could not be updated.'**
+  String get myLinksUpdateFailed;
+
+  /// No description provided for @myLinksUpdateError.
+  ///
+  /// In en, this message translates to:
+  /// **'An error occurred while updating the link.'**
+  String get myLinksUpdateError;
+
+  /// No description provided for @myLinksEditTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit Link'**
+  String get myLinksEditTitle;
+
+  /// No description provided for @myLinksUpdateButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Update'**
+  String get myLinksUpdateButton;
+
+  /// No description provided for @myLinksTypeFallback.
+  ///
+  /// In en, this message translates to:
+  /// **'Type #{id}'**
+  String myLinksTypeFallback(Object id);
+
+  /// No description provided for @myLinksColorFallback.
+  ///
+  /// In en, this message translates to:
+  /// **'Color #{id}'**
+  String myLinksColorFallback(Object id);
+
+  /// No description provided for @myLinksNoLinksTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'No links yet'**
+  String get myLinksNoLinksTitle;
+
+  /// No description provided for @myLinksNoLinksSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Start by adding a new link'**
+  String get myLinksNoLinksSubtitle;
+
+  /// No description provided for @myLinksDebugTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Missing data'**
+  String get myLinksDebugTitle;
+
+  /// No description provided for @myLinksDebugSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Expected lists were not returned from API'**
+  String get myLinksDebugSubtitle;
+
+  /// No description provided for @myLinksDebugNoLinks.
+  ///
+  /// In en, this message translates to:
+  /// **'⚠️ No links returned from API.'**
+  String get myLinksDebugNoLinks;
+
+  /// No description provided for @myLinksDebugNoTypes.
+  ///
+  /// In en, this message translates to:
+  /// **'⚠️ Link types returned empty.'**
+  String get myLinksDebugNoTypes;
+
+  /// No description provided for @myLinksDebugNoColors.
+  ///
+  /// In en, this message translates to:
+  /// **'⚠️ Color list returned empty.'**
+  String get myLinksDebugNoColors;
+
+  /// No description provided for @myLinksOrderSaving.
+  ///
+  /// In en, this message translates to:
+  /// **'Saving order...'**
+  String get myLinksOrderSaving;
+
+  /// No description provided for @myLinksShowForm.
+  ///
+  /// In en, this message translates to:
+  /// **'Add New Link'**
+  String get myLinksShowForm;
+
+  /// No description provided for @myLinksHideForm.
+  ///
+  /// In en, this message translates to:
+  /// **'Hide Form'**
+  String get myLinksHideForm;
 }
 
 class _AppLocalizationsDelegate

@@ -576,4 +576,121 @@ class AppLocalizationsTr extends AppLocalizations {
   String profileSmsCount(Object count) {
     return 'SMS: $count';
   }
+
+  @override
+  String get myLinksTitle => 'Linklerim';
+
+  @override
+  String get myLinksNewLink => 'Yeni Link';
+
+  @override
+  String get myLinksSearchType => 'Link tipi ara';
+
+  @override
+  String get myLinksNoResults => 'Sonuç bulunamadı';
+
+  @override
+  String get myLinksLinkType => 'Link Tipi';
+
+  @override
+  String get myLinksTypeMissing =>
+      'Link tipi bulunamadı, lütfen ayarları kontrol edin.';
+
+  @override
+  String get myLinksTitleLabel => 'Başlık';
+
+  @override
+  String get myLinksUrlLabel => 'URL';
+
+  @override
+  String get myLinksColorLabel => 'Renk';
+
+  @override
+  String get myLinksColorMissing => 'Renk listesi bulunamadı.';
+
+  @override
+  String get myLinksAddLink => 'Link Ekle';
+
+  @override
+  String get myLinksSaving => 'Kaydediliyor...';
+
+  @override
+  String get myLinksCreateRequired =>
+      'Link eklemek için token, tip ve renk gerekli.';
+
+  @override
+  String get myLinksCreateSuccess => 'Link eklendi.';
+
+  @override
+  String get myLinksCreateFailed => 'Link eklenemedi.';
+
+  @override
+  String get myLinksCreateError => 'Link eklenirken hata oluştu.';
+
+  @override
+  String get myLinksTokenMissing => 'Token bulunamadı.';
+
+  @override
+  String get myLinksDeleteSuccess => 'Link silindi.';
+
+  @override
+  String get myLinksDeleteFailed => 'Link silinemedi.';
+
+  @override
+  String get myLinksDeleteError => 'Link silinirken hata oluştu.';
+
+  @override
+  String get myLinksUpdateSuccess => 'Link güncellendi.';
+
+  @override
+  String get myLinksUpdateFailed => 'Link güncellenemedi.';
+
+  @override
+  String get myLinksUpdateError => 'Link güncellenirken hata oluştu.';
+
+  @override
+  String get myLinksEditTitle => 'Link Düzenle';
+
+  @override
+  String get myLinksUpdateButton => 'Güncelle';
+
+  @override
+  String myLinksTypeFallback(Object id) {
+    return 'Tip #$id';
+  }
+
+  @override
+  String myLinksColorFallback(Object id) {
+    return 'Renk #$id';
+  }
+
+  @override
+  String get myLinksNoLinksTitle => 'Henüz link yok';
+
+  @override
+  String get myLinksNoLinksSubtitle => 'Yeni link ekleyerek başla';
+
+  @override
+  String get myLinksDebugTitle => 'Eksik veriler';
+
+  @override
+  String get myLinksDebugSubtitle => 'API’den beklenen listeler gelmedi';
+
+  @override
+  String get myLinksDebugNoLinks => '⚠️ API\'den hiç link gelmedi.';
+
+  @override
+  String get myLinksDebugNoTypes => '⚠️ Link tipleri boş geldi.';
+
+  @override
+  String get myLinksDebugNoColors => '⚠️ Renk listesi boş geldi.';
+
+  @override
+  String get myLinksOrderSaving => 'Sıralama kaydediliyor...';
+
+  @override
+  String get myLinksShowForm => 'Yeni Link Ekle';
+
+  @override
+  String get myLinksHideForm => 'Formu Gizle';
 }

@@ -573,4 +573,122 @@ class AppLocalizationsEn extends AppLocalizations {
   String profileSmsCount(Object count) {
     return 'SMS: $count';
   }
+
+  @override
+  String get myLinksTitle => 'My Links';
+
+  @override
+  String get myLinksNewLink => 'New Link';
+
+  @override
+  String get myLinksSearchType => 'Search link type';
+
+  @override
+  String get myLinksNoResults => 'No results found';
+
+  @override
+  String get myLinksLinkType => 'Link Type';
+
+  @override
+  String get myLinksTypeMissing =>
+      'No link types found, please check settings.';
+
+  @override
+  String get myLinksTitleLabel => 'Title';
+
+  @override
+  String get myLinksUrlLabel => 'URL';
+
+  @override
+  String get myLinksColorLabel => 'Color';
+
+  @override
+  String get myLinksColorMissing => 'No color list found.';
+
+  @override
+  String get myLinksAddLink => 'Add Link';
+
+  @override
+  String get myLinksSaving => 'Saving...';
+
+  @override
+  String get myLinksCreateRequired =>
+      'Token, type, and color are required to add a link.';
+
+  @override
+  String get myLinksCreateSuccess => 'Link added.';
+
+  @override
+  String get myLinksCreateFailed => 'Link could not be added.';
+
+  @override
+  String get myLinksCreateError => 'An error occurred while adding the link.';
+
+  @override
+  String get myLinksTokenMissing => 'Token not found.';
+
+  @override
+  String get myLinksDeleteSuccess => 'Link deleted.';
+
+  @override
+  String get myLinksDeleteFailed => 'Link could not be deleted.';
+
+  @override
+  String get myLinksDeleteError => 'An error occurred while deleting the link.';
+
+  @override
+  String get myLinksUpdateSuccess => 'Link updated.';
+
+  @override
+  String get myLinksUpdateFailed => 'Link could not be updated.';
+
+  @override
+  String get myLinksUpdateError => 'An error occurred while updating the link.';
+
+  @override
+  String get myLinksEditTitle => 'Edit Link';
+
+  @override
+  String get myLinksUpdateButton => 'Update';
+
+  @override
+  String myLinksTypeFallback(Object id) {
+    return 'Type #$id';
+  }
+
+  @override
+  String myLinksColorFallback(Object id) {
+    return 'Color #$id';
+  }
+
+  @override
+  String get myLinksNoLinksTitle => 'No links yet';
+
+  @override
+  String get myLinksNoLinksSubtitle => 'Start by adding a new link';
+
+  @override
+  String get myLinksDebugTitle => 'Missing data';
+
+  @override
+  String get myLinksDebugSubtitle =>
+      'Expected lists were not returned from API';
+
+  @override
+  String get myLinksDebugNoLinks => '⚠️ No links returned from API.';
+
+  @override
+  String get myLinksDebugNoTypes => '⚠️ Link types returned empty.';
+
+  @override
+  String get myLinksDebugNoColors => '⚠️ Color list returned empty.';
+
+  @override
+  String get myLinksOrderSaving => 'Saving order...';
+
+  @override
+  String get myLinksShowForm => 'Add New Link';
+
+  @override
+  String get myLinksHideForm => 'Hide Form';
 }
