@@ -451,5 +451,9 @@
   "supportStatusOpen": "Open",
   "supportStatusPending": "Pending",
   "supportStatusClosed": "Closed",
-  "supportPriority": "Priority"
+  "supportPriority": "Priority",
+  "profileLanguage": "App Language",
+  "profileLanguageTurkish": "Turkish",
+  "profileLanguageEnglish": "English",
+  "profileLanguageSaved": "Language updated."
 }

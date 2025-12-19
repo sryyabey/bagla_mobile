@@ -2809,6 +2809,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Priority'**
   String get supportPriority;
+
+  /// No description provided for @profileLanguage.
+  ///
+  /// In en, this message translates to:
+  /// **'App Language'**
+  String get profileLanguage;
+
+  /// No description provided for @profileLanguageTurkish.
+  ///
+  /// In en, this message translates to:
+  /// **'Turkish'**
+  String get profileLanguageTurkish;
+
+  /// No description provided for @profileLanguageEnglish.
+  ///
+  /// In en, this message translates to:
+  /// **'English'**
+  String get profileLanguageEnglish;
+
+  /// No description provided for @profileLanguageSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Language updated.'**
+  String get profileLanguageSaved;
 }
 
 class _AppLocalizationsDelegate

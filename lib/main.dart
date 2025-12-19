@@ -14,18 +14,30 @@ class BaglaApp extends StatefulWidget {
   const BaglaApp({super.key});
 
   @override
-  State<BaglaApp> createState() => _BaglaAppState();
+  State<BaglaApp> createState() => BaglaAppState();
 }
 
-class _BaglaAppState extends State<BaglaApp> {
+class BaglaAppState extends State<BaglaApp> {
   Locale? _locale;
   bool _isLoggedIn = false;
 
   @override
   void initState() {
     super.initState();
-    _locale = WidgetsBinding.instance.platformDispatcher.locale;
+    _initLocale();
     _checkLoginStatus();
+  }
+
+  Future<void> _initLocale() async {
+    final prefs = await SharedPreferences.getInstance();
+    final saved = prefs.getString('preferred_locale');
+    if (saved != null && saved.isNotEmpty) {
+      setState(() {
+        _locale = Locale(saved);
+      });
+    } else {
+      _locale = WidgetsBinding.instance.platformDispatcher.locale;
+    }
   }
 
   void _checkLoginStatus() async {
@@ -38,10 +50,12 @@ class _BaglaAppState extends State<BaglaApp> {
     }
   }
 
-  void setLocale(Locale locale) {
+  void setLocale(Locale locale) async {
     setState(() {
       _locale = locale;
     });
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('preferred_locale', locale.languageCode);
   }
 
   @override

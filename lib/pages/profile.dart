@@ -10,6 +10,7 @@ import 'package:bagla_mobile/config.dart';
 import '../auth.dart';
 import '../widgets/main_nav.dart';
 import 'package:bagla_mobile/l10n/app_localizations.dart';
+import '../main.dart';
 
 class ProfilePage extends StatefulWidget {
   final bool showBottomNav;
@@ -494,6 +495,10 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
+  Widget _buildLanguageSelector() {
+    return const SizedBox.shrink();
+  }
+
   Widget _infoChip(IconData icon, String text) {
     return Chip(
       avatar: Icon(icon, size: 16, color: _primaryColor),
@@ -699,6 +704,7 @@ class _ProfilePageState extends State<ProfilePage> {
 
   @override
   Widget build(BuildContext context) {
+    final currentLang = Localizations.localeOf(context).languageCode;
     return Scaffold(
       backgroundColor: _backgroundColor,
       appBar: AppBar(
@@ -709,6 +715,38 @@ class _ProfilePageState extends State<ProfilePage> {
           loc.profileTitle,
           style: const TextStyle(fontWeight: FontWeight.w700),
         ),
+        actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: 12),
+            child: DropdownButtonHideUnderline(
+              child: DropdownButton<String>(
+                value: currentLang == 'en' ? 'en' : 'tr',
+                onChanged: (val) async {
+                  if (val == null) return;
+                  final baglaState =
+                      context.findAncestorStateOfType<BaglaAppState>();
+                  final locale = Locale(val);
+                  if (baglaState != null) {
+                    baglaState.setLocale(locale);
+                  }
+                  final prefs = await SharedPreferences.getInstance();
+                  await prefs.setString('preferred_locale', val);
+                  _showSnack(loc.profileLanguageSaved, success: true);
+                },
+                items: [
+                  DropdownMenuItem(
+                    value: 'tr',
+                    child: Text(loc.profileLanguageTurkish),
+                  ),
+                  DropdownMenuItem(
+                    value: 'en',
+                    child: Text(loc.profileLanguageEnglish),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
       ),
       body: _loadingProfile
           ? const Center(child: CircularProgressIndicator())
@@ -750,6 +788,8 @@ class _ProfilePageState extends State<ProfilePage> {
                     _buildProfileForm(),
                     const SizedBox(height: 12),
                     _buildSeoForm(),
+                    const SizedBox(height: 12),
+                    _buildLanguageSelector(),
                     const SizedBox(height: 12),
                     _buildPasswordForm(),
                   ],

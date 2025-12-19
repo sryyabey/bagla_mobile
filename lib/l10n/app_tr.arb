@@ -451,5 +451,9 @@
   "supportStatusOpen": "Açık",
   "supportStatusPending": "Beklemede",
   "supportStatusClosed": "Kapalı",
-  "supportPriority": "Öncelik"
+  "supportPriority": "Öncelik",
+  "profileLanguage": "Uygulama Dili",
+  "profileLanguageTurkish": "Türkçe",
+  "profileLanguageEnglish": "İngilizce",
+  "profileLanguageSaved": "Dil güncellendi."
 }

@@ -1515,4 +1515,16 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get supportPriority => 'Priority';
+
+  @override
+  String get profileLanguage => 'App Language';
+
+  @override
+  String get profileLanguageTurkish => 'Turkish';
+
+  @override
+  String get profileLanguageEnglish => 'English';
+
+  @override
+  String get profileLanguageSaved => 'Language updated.';
 }

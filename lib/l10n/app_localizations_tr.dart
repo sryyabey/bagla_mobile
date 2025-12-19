@@ -1521,4 +1521,16 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get supportPriority => 'Öncelik';
+
+  @override
+  String get profileLanguage => 'Uygulama Dili';
+
+  @override
+  String get profileLanguageTurkish => 'Türkçe';
+
+  @override
+  String get profileLanguageEnglish => 'İngilizce';
+
+  @override
+  String get profileLanguageSaved => 'Dil güncellendi.';
 }
