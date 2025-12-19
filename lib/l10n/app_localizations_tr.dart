@@ -1211,4 +1211,93 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get ordersStatusCancelled => 'İptal edildi';
+
+  @override
+  String get workingPrefsTitle => 'Çalışma Saatleri';
+
+  @override
+  String get workingPrefsSessionMissing =>
+      'Oturum bulunamadı. Lütfen tekrar giriş yapın.';
+
+  @override
+  String workingPrefsLoadFailedStatus(Object status) {
+    return 'Çalışma saatleri alınamadı (HTTP $status).';
+  }
+
+  @override
+  String workingPrefsLoadFailed(Object error) {
+    return 'Çalışma saatleri alınamadı: $error';
+  }
+
+  @override
+  String get workingPrefsSaveSuccess => 'Kaydedildi.';
+
+  @override
+  String workingPrefsSaveFailedStatus(Object status) {
+    return 'Kaydedilemedi (HTTP $status).';
+  }
+
+  @override
+  String workingPrefsSaveFailed(Object error) {
+    return 'Kaydedilemedi: $error';
+  }
+
+  @override
+  String get workingPrefsRetry => 'Tekrar Dene';
+
+  @override
+  String get workingPrefsFirstSessionTitle => 'İlk randevu oturum sayısı';
+
+  @override
+  String get workingPrefsSelect => 'Seçiniz';
+
+  @override
+  String workingPrefsSessionOption(Object count) {
+    return '$count Oturum';
+  }
+
+  @override
+  String get workingPrefsDaySubtitle => 'Çalışma durumu ve saat aralıkları';
+
+  @override
+  String get workingPrefsWorking => 'Çalışıyor';
+
+  @override
+  String get workingPrefsAddSlot => 'Saat aralığı ekle';
+
+  @override
+  String get workingPrefsStart => 'Başlangıç';
+
+  @override
+  String get workingPrefsEnd => 'Bitiş';
+
+  @override
+  String get workingPrefsPeriod => 'Periyot (dakika)';
+
+  @override
+  String get workingPrefsDelete => 'Sil';
+
+  @override
+  String get workingPrefsSaving => 'Kaydediliyor...';
+
+  @override
+  String get workingPrefsSave => 'Kaydet';
+
+  @override
+  String get workingPrefsHolidaysTitle => 'Tatil Günleri';
+
+  @override
+  String get workingPrefsHolidaysEmpty => 'Henüz tatil eklenmedi.';
+
+  @override
+  String get workingPrefsHolidayAdd => 'Tatil ekle';
+
+  @override
+  String get workingPrefsHolidayStart => 'Başlangıç';
+
+  @override
+  String get workingPrefsHolidayEnd => 'Bitiş';
+
+  @override
+  String get workingPrefsHolidayReason => 'Açıklama (isteğe bağlı)';
 }

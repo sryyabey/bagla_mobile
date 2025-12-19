@@ -1206,4 +1206,93 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get ordersStatusCancelled => 'Cancelled';
+
+  @override
+  String get workingPrefsTitle => 'Working Hours';
+
+  @override
+  String get workingPrefsSessionMissing =>
+      'Session not found. Please log in again.';
+
+  @override
+  String workingPrefsLoadFailedStatus(Object status) {
+    return 'Working hours could not be loaded (HTTP $status).';
+  }
+
+  @override
+  String workingPrefsLoadFailed(Object error) {
+    return 'Working hours could not be loaded: $error';
+  }
+
+  @override
+  String get workingPrefsSaveSuccess => 'Saved.';
+
+  @override
+  String workingPrefsSaveFailedStatus(Object status) {
+    return 'Could not be saved (HTTP $status).';
+  }
+
+  @override
+  String workingPrefsSaveFailed(Object error) {
+    return 'Could not be saved: $error';
+  }
+
+  @override
+  String get workingPrefsRetry => 'Retry';
+
+  @override
+  String get workingPrefsFirstSessionTitle => 'First appointment session count';
+
+  @override
+  String get workingPrefsSelect => 'Select';
+
+  @override
+  String workingPrefsSessionOption(Object count) {
+    return '$count Session';
+  }
+
+  @override
+  String get workingPrefsDaySubtitle => 'Working status and time ranges';
+
+  @override
+  String get workingPrefsWorking => 'Working';
+
+  @override
+  String get workingPrefsAddSlot => 'Add time slot';
+
+  @override
+  String get workingPrefsStart => 'Start';
+
+  @override
+  String get workingPrefsEnd => 'End';
+
+  @override
+  String get workingPrefsPeriod => 'Period (minutes)';
+
+  @override
+  String get workingPrefsDelete => 'Delete';
+
+  @override
+  String get workingPrefsSaving => 'Saving...';
+
+  @override
+  String get workingPrefsSave => 'Save';
+
+  @override
+  String get workingPrefsHolidaysTitle => 'Holidays';
+
+  @override
+  String get workingPrefsHolidaysEmpty => 'No holiday added yet.';
+
+  @override
+  String get workingPrefsHolidayAdd => 'Add holiday';
+
+  @override
+  String get workingPrefsHolidayStart => 'Start';
+
+  @override
+  String get workingPrefsHolidayEnd => 'End';
+
+  @override
+  String get workingPrefsHolidayReason => 'Reason (optional)';
 }

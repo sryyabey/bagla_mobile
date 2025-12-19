@@ -2281,6 +2281,162 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Cancelled'**
   String get ordersStatusCancelled;
+
+  /// No description provided for @workingPrefsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Working Hours'**
+  String get workingPrefsTitle;
+
+  /// No description provided for @workingPrefsSessionMissing.
+  ///
+  /// In en, this message translates to:
+  /// **'Session not found. Please log in again.'**
+  String get workingPrefsSessionMissing;
+
+  /// No description provided for @workingPrefsLoadFailedStatus.
+  ///
+  /// In en, this message translates to:
+  /// **'Working hours could not be loaded (HTTP {status}).'**
+  String workingPrefsLoadFailedStatus(Object status);
+
+  /// No description provided for @workingPrefsLoadFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Working hours could not be loaded: {error}'**
+  String workingPrefsLoadFailed(Object error);
+
+  /// No description provided for @workingPrefsSaveSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved.'**
+  String get workingPrefsSaveSuccess;
+
+  /// No description provided for @workingPrefsSaveFailedStatus.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not be saved (HTTP {status}).'**
+  String workingPrefsSaveFailedStatus(Object status);
+
+  /// No description provided for @workingPrefsSaveFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not be saved: {error}'**
+  String workingPrefsSaveFailed(Object error);
+
+  /// No description provided for @workingPrefsRetry.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry'**
+  String get workingPrefsRetry;
+
+  /// No description provided for @workingPrefsFirstSessionTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'First appointment session count'**
+  String get workingPrefsFirstSessionTitle;
+
+  /// No description provided for @workingPrefsSelect.
+  ///
+  /// In en, this message translates to:
+  /// **'Select'**
+  String get workingPrefsSelect;
+
+  /// No description provided for @workingPrefsSessionOption.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} Session'**
+  String workingPrefsSessionOption(Object count);
+
+  /// No description provided for @workingPrefsDaySubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Working status and time ranges'**
+  String get workingPrefsDaySubtitle;
+
+  /// No description provided for @workingPrefsWorking.
+  ///
+  /// In en, this message translates to:
+  /// **'Working'**
+  String get workingPrefsWorking;
+
+  /// No description provided for @workingPrefsAddSlot.
+  ///
+  /// In en, this message translates to:
+  /// **'Add time slot'**
+  String get workingPrefsAddSlot;
+
+  /// No description provided for @workingPrefsStart.
+  ///
+  /// In en, this message translates to:
+  /// **'Start'**
+  String get workingPrefsStart;
+
+  /// No description provided for @workingPrefsEnd.
+  ///
+  /// In en, this message translates to:
+  /// **'End'**
+  String get workingPrefsEnd;
+
+  /// No description provided for @workingPrefsPeriod.
+  ///
+  /// In en, this message translates to:
+  /// **'Period (minutes)'**
+  String get workingPrefsPeriod;
+
+  /// No description provided for @workingPrefsDelete.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete'**
+  String get workingPrefsDelete;
+
+  /// No description provided for @workingPrefsSaving.
+  ///
+  /// In en, this message translates to:
+  /// **'Saving...'**
+  String get workingPrefsSaving;
+
+  /// No description provided for @workingPrefsSave.
+  ///
+  /// In en, this message translates to:
+  /// **'Save'**
+  String get workingPrefsSave;
+
+  /// No description provided for @workingPrefsHolidaysTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Holidays'**
+  String get workingPrefsHolidaysTitle;
+
+  /// No description provided for @workingPrefsHolidaysEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No holiday added yet.'**
+  String get workingPrefsHolidaysEmpty;
+
+  /// No description provided for @workingPrefsHolidayAdd.
+  ///
+  /// In en, this message translates to:
+  /// **'Add holiday'**
+  String get workingPrefsHolidayAdd;
+
+  /// No description provided for @workingPrefsHolidayStart.
+  ///
+  /// In en, this message translates to:
+  /// **'Start'**
+  String get workingPrefsHolidayStart;
+
+  /// No description provided for @workingPrefsHolidayEnd.
+  ///
+  /// In en, this message translates to:
+  /// **'End'**
+  String get workingPrefsHolidayEnd;
+
+  /// No description provided for @workingPrefsHolidayReason.
+  ///
+  /// In en, this message translates to:
+  /// **'Reason (optional)'**
+  String get workingPrefsHolidayReason;
 }
 
 class _AppLocalizationsDelegate

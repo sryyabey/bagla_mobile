@@ -4,6 +4,7 @@ import 'package:bagla_mobile/config.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:bagla_mobile/l10n/app_localizations.dart';
 
 class WorkingPreferencesPage extends StatefulWidget {
   const WorkingPreferencesPage({super.key});
@@ -13,6 +14,7 @@ class WorkingPreferencesPage extends StatefulWidget {
 }
 
 class _WorkingPreferencesPageState extends State<WorkingPreferencesPage> {
+  AppLocalizations get loc => AppLocalizations.of(context)!;
   static const Color _backgroundColor = Color(0xFFF7F9FC);
   static const Color _primaryColor = Color(0xFF6366F1);
 
@@ -41,13 +43,13 @@ class _WorkingPreferencesPageState extends State<WorkingPreferencesPage> {
   }
 
   final List<String> _dayNames = const [
-    'Pazartesi',
-    'Salı',
-    'Çarşamba',
-    'Perşembe',
-    'Cuma',
-    'Cumartesi',
-    'Pazar',
+    'dayMonFull',
+    'dayTueFull',
+    'dayWedFull',
+    'dayThuFull',
+    'dayFriFull',
+    'daySatFull',
+    'daySunFull',
   ];
 
   @override
@@ -78,7 +80,7 @@ class _WorkingPreferencesPageState extends State<WorkingPreferencesPage> {
     if (token == null || token.isEmpty) {
       setState(() {
         _loading = false;
-        _error = 'Oturum bulunamadı. Lütfen tekrar giriş yapın.';
+        _error = loc.workingPrefsSessionMissing;
       });
       return;
     }
@@ -135,14 +137,13 @@ class _WorkingPreferencesPageState extends State<WorkingPreferencesPage> {
         });
       } else {
         setState(() {
-          _error =
-              'Çalışma saatleri alınamadı (HTTP ${response.statusCode}).';
+          _error = loc.workingPrefsLoadFailedStatus(response.statusCode);
           _loading = false;
         });
       }
     } catch (e) {
       setState(() {
-        _error = 'Çalışma saatleri alınamadı: $e';
+        _error = loc.workingPrefsLoadFailed(e.toString());
         _loading = false;
       });
     }
@@ -153,7 +154,7 @@ class _WorkingPreferencesPageState extends State<WorkingPreferencesPage> {
 
     final token = await _getToken();
     if (token == null || token.isEmpty) {
-      _showSnack('Oturum bulunamadı. Lütfen tekrar giriş yapın.');
+      _showSnack(loc.workingPrefsSessionMissing);
       return;
     }
 
@@ -183,10 +184,11 @@ class _WorkingPreferencesPageState extends State<WorkingPreferencesPage> {
       );
 
       if (response.statusCode == 200) {
-        _showSnack('Kaydedildi', success: true);
+        _showSnack(loc.workingPrefsSaveSuccess, success: true);
         await _loadPreferences();
       } else {
-        String message = 'Kaydedilemedi (HTTP ${response.statusCode}).';
+        String message =
+            loc.workingPrefsSaveFailedStatus(response.statusCode);
         try {
           final decoded = jsonDecode(response.body);
           message = decoded['message']?.toString() ?? message;
@@ -194,7 +196,7 @@ class _WorkingPreferencesPageState extends State<WorkingPreferencesPage> {
         _showSnack(message);
       }
     } catch (e) {
-      _showSnack('Kaydedilemedi: $e');
+      _showSnack(loc.workingPrefsSaveFailed(e.toString()));
     } finally {
       if (mounted) {
         setState(() {
@@ -372,6 +374,27 @@ class _WorkingPreferencesPageState extends State<WorkingPreferencesPage> {
     return options.first;
   }
 
+  String _dayLabel(int dayOfWeek) {
+    switch (dayOfWeek) {
+      case 1:
+        return loc.dayMonFull;
+      case 2:
+        return loc.dayTueFull;
+      case 3:
+        return loc.dayWedFull;
+      case 4:
+        return loc.dayThuFull;
+      case 5:
+        return loc.dayFriFull;
+      case 6:
+        return loc.daySatFull;
+      case 7:
+        return loc.daySunFull;
+      default:
+        return '';
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -380,9 +403,9 @@ class _WorkingPreferencesPageState extends State<WorkingPreferencesPage> {
         elevation: 0,
         backgroundColor: Colors.white,
         foregroundColor: Colors.black87,
-        title: const Text(
-          'Çalışma Saatleri',
-          style: TextStyle(fontWeight: FontWeight.w700),
+        title: Text(
+          loc.workingPrefsTitle,
+          style: const TextStyle(fontWeight: FontWeight.w700),
         ),
       ),
       body: _buildBody(),
@@ -411,7 +434,7 @@ class _WorkingPreferencesPageState extends State<WorkingPreferencesPage> {
                 backgroundColor: _primaryColor,
                 foregroundColor: Colors.white,
               ),
-              child: const Text('Tekrar Dene'),
+              child: Text(loc.workingPrefsRetry),
             ),
           ],
         ),
@@ -425,22 +448,28 @@ class _WorkingPreferencesPageState extends State<WorkingPreferencesPage> {
         physics: const AlwaysScrollableScrollPhysics(),
         children: [
           _sectionCard(
-            title: 'İlk randevu oturum sayısı',
+            title: loc.workingPrefsFirstSessionTitle,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 DropdownButtonFormField<int>(
                   value: _firstAppointmentSessionCount,
                   decoration: InputDecoration(
-                    labelText: 'Seçiniz',
+                    labelText: loc.workingPrefsSelect,
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(10),
                     ),
                   ),
-                  items: const [
-                    DropdownMenuItem(value: 1, child: Text('1 Oturum')),
-                    DropdownMenuItem(value: 2, child: Text('2 Oturum')),
-                    DropdownMenuItem(value: 3, child: Text('3 Oturum')),
+                  items: [
+                    DropdownMenuItem(
+                        value: 1,
+                        child: Text(loc.workingPrefsSessionOption(1))),
+                    DropdownMenuItem(
+                        value: 2,
+                        child: Text(loc.workingPrefsSessionOption(2))),
+                    DropdownMenuItem(
+                        value: 3,
+                        child: Text(loc.workingPrefsSessionOption(3))),
                   ],
                   onChanged: (val) {
                     if (val == null) return;
@@ -466,7 +495,8 @@ class _WorkingPreferencesPageState extends State<WorkingPreferencesPage> {
                     child: CircularProgressIndicator(strokeWidth: 2),
                   )
                 : const Icon(Icons.save),
-            label: Text(_saving ? 'Kaydediliyor...' : 'Kaydet'),
+            label: Text(
+                _saving ? loc.workingPrefsSaving : loc.workingPrefsSave),
             style: ElevatedButton.styleFrom(
               backgroundColor: _primaryColor,
               foregroundColor: Colors.white,
@@ -480,16 +510,16 @@ class _WorkingPreferencesPageState extends State<WorkingPreferencesPage> {
   }
 
   Widget _buildDayCard(_DayPreference pref) {
-    final dayName = _dayNames[pref.dayOfWeek - 1];
+    final dayName = _dayLabel(pref.dayOfWeek);
     return _sectionCard(
       title: dayName,
-      subtitle: 'Çalışma durumu ve saat aralıkları',
+      subtitle: loc.workingPrefsDaySubtitle,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              const Text('Çalışıyor'),
+              Text(loc.workingPrefsWorking),
               Switch(
                 value: pref.isWorking,
                 onChanged: (val) {
@@ -513,7 +543,7 @@ class _WorkingPreferencesPageState extends State<WorkingPreferencesPage> {
             child: TextButton.icon(
               onPressed: () => _addSlot(pref),
               icon: const Icon(Icons.add),
-              label: const Text('Saat aralığı ekle'),
+              label: Text(loc.workingPrefsAddSlot),
             ),
           ),
         ],
@@ -546,8 +576,8 @@ class _WorkingPreferencesPageState extends State<WorkingPreferencesPage> {
                     ),
                   )
                   .toList(),
-              decoration: const InputDecoration(
-                labelText: 'Başlangıç',
+              decoration: InputDecoration(
+                labelText: loc.workingPrefsStart,
               ),
               onChanged: (val) {
                 if (val == null) return;
@@ -573,8 +603,8 @@ class _WorkingPreferencesPageState extends State<WorkingPreferencesPage> {
                     ),
                   )
                   .toList(),
-              decoration: const InputDecoration(
-                labelText: 'Bitiş',
+              decoration: InputDecoration(
+                labelText: loc.workingPrefsEnd,
               ),
               onChanged: (val) {
                 if (val == null) return;
@@ -601,11 +631,11 @@ class _WorkingPreferencesPageState extends State<WorkingPreferencesPage> {
                     ),
                   )
                   .toList(),
-              decoration: const InputDecoration(
-                labelText: 'Periyot',
+              decoration: InputDecoration(
+                labelText: loc.workingPrefsPeriod,
                 isDense: true,
                 contentPadding:
-                    EdgeInsets.symmetric(horizontal: 8, vertical: 10),
+                    const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
               ),
               onChanged: (val) {
                 if (val == null) return;
@@ -618,7 +648,7 @@ class _WorkingPreferencesPageState extends State<WorkingPreferencesPage> {
           SizedBox(
             width: 36,
             child: IconButton(
-              tooltip: 'Sil',
+              tooltip: loc.workingPrefsDelete,
               padding: EdgeInsets.zero,
               constraints: const BoxConstraints.tightFor(width: 36, height: 36),
               visualDensity: VisualDensity.compact,
@@ -635,12 +665,12 @@ class _WorkingPreferencesPageState extends State<WorkingPreferencesPage> {
 
   Widget _buildHolidaysCard() {
     return _sectionCard(
-      title: 'Tatil Günleri',
+      title: loc.workingPrefsHolidaysTitle,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           if (_holidays.isEmpty)
-            const Text('Henüz tatil eklenmedi.'),
+            Text(loc.workingPrefsHolidaysEmpty),
           ..._holidays.asMap().entries.map((entry) {
             final index = entry.key;
             final holiday = entry.value;
@@ -655,8 +685,8 @@ class _WorkingPreferencesPageState extends State<WorkingPreferencesPage> {
                           key: ValueKey('begin-$index-${holiday.holidayBegin}'),
                           readOnly: true,
                           initialValue: holiday.holidayBegin,
-                          decoration: const InputDecoration(
-                            labelText: 'Başlangıç',
+                          decoration: InputDecoration(
+                            labelText: loc.workingPrefsHolidayStart,
                             isDense: true,
                           ),
                           onTap: () => _pickHolidayDate(index, true),
@@ -668,8 +698,8 @@ class _WorkingPreferencesPageState extends State<WorkingPreferencesPage> {
                           key: ValueKey('end-$index-${holiday.holidayEnd}'),
                           readOnly: true,
                           initialValue: holiday.holidayEnd,
-                          decoration: const InputDecoration(
-                            labelText: 'Bitiş',
+                          decoration: InputDecoration(
+                            labelText: loc.workingPrefsHolidayEnd,
                             isDense: true,
                           ),
                           onTap: () => _pickHolidayDate(index, false),
@@ -683,20 +713,20 @@ class _WorkingPreferencesPageState extends State<WorkingPreferencesPage> {
                           constraints:
                               const BoxConstraints.tightFor(width: 36, height: 36),
                           visualDensity: VisualDensity.compact,
-                          onPressed: () => _removeHoliday(index),
-                          icon: const Icon(Icons.delete),
-                        ),
+                            onPressed: () => _removeHoliday(index),
+                            icon: const Icon(Icons.delete),
+                          ),
                       ),
                     ],
                   ),
                   const SizedBox(height: 8),
                   TextFormField(
-                    key: ValueKey('reason-$index-${holiday.reason}'),
-                    initialValue: holiday.reason,
-                    decoration: const InputDecoration(
-                      labelText: 'Açıklama (isteğe bağlı)',
-                      isDense: true,
-                    ),
+                  key: ValueKey('reason-$index-${holiday.reason}'),
+                  initialValue: holiday.reason,
+                  decoration: InputDecoration(
+                    labelText: loc.workingPrefsHolidayReason,
+                    isDense: true,
+                  ),
                     onChanged: (val) {
                       setState(() {
                         holiday.reason = val;
@@ -712,7 +742,7 @@ class _WorkingPreferencesPageState extends State<WorkingPreferencesPage> {
             child: TextButton.icon(
               onPressed: _addHoliday,
               icon: const Icon(Icons.add),
-              label: const Text('Tatil ekle'),
+              label: Text(loc.workingPrefsHolidayAdd),
             ),
           ),
         ],
