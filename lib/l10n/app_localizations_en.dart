@@ -691,4 +691,65 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get myLinksHideForm => 'Hide Form';
+
+  @override
+  String get themesTitle => 'Themes';
+
+  @override
+  String get themesSessionMissing => 'Session not found. Please log in again.';
+
+  @override
+  String get themesSessionExpired =>
+      'Your session has expired. Please log in again.';
+
+  @override
+  String themesLoadFailed(Object error) {
+    return 'Themes could not be loaded: $error';
+  }
+
+  @override
+  String get themesPreviewError => 'There was a problem loading the preview.';
+
+  @override
+  String get themesSelectTheme => 'Please select a theme.';
+
+  @override
+  String get themesSaveSuccess => 'Theme updated.';
+
+  @override
+  String themesSaveFailedStatus(Object status) {
+    return 'Theme could not be updated (HTTP $status).';
+  }
+
+  @override
+  String themesSaveError(Object error) {
+    return 'An error occurred while saving the theme: $error';
+  }
+
+  @override
+  String get themesRefreshTooltip => 'Refresh';
+
+  @override
+  String get themesRetry => 'Retry';
+
+  @override
+  String get themesListTitle => 'Themes';
+
+  @override
+  String get themesNoThemes => 'No themes available.';
+
+  @override
+  String get themesLivePreview => 'Live Preview';
+
+  @override
+  String get themesSaving => 'Saving...';
+
+  @override
+  String get themesSaveButton => 'Save Theme';
+
+  @override
+  String get themesPreviewPlaceholder => 'Select a theme to preview.';
+
+  @override
+  String get themesFallbackName => 'Theme';
 }

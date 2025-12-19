@@ -1363,6 +1363,114 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Hide Form'**
   String get myLinksHideForm;
+
+  /// No description provided for @themesTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Themes'**
+  String get themesTitle;
+
+  /// No description provided for @themesSessionMissing.
+  ///
+  /// In en, this message translates to:
+  /// **'Session not found. Please log in again.'**
+  String get themesSessionMissing;
+
+  /// No description provided for @themesSessionExpired.
+  ///
+  /// In en, this message translates to:
+  /// **'Your session has expired. Please log in again.'**
+  String get themesSessionExpired;
+
+  /// No description provided for @themesLoadFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Themes could not be loaded: {error}'**
+  String themesLoadFailed(Object error);
+
+  /// No description provided for @themesPreviewError.
+  ///
+  /// In en, this message translates to:
+  /// **'There was a problem loading the preview.'**
+  String get themesPreviewError;
+
+  /// No description provided for @themesSelectTheme.
+  ///
+  /// In en, this message translates to:
+  /// **'Please select a theme.'**
+  String get themesSelectTheme;
+
+  /// No description provided for @themesSaveSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Theme updated.'**
+  String get themesSaveSuccess;
+
+  /// No description provided for @themesSaveFailedStatus.
+  ///
+  /// In en, this message translates to:
+  /// **'Theme could not be updated (HTTP {status}).'**
+  String themesSaveFailedStatus(Object status);
+
+  /// No description provided for @themesSaveError.
+  ///
+  /// In en, this message translates to:
+  /// **'An error occurred while saving the theme: {error}'**
+  String themesSaveError(Object error);
+
+  /// No description provided for @themesRefreshTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Refresh'**
+  String get themesRefreshTooltip;
+
+  /// No description provided for @themesRetry.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry'**
+  String get themesRetry;
+
+  /// No description provided for @themesListTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Themes'**
+  String get themesListTitle;
+
+  /// No description provided for @themesNoThemes.
+  ///
+  /// In en, this message translates to:
+  /// **'No themes available.'**
+  String get themesNoThemes;
+
+  /// No description provided for @themesLivePreview.
+  ///
+  /// In en, this message translates to:
+  /// **'Live Preview'**
+  String get themesLivePreview;
+
+  /// No description provided for @themesSaving.
+  ///
+  /// In en, this message translates to:
+  /// **'Saving...'**
+  String get themesSaving;
+
+  /// No description provided for @themesSaveButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Save Theme'**
+  String get themesSaveButton;
+
+  /// No description provided for @themesPreviewPlaceholder.
+  ///
+  /// In en, this message translates to:
+  /// **'Select a theme to preview.'**
+  String get themesPreviewPlaceholder;
+
+  /// No description provided for @themesFallbackName.
+  ///
+  /// In en, this message translates to:
+  /// **'Theme'**
+  String get themesFallbackName;
 }
 
 class _AppLocalizationsDelegate

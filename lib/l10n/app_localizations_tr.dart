@@ -693,4 +693,66 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get myLinksHideForm => 'Formu Gizle';
+
+  @override
+  String get themesTitle => 'Temalar';
+
+  @override
+  String get themesSessionMissing =>
+      'Oturum bulunamadı. Lütfen tekrar giriş yapın.';
+
+  @override
+  String get themesSessionExpired =>
+      'Oturum süreniz dolmuş. Lütfen tekrar giriş yapın.';
+
+  @override
+  String themesLoadFailed(Object error) {
+    return 'Temalar yüklenemedi: $error';
+  }
+
+  @override
+  String get themesPreviewError => 'Önizleme yüklenirken sorun oluştu.';
+
+  @override
+  String get themesSelectTheme => 'Lütfen bir tema seçin.';
+
+  @override
+  String get themesSaveSuccess => 'Tema güncellendi.';
+
+  @override
+  String themesSaveFailedStatus(Object status) {
+    return 'Tema güncellenemedi (HTTP $status).';
+  }
+
+  @override
+  String themesSaveError(Object error) {
+    return 'Tema kaydedilirken hata oluştu: $error';
+  }
+
+  @override
+  String get themesRefreshTooltip => 'Yenile';
+
+  @override
+  String get themesRetry => 'Tekrar Dene';
+
+  @override
+  String get themesListTitle => 'Temalar';
+
+  @override
+  String get themesNoThemes => 'Kullanılabilir tema bulunamadı.';
+
+  @override
+  String get themesLivePreview => 'Canlı Önizleme';
+
+  @override
+  String get themesSaving => 'Kaydediliyor...';
+
+  @override
+  String get themesSaveButton => 'Temayı Kaydet';
+
+  @override
+  String get themesPreviewPlaceholder => 'Önizleme için bir tema seçin.';
+
+  @override
+  String get themesFallbackName => 'Tema';
 }

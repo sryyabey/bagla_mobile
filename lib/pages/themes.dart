@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:webview_flutter/webview_flutter.dart';
+import 'package:bagla_mobile/l10n/app_localizations.dart';
 
 class ThemesPage extends StatefulWidget {
   const ThemesPage({super.key});
@@ -14,6 +15,7 @@ class ThemesPage extends StatefulWidget {
 }
 
 class _ThemesPageState extends State<ThemesPage> {
+  AppLocalizations get loc => AppLocalizations.of(context)!;
   List<Map<String, dynamic>> _themes = [];
   bool _loading = true;
   bool _saving = false;
@@ -78,7 +80,7 @@ class _ThemesPageState extends State<ThemesPage> {
     final token = await _getToken();
     if (token == null || token.isEmpty) {
       setState(() {
-        _errorMessage = 'Oturum bulunamadı. Lütfen tekrar giriş yapın.';
+        _errorMessage = loc.themesSessionMissing;
         _loading = false;
       });
       return;
@@ -109,7 +111,7 @@ class _ThemesPageState extends State<ThemesPage> {
           profileResponse.statusCode == 401) {
         if (!mounted) return;
         setState(() {
-          _errorMessage = 'Oturum süreniz dolmuş. Lütfen tekrar giriş yapın.';
+          _errorMessage = loc.themesSessionExpired;
           _loading = false;
         });
         return;
@@ -171,7 +173,7 @@ class _ThemesPageState extends State<ThemesPage> {
     } catch (e) {
       if (!mounted) return;
       setState(() {
-        _errorMessage = 'Temalar yüklenemedi: $e';
+        _errorMessage = loc.themesLoadFailed(e.toString());
         _loading = false;
       });
     }
@@ -221,7 +223,7 @@ class _ThemesPageState extends State<ThemesPage> {
             if (mounted) {
               setState(() {
                 _previewLoading = false;
-                _previewError = 'Önizleme yüklenirken sorun oluştu.';
+                _previewError = loc.themesPreviewError;
               });
             }
           },
@@ -243,8 +245,8 @@ class _ThemesPageState extends State<ThemesPage> {
 
     if (themeId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Lütfen bir tema seçin.'),
+        SnackBar(
+          content: Text(loc.themesSelectTheme),
           backgroundColor: Colors.red,
         ),
       );
@@ -253,8 +255,8 @@ class _ThemesPageState extends State<ThemesPage> {
 
     if (token == null || token.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Oturum bulunamadı. Lütfen tekrar giriş yapın.'),
+        SnackBar(
+          content: Text(loc.themesSessionMissing),
           backgroundColor: Colors.red,
         ),
       );
@@ -280,13 +282,13 @@ class _ThemesPageState extends State<ThemesPage> {
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Tema güncellendi.'),
+          SnackBar(
+            content: Text(loc.themesSaveSuccess),
             backgroundColor: Colors.green,
           ),
         );
       } else {
-        String message = 'Tema güncellenemedi (${response.statusCode}).';
+        String message = loc.themesSaveFailedStatus(response.statusCode);
         try {
           final decoded = jsonDecode(response.body);
           message = decoded['message']?.toString() ?? message;
@@ -302,7 +304,7 @@ class _ThemesPageState extends State<ThemesPage> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Tema kaydedilirken hata: $e'),
+          content: Text(loc.themesSaveError(e.toString())),
           backgroundColor: Colors.red,
         ),
       );
@@ -329,7 +331,9 @@ class _ThemesPageState extends State<ThemesPage> {
   Widget _buildThemeChip(Map<String, dynamic> theme) {
     final id = _parseInt(theme['id']);
     final name =
-        theme['name']?.toString() ?? theme['title']?.toString() ?? 'Tema';
+        theme['name']?.toString() ??
+            theme['title']?.toString() ??
+            loc.themesFallbackName;
     final isSelected = id != null && id == _selectedThemeId;
 
     return ChoiceChip(
@@ -356,8 +360,8 @@ class _ThemesPageState extends State<ThemesPage> {
             borderRadius: BorderRadius.circular(24),
             border: Border.all(color: Colors.grey.shade300),
           ),
-          child: const Center(
-            child: Text('Önizleme için bir tema seçin.'),
+          child: Center(
+            child: Text(loc.themesPreviewPlaceholder),
           ),
         ),
       );
@@ -399,12 +403,12 @@ class _ThemesPageState extends State<ThemesPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Temalar'),
+        title: Text(loc.themesTitle),
         actions: [
           IconButton(
             onPressed: _loading ? null : _fetchThemesAndProfile,
             icon: const Icon(Icons.refresh),
-            tooltip: 'Yenile',
+            tooltip: loc.themesRefreshTooltip,
           ),
         ],
       ),
@@ -426,7 +430,7 @@ class _ThemesPageState extends State<ThemesPage> {
                         const SizedBox(height: 12),
                         ElevatedButton(
                           onPressed: _fetchThemesAndProfile,
-                          child: const Text('Tekrar Dene'),
+                          child: Text(loc.themesRetry),
                         )
                       ],
                     ),
@@ -444,14 +448,15 @@ class _ThemesPageState extends State<ThemesPage> {
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             Text(
-                              'Temalar',
+                              loc.themesListTitle,
                               style: Theme.of(context).textTheme.titleMedium,
                             ),
                             const SizedBox(height: 8),
                             if (_themes.isEmpty)
-                              const Padding(
-                                padding: EdgeInsets.symmetric(vertical: 12),
-                                child: Text('Kullanılabilir tema bulunamadı.'),
+                              Padding(
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 12),
+                                child: Text(loc.themesNoThemes),
                               )
                             else
                               SizedBox(
@@ -474,7 +479,7 @@ class _ThemesPageState extends State<ThemesPage> {
                               ),
                             const SizedBox(height: 16),
                             Text(
-                              'Canlı Önizleme',
+                              loc.themesLivePreview,
                               style: Theme.of(context).textTheme.titleMedium,
                             ),
                             const SizedBox(height: 8),
@@ -494,8 +499,8 @@ class _ThemesPageState extends State<ThemesPage> {
                                     : const Icon(Icons.check),
                                 label: Text(
                                   _saving
-                                      ? 'Kaydediliyor...'
-                                      : 'Temayı Kaydet',
+                                      ? loc.themesSaving
+                                      : loc.themesSaveButton,
                                 ),
                                 style: ElevatedButton.styleFrom(
                                   padding: const EdgeInsets.symmetric(
