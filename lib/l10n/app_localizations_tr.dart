@@ -1300,4 +1300,74 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get workingPrefsHolidayReason => 'Açıklama (isteğe bağlı)';
+
+  @override
+  String get smsTemplatesTitle => 'SMS Şablonları';
+
+  @override
+  String get smsTemplatesSessionMissing =>
+      'Oturum bulunamadı. Lütfen tekrar giriş yapın.';
+
+  @override
+  String smsTemplatesFetchFailedStatus(Object status) {
+    return 'Şablonlar alınamadı (HTTP $status).';
+  }
+
+  @override
+  String smsTemplatesFetchFailed(Object error) {
+    return 'Şablonlar alınamadı: $error';
+  }
+
+  @override
+  String get smsTemplatesUpdated => 'SMS şablonları güncellendi.';
+
+  @override
+  String smsTemplatesSaveFailedStatus(Object status) {
+    return 'Kaydedilemedi (HTTP $status).';
+  }
+
+  @override
+  String smsTemplatesSaveFailed(Object error) {
+    return 'Kaydedilemedi: $error';
+  }
+
+  @override
+  String get smsTemplatesSelect => 'Seçiniz';
+
+  @override
+  String get smsTemplatesNotFound => 'Şablon bulunamadı';
+
+  @override
+  String get smsTemplatesCustomerTemplates => 'Müşteri SMS Şablonları';
+
+  @override
+  String smsTemplatesSelectionId(Object id) {
+    return 'Seçim ID: $id';
+  }
+
+  @override
+  String get smsTemplatesMain => 'Ana Mesaj';
+
+  @override
+  String get smsTemplatesReminder => 'Hatırlatma';
+
+  @override
+  String get smsTemplatesCancel => 'İptal';
+
+  @override
+  String get smsTemplatesUpdate => 'Güncelleme';
+
+  @override
+  String get smsTemplatesSave => 'Kaydet';
+
+  @override
+  String get smsTemplatesSaving => 'Kaydediliyor...';
+
+  @override
+  String get smsTemplatesRefresh => 'Yenile';
+
+  @override
+  String smsTemplatesFallbackTitle(Object id) {
+    return 'Şablon #$id';
+  }
 }

@@ -2437,6 +2437,120 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Reason (optional)'**
   String get workingPrefsHolidayReason;
+
+  /// No description provided for @smsTemplatesTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'SMS Templates'**
+  String get smsTemplatesTitle;
+
+  /// No description provided for @smsTemplatesSessionMissing.
+  ///
+  /// In en, this message translates to:
+  /// **'Session not found. Please log in again.'**
+  String get smsTemplatesSessionMissing;
+
+  /// No description provided for @smsTemplatesFetchFailedStatus.
+  ///
+  /// In en, this message translates to:
+  /// **'Templates could not be loaded (HTTP {status}).'**
+  String smsTemplatesFetchFailedStatus(Object status);
+
+  /// No description provided for @smsTemplatesFetchFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Templates could not be loaded: {error}'**
+  String smsTemplatesFetchFailed(Object error);
+
+  /// No description provided for @smsTemplatesUpdated.
+  ///
+  /// In en, this message translates to:
+  /// **'SMS templates updated.'**
+  String get smsTemplatesUpdated;
+
+  /// No description provided for @smsTemplatesSaveFailedStatus.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not be saved (HTTP {status}).'**
+  String smsTemplatesSaveFailedStatus(Object status);
+
+  /// No description provided for @smsTemplatesSaveFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not be saved: {error}'**
+  String smsTemplatesSaveFailed(Object error);
+
+  /// No description provided for @smsTemplatesSelect.
+  ///
+  /// In en, this message translates to:
+  /// **'Select'**
+  String get smsTemplatesSelect;
+
+  /// No description provided for @smsTemplatesNotFound.
+  ///
+  /// In en, this message translates to:
+  /// **'No template found'**
+  String get smsTemplatesNotFound;
+
+  /// No description provided for @smsTemplatesCustomerTemplates.
+  ///
+  /// In en, this message translates to:
+  /// **'Customer SMS Templates'**
+  String get smsTemplatesCustomerTemplates;
+
+  /// No description provided for @smsTemplatesSelectionId.
+  ///
+  /// In en, this message translates to:
+  /// **'Selection ID: {id}'**
+  String smsTemplatesSelectionId(Object id);
+
+  /// No description provided for @smsTemplatesMain.
+  ///
+  /// In en, this message translates to:
+  /// **'Main Message'**
+  String get smsTemplatesMain;
+
+  /// No description provided for @smsTemplatesReminder.
+  ///
+  /// In en, this message translates to:
+  /// **'Reminder'**
+  String get smsTemplatesReminder;
+
+  /// No description provided for @smsTemplatesCancel.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel'**
+  String get smsTemplatesCancel;
+
+  /// No description provided for @smsTemplatesUpdate.
+  ///
+  /// In en, this message translates to:
+  /// **'Update'**
+  String get smsTemplatesUpdate;
+
+  /// No description provided for @smsTemplatesSave.
+  ///
+  /// In en, this message translates to:
+  /// **'Save'**
+  String get smsTemplatesSave;
+
+  /// No description provided for @smsTemplatesSaving.
+  ///
+  /// In en, this message translates to:
+  /// **'Saving...'**
+  String get smsTemplatesSaving;
+
+  /// No description provided for @smsTemplatesRefresh.
+  ///
+  /// In en, this message translates to:
+  /// **'Refresh'**
+  String get smsTemplatesRefresh;
+
+  /// No description provided for @smsTemplatesFallbackTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Template #{id}'**
+  String smsTemplatesFallbackTitle(Object id);
 }
 
 class _AppLocalizationsDelegate

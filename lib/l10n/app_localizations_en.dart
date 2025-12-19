@@ -1295,4 +1295,74 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get workingPrefsHolidayReason => 'Reason (optional)';
+
+  @override
+  String get smsTemplatesTitle => 'SMS Templates';
+
+  @override
+  String get smsTemplatesSessionMissing =>
+      'Session not found. Please log in again.';
+
+  @override
+  String smsTemplatesFetchFailedStatus(Object status) {
+    return 'Templates could not be loaded (HTTP $status).';
+  }
+
+  @override
+  String smsTemplatesFetchFailed(Object error) {
+    return 'Templates could not be loaded: $error';
+  }
+
+  @override
+  String get smsTemplatesUpdated => 'SMS templates updated.';
+
+  @override
+  String smsTemplatesSaveFailedStatus(Object status) {
+    return 'Could not be saved (HTTP $status).';
+  }
+
+  @override
+  String smsTemplatesSaveFailed(Object error) {
+    return 'Could not be saved: $error';
+  }
+
+  @override
+  String get smsTemplatesSelect => 'Select';
+
+  @override
+  String get smsTemplatesNotFound => 'No template found';
+
+  @override
+  String get smsTemplatesCustomerTemplates => 'Customer SMS Templates';
+
+  @override
+  String smsTemplatesSelectionId(Object id) {
+    return 'Selection ID: $id';
+  }
+
+  @override
+  String get smsTemplatesMain => 'Main Message';
+
+  @override
+  String get smsTemplatesReminder => 'Reminder';
+
+  @override
+  String get smsTemplatesCancel => 'Cancel';
+
+  @override
+  String get smsTemplatesUpdate => 'Update';
+
+  @override
+  String get smsTemplatesSave => 'Save';
+
+  @override
+  String get smsTemplatesSaving => 'Saving...';
+
+  @override
+  String get smsTemplatesRefresh => 'Refresh';
+
+  @override
+  String smsTemplatesFallbackTitle(Object id) {
+    return 'Template #$id';
+  }
 }

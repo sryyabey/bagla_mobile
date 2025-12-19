@@ -4,6 +4,7 @@ import 'package:bagla_mobile/config.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:bagla_mobile/l10n/app_localizations.dart';
 
 class SmsTemplatesPage extends StatefulWidget {
   const SmsTemplatesPage({super.key});
@@ -13,6 +14,7 @@ class SmsTemplatesPage extends StatefulWidget {
 }
 
 class _SmsTemplatesPageState extends State<SmsTemplatesPage> {
+  AppLocalizations get loc => AppLocalizations.of(context)!;
   bool _loading = true;
   bool _saving = false;
   String? _error;
@@ -49,7 +51,7 @@ class _SmsTemplatesPageState extends State<SmsTemplatesPage> {
     if (token == null || token.isEmpty) {
       setState(() {
         _loading = false;
-        _error = 'Oturum bulunamadı. Lütfen tekrar giriş yapın.';
+        _error = loc.smsTemplatesSessionMissing;
       });
       return;
     }
@@ -108,13 +110,13 @@ class _SmsTemplatesPageState extends State<SmsTemplatesPage> {
         });
       } else {
         setState(() {
-          _error = 'Şablonlar alınamadı (HTTP ${response.statusCode}).';
+          _error = loc.smsTemplatesFetchFailedStatus(response.statusCode);
           _loading = false;
         });
       }
     } catch (e) {
       setState(() {
-        _error = 'Şablonlar alınamadı: $e';
+        _error = loc.smsTemplatesFetchFailed(e.toString());
         _loading = false;
       });
     }
@@ -140,14 +142,14 @@ class _SmsTemplatesPageState extends State<SmsTemplatesPage> {
     if (_saving) return;
     final token = await _getToken();
     if (token == null || token.isEmpty) {
-      _showSnack('Oturum bulunamadı. Lütfen tekrar giriş yapın.');
+      _showSnack(loc.smsTemplatesSessionMissing);
       return;
     }
     if (_selectedMain == null ||
         _selectedReminder == null ||
         _selectedCancel == null ||
         _selectedUpdate == null) {
-      _showSnack('Tüm şablon seçimlerini yapın.');
+      _showSnack(loc.smsTemplatesSelect);
       return;
     }
 
@@ -172,9 +174,9 @@ class _SmsTemplatesPageState extends State<SmsTemplatesPage> {
       );
 
       if (response.statusCode == 200 || response.statusCode == 201) {
-        _showSnack('SMS şablonları güncellendi.', success: true);
+        _showSnack(loc.smsTemplatesUpdated, success: true);
       } else {
-        String msg = 'Kaydedilemedi (HTTP ${response.statusCode}).';
+        String msg = loc.smsTemplatesSaveFailedStatus(response.statusCode);
         try {
           final decoded = jsonDecode(response.body);
           msg = decoded['message']?.toString() ?? msg;
@@ -182,7 +184,7 @@ class _SmsTemplatesPageState extends State<SmsTemplatesPage> {
         _showSnack(msg);
       }
     } catch (e) {
-      _showSnack('Kaydedilemedi: $e');
+      _showSnack(loc.smsTemplatesSaveFailed(e.toString()));
     } finally {
       if (mounted) {
         setState(() {
@@ -272,7 +274,8 @@ class _SmsTemplatesPageState extends State<SmsTemplatesPage> {
       menuMaxHeight: 250,
       decoration: InputDecoration(
         labelText: label,
-        hintText: options.isEmpty ? 'Şablon bulunamadı' : 'Seçiniz',
+        hintText:
+            options.isEmpty ? loc.smsTemplatesNotFound : loc.smsTemplatesSelect,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
         ),
@@ -308,15 +311,15 @@ class _SmsTemplatesPageState extends State<SmsTemplatesPage> {
         elevation: 0,
         backgroundColor: Colors.white,
         foregroundColor: Colors.black87,
-        title: const Text(
-          'SMS Şablonları',
-          style: TextStyle(fontWeight: FontWeight.w700),
+        title: Text(
+          loc.smsTemplatesTitle,
+          style: const TextStyle(fontWeight: FontWeight.w700),
         ),
         actions: [
           IconButton(
             onPressed: _fetchTemplates,
             icon: const Icon(Icons.refresh),
-            tooltip: 'Yenile',
+            tooltip: loc.smsTemplatesRefresh,
           ),
         ],
       ),
@@ -338,15 +341,16 @@ class _SmsTemplatesPageState extends State<SmsTemplatesPage> {
                   )
                 : SingleChildScrollView(
                     child: _sectionCard(
-                      title: 'Müşteri SMS Şablonları',
+                      title: loc.smsTemplatesCustomerTemplates,
                       subtitle: _selectedTemplatesMeta != null
-                          ? 'Seçim ID: ${_selectedTemplatesMeta?['id'] ?? ''}'
+                          ? loc.smsTemplatesSelectionId(
+                              _selectedTemplatesMeta?['id']?.toString() ?? '')
                           : null,
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           _buildDropdown(
-                            label: 'Ana Mesaj',
+                            label: loc.smsTemplatesMain,
                             category: 'appointment',
                             selectedId: _selectedMain,
                             onChanged: (val) {
@@ -357,7 +361,7 @@ class _SmsTemplatesPageState extends State<SmsTemplatesPage> {
                           ),
                           const SizedBox(height: 12),
                           _buildDropdown(
-                            label: 'Hatırlatma',
+                            label: loc.smsTemplatesReminder,
                             category: 'reminder',
                             selectedId: _selectedReminder,
                             onChanged: (val) {
@@ -368,7 +372,7 @@ class _SmsTemplatesPageState extends State<SmsTemplatesPage> {
                           ),
                           const SizedBox(height: 12),
                           _buildDropdown(
-                            label: 'İptal',
+                            label: loc.smsTemplatesCancel,
                             category: 'cancel',
                             selectedId: _selectedCancel,
                             onChanged: (val) {
@@ -379,7 +383,7 @@ class _SmsTemplatesPageState extends State<SmsTemplatesPage> {
                           ),
                           const SizedBox(height: 12),
                           _buildDropdown(
-                            label: 'Güncelleme',
+                            label: loc.smsTemplatesUpdate,
                             category: 'update',
                             selectedId: _selectedUpdate,
                             onChanged: (val) {
@@ -414,7 +418,9 @@ class _SmsTemplatesPageState extends State<SmsTemplatesPage> {
                                     )
                                   : const Icon(Icons.save),
                               label: Text(
-                                _saving ? 'Kaydediliyor...' : 'Kaydet',
+                                _saving
+                                    ? loc.smsTemplatesSaving
+                                    : loc.smsTemplatesSave,
                               ),
                             ),
                           ),
