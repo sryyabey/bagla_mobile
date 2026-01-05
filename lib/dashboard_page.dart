@@ -211,10 +211,27 @@ class _DashboardPageState extends State<DashboardPage> {
     }
   }
 
-  Future<void> _shareBioSystem(String link) async {
+  Rect _shareOrigin(BuildContext sourceContext) {
+    final box = sourceContext.findRenderObject();
+    if (box is RenderBox && box.hasSize) {
+      return box.localToGlobal(Offset.zero) & box.size;
+    }
+    final overlayBox = Overlay.of(context).context.findRenderObject();
+    if (overlayBox is RenderBox && overlayBox.hasSize) {
+      return overlayBox.localToGlobal(Offset.zero) & overlayBox.size;
+    }
+    return const Rect.fromLTWH(0, 0, 1, 1);
+  }
+
+  Future<void> _shareBioSystem(BuildContext sourceContext, String link) async {
     final loc = AppLocalizations.of(context)!;
     try {
-      await Share.share(link, subject: loc.dashboardShareBio);
+      final origin = _shareOrigin(sourceContext);
+      await Share.share(
+        link,
+        subject: loc.dashboardShareBio,
+        sharePositionOrigin: origin,
+      );
     } catch (e) {
       _showSnack(loc.dashboardShareFailed(e.toString()));
     }
@@ -266,7 +283,7 @@ class _DashboardPageState extends State<DashboardPage> {
                     child: OutlinedButton.icon(
                       onPressed: () {
                         Navigator.of(ctx).pop();
-                        _shareBioSystem(link);
+                        _shareBioSystem(ctx, link);
                       },
                       icon: const Icon(Icons.share),
                       label: Text(loc.dashboardShare),
@@ -488,10 +505,12 @@ class _DashboardPageState extends State<DashboardPage> {
             spacing: 8,
             runSpacing: 8,
             children: [
-              ElevatedButton.icon(
-                onPressed: () => _shareBioSystem(link),
-                icon: const Icon(Icons.share),
-                label: Text(loc.dashboardShare),
+              Builder(
+                builder: (buttonContext) => ElevatedButton.icon(
+                  onPressed: () => _shareBioSystem(buttonContext, link),
+                  icon: const Icon(Icons.share),
+                  label: Text(loc.dashboardShare),
+                ),
               ),
               OutlinedButton.icon(
                 onPressed: () => _showQrModal(link),

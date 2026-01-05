@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:bagla_mobile/l10n/app_localizations.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'config.dart';
 import 'auth.dart';
 import 'register_page.dart';
@@ -33,11 +35,14 @@ class _LoginPageState extends State<LoginPage> {
   Locale _locale = const Locale('tr');
   bool _isLoading = false;
   bool _isGoogleLoading = false;
+  bool _isAppleLoading = false;
+  bool _isAppleAvailable = false;
   String? _error;
 
   @override
   void initState() {
     super.initState();
+    _checkAppleAvailability();
     // Başlangıçta mevcut locale ile eşitle
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final current = Localizations.localeOf(context);
@@ -59,6 +64,14 @@ class _LoginPageState extends State<LoginPage> {
         _locale = current;
       });
     }
+  }
+
+  Future<void> _checkAppleAvailability() async {
+    final available = await SignInWithApple.isAvailable();
+    if (!mounted) return;
+    setState(() {
+      _isAppleAvailable = available;
+    });
   }
 
   Future<void> _storeToken(String token, {String? refresh}) async {
@@ -191,6 +204,87 @@ class _LoginPageState extends State<LoginPage> {
       if (mounted) {
         setState(() {
           _isGoogleLoading = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _loginWithApple() async {
+    setState(() {
+      _isAppleLoading = true;
+      _error = null;
+    });
+
+    try {
+      final webAuthOptions =
+          (kIsWeb || defaultTargetPlatform == TargetPlatform.android)
+              ? WebAuthenticationOptions(
+                  clientId: 'com.bagla.app',
+                  redirectUri: Uri.parse('$apiBaseUrl/login/apple'),
+                )
+              : null;
+      final credential = await SignInWithApple.getAppleIDCredential(
+        scopes: [
+          AppleIDAuthorizationScopes.email,
+          AppleIDAuthorizationScopes.fullName,
+        ],
+        webAuthenticationOptions: webAuthOptions,
+      );
+
+      final idToken = credential.identityToken;
+      if (idToken == null) {
+        _showError('Apple idToken alınamadı.');
+        return;
+      }
+
+      final fullNameParts = [
+        credential.givenName,
+        credential.familyName,
+      ].where((part) => part != null && part!.trim().isNotEmpty).toList();
+      final fullName =
+          fullNameParts.isEmpty ? null : fullNameParts.join(' ').trim();
+
+      final payload = <String, dynamic>{
+        'id_token': idToken,
+        'device_name': 'bagla_mobile',
+        'name': fullName,
+        'email': credential.email,
+      }..removeWhere((key, value) => value == null);
+
+      final response = await http.post(
+        Uri.parse('$apiBaseUrl/login/apple'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        body: jsonEncode(payload),
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        final token = data['token'] ??
+            (data['data'] != null ? data['data']['token'] : null) ??
+            data['access_token'];
+        final refresh = data['refresh_token'] ??
+            data['refreshToken'] ??
+            (data['data'] != null ? data['data']['refresh_token'] : null);
+        if (token != null) {
+          await _storeToken(token, refresh: refresh?.toString());
+          await _handleLoginSuccess(token);
+        } else {
+          _showError('Token alınamadı.');
+        }
+      } else {
+        final msg = _extractMessage(response.body) ??
+            'Apple giriş başarısız (HTTP ${response.statusCode}).';
+        _showError(msg);
+      }
+    } catch (e) {
+      _showError('Apple girişi başarısız: $e');
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isAppleLoading = false;
         });
       }
     }
@@ -392,6 +486,19 @@ class _LoginPageState extends State<LoginPage> {
                           ),
                         ),
                       ),
+                      if (_isAppleAvailable) ...[
+                        const SizedBox(height: 12),
+                        SizedBox(
+                          width: double.infinity,
+                          child: SignInWithAppleButton(
+                            onPressed: () {
+                              if (_isAppleLoading) return;
+                              _loginWithApple();
+                            },
+                            style: SignInWithAppleButtonStyle.black,
+                          ),
+                        ),
+                      ],
                       const SizedBox(height: 16),
                       TextButton(
                         onPressed: () {
