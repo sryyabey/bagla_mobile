@@ -171,7 +171,7 @@ class _DashboardPageState extends State<DashboardPage> {
     );
   }
 
-  Future<void> _downloadQr(String link) async {
+  Future<void> _downloadQr(BuildContext sourceContext, String link) async {
     final loc = AppLocalizations.of(context)!;
     try {
       final painter = QrPainter(
@@ -189,8 +189,12 @@ class _DashboardPageState extends State<DashboardPage> {
       final file = File('${dir.path}/bagla_qr.png');
       await file.writeAsBytes(bytes);
 
-      await Share.shareXFiles([XFile(file.path)],
-          text: loc.dashboardShareBio);
+      final origin = _shareOrigin(sourceContext);
+      await Share.shareXFiles(
+        [XFile(file.path)],
+        text: loc.dashboardShareBio,
+        sharePositionOrigin: origin,
+      );
     } catch (e) {
       _showSnack(loc.dashboardQrDownloadFailed(e.toString()));
     }
@@ -281,9 +285,11 @@ class _DashboardPageState extends State<DashboardPage> {
                 children: [
                   Expanded(
                     child: OutlinedButton.icon(
-                      onPressed: () {
-                        Navigator.of(ctx).pop();
-                        _shareBioSystem(ctx, link);
+                      onPressed: () async {
+                        await _shareBioSystem(ctx, link);
+                        if (Navigator.of(ctx).canPop()) {
+                          Navigator.of(ctx).pop();
+                        }
                       },
                       icon: const Icon(Icons.share),
                       label: Text(loc.dashboardShare),
@@ -293,8 +299,10 @@ class _DashboardPageState extends State<DashboardPage> {
                   Expanded(
                     child: OutlinedButton.icon(
                       onPressed: () async {
-                        Navigator.of(ctx).pop();
-                        await _downloadQr(link);
+                        await _downloadQr(ctx, link);
+                        if (Navigator.of(ctx).canPop()) {
+                          Navigator.of(ctx).pop();
+                        }
                       },
                       icon: const Icon(Icons.download),
                       label: Text(loc.dashboardDownload),
@@ -938,15 +946,13 @@ class _DashboardPageState extends State<DashboardPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Container(
-                    padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(10),
                     child: Image.asset(
-                      'assets/logo.png',
+                      'assets/mobile_logo.png',
                       height: 40,
+                      width: 40,
+                      fit: BoxFit.cover,
                     ),
                   ),
                   const SizedBox(height: 16),

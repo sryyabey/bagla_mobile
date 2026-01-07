@@ -1,12 +1,15 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 
 import 'auth.dart';
 import 'config.dart';
 import 'main_tabs_page.dart';
+import 'services/apple_auth_service.dart';
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});
@@ -30,8 +33,25 @@ class _RegisterPageState extends State<RegisterPage> {
 
   bool _isLoading = false;
   bool _isGoogleLoading = false;
+  bool _isAppleLoading = false;
+  bool _isAppleAvailable = false;
   String? _error;
   Map<String, dynamic>? _user;
+  final AppleAuthService _appleAuthService = AppleAuthService();
+
+  @override
+  void initState() {
+    super.initState();
+    _checkAppleAvailability();
+  }
+
+  Future<void> _checkAppleAvailability() async {
+    final available = await SignInWithApple.isAvailable();
+    if (!mounted) return;
+    setState(() {
+      _isAppleAvailable = available;
+    });
+  }
 
   @override
   void dispose() {
@@ -212,6 +232,28 @@ class _RegisterPageState extends State<RegisterPage> {
     }
   }
 
+  Future<void> _loginWithApple() async {
+    setState(() {
+      _isAppleLoading = true;
+      _error = null;
+    });
+
+    try {
+      final result = await _appleAuthService.login();
+      await _handleRegisterSuccess(result.token);
+    } on AppleAuthException catch (e) {
+      _showError(e.message);
+    } catch (e) {
+      _showError('Apple girişi başarısız: $e');
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isAppleLoading = false;
+        });
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -386,6 +428,21 @@ class _RegisterPageState extends State<RegisterPage> {
                     ),
                   ),
                 ),
+                if (_isAppleAvailable ||
+                    kIsWeb ||
+                    defaultTargetPlatform == TargetPlatform.android) ...[
+                  const SizedBox(height: 12),
+                  SizedBox(
+                    width: double.infinity,
+                    child: SignInWithAppleButton(
+                      onPressed: () {
+                        if (_isAppleLoading) return;
+                        _loginWithApple();
+                      },
+                      style: SignInWithAppleButtonStyle.black,
+                    ),
+                  ),
+                ],
                 const SizedBox(height: 16),
                 TextButton(
                   onPressed: () => Navigator.of(context).pop(),

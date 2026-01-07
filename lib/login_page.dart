@@ -3,12 +3,11 @@ import 'package:flutter/foundation.dart';
 import 'package:bagla_mobile/l10n/app_localizations.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'config.dart';
 import 'auth.dart';
+import 'services/apple_auth_service.dart';
 import 'register_page.dart';
 import 'main_tabs_page.dart';
 
@@ -24,7 +23,6 @@ class LoginPage extends StatefulWidget {
 class _LoginPageState extends State<LoginPage> {
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
-  final FlutterSecureStorage _secureStorage = const FlutterSecureStorage();
   final GoogleSignIn _googleSignIn = GoogleSignIn(
     scopes: const ['email'],
     // Use the Web client ID here so the backend can verify idToken audience.
@@ -38,6 +36,7 @@ class _LoginPageState extends State<LoginPage> {
   bool _isAppleLoading = false;
   bool _isAppleAvailable = false;
   String? _error;
+  final AppleAuthService _appleAuthService = AppleAuthService();
 
   @override
   void initState() {
@@ -216,69 +215,10 @@ class _LoginPageState extends State<LoginPage> {
     });
 
     try {
-      final webAuthOptions =
-          (kIsWeb || defaultTargetPlatform == TargetPlatform.android)
-              ? WebAuthenticationOptions(
-                  clientId: 'com.bagla.app',
-                  redirectUri: Uri.parse('$apiBaseUrl/login/apple'),
-                )
-              : null;
-      final credential = await SignInWithApple.getAppleIDCredential(
-        scopes: [
-          AppleIDAuthorizationScopes.email,
-          AppleIDAuthorizationScopes.fullName,
-        ],
-        webAuthenticationOptions: webAuthOptions,
-      );
-
-      final idToken = credential.identityToken;
-      if (idToken == null) {
-        _showError('Apple idToken alınamadı.');
-        return;
-      }
-
-      final fullNameParts = [
-        credential.givenName,
-        credential.familyName,
-      ].where((part) => part != null && part!.trim().isNotEmpty).toList();
-      final fullName =
-          fullNameParts.isEmpty ? null : fullNameParts.join(' ').trim();
-
-      final payload = <String, dynamic>{
-        'id_token': idToken,
-        'device_name': 'bagla_mobile',
-        'name': fullName,
-        'email': credential.email,
-      }..removeWhere((key, value) => value == null);
-
-      final response = await http.post(
-        Uri.parse('$apiBaseUrl/login/apple'),
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-        },
-        body: jsonEncode(payload),
-      );
-
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        final token = data['token'] ??
-            (data['data'] != null ? data['data']['token'] : null) ??
-            data['access_token'];
-        final refresh = data['refresh_token'] ??
-            data['refreshToken'] ??
-            (data['data'] != null ? data['data']['refresh_token'] : null);
-        if (token != null) {
-          await _storeToken(token, refresh: refresh?.toString());
-          await _handleLoginSuccess(token);
-        } else {
-          _showError('Token alınamadı.');
-        }
-      } else {
-        final msg = _extractMessage(response.body) ??
-            'Apple giriş başarısız (HTTP ${response.statusCode}).';
-        _showError(msg);
-      }
+      final result = await _appleAuthService.login();
+      await _handleLoginSuccess(result.token);
+    } on AppleAuthException catch (e) {
+      _showError(e.message);
     } catch (e) {
       _showError('Apple girişi başarısız: $e');
     } finally {
@@ -486,7 +426,9 @@ class _LoginPageState extends State<LoginPage> {
                           ),
                         ),
                       ),
-                      if (_isAppleAvailable) ...[
+                      if (_isAppleAvailable ||
+                          kIsWeb ||
+                          defaultTargetPlatform == TargetPlatform.android) ...[
                         const SizedBox(height: 12),
                         SizedBox(
                           width: double.infinity,
