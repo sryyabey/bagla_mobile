@@ -1,8 +1,11 @@
 import 'dart:convert';
 import 'dart:typed_data';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:image/image.dart' as img;
+import 'package:image_cropper/image_cropper.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:http_parser/http_parser.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -153,33 +156,84 @@ class _ProfilePageState extends State<ProfilePage> {
     if (picked == null) return;
 
     try {
-      // Boyut ve format doğrulama
-      final sizeBytes = await picked.length();
-      const maxSize = 3 * 1024 * 1024; // 3MB
-      if (sizeBytes > maxSize) {
-        _showSnack(loc.profileAvatarTooLarge);
-        return;
+      Uint8List bytes;
+      String fileName;
+      String mimeType;
+
+      if (kIsWeb) {
+        bytes = await picked.readAsBytes();
+        final ext = picked.name.split('.').last.toLowerCase();
+        fileName = picked.name.isNotEmpty
+            ? picked.name
+            : 'avatar.${ext.isNotEmpty ? ext : 'jpg'}';
+        mimeType = ext == 'png'
+            ? 'image/png'
+            : ext == 'webp'
+                ? 'image/webp'
+                : 'image/jpeg';
+      } else if (defaultTargetPlatform == TargetPlatform.android) {
+        final originalBytes = await picked.readAsBytes();
+        final decoded = img.decodeImage(originalBytes);
+        if (decoded == null) {
+          _showSnack(loc.profileAvatarInvalidFormat);
+          return;
+        }
+        final size =
+            decoded.width < decoded.height ? decoded.width : decoded.height;
+        final offsetX = ((decoded.width - size) / 2).round();
+        final offsetY = ((decoded.height - size) / 2).round();
+        final cropped = img.copyCrop(
+          decoded,
+          x: offsetX,
+          y: offsetY,
+          width: size,
+          height: size,
+        );
+        bytes = Uint8List.fromList(img.encodeJpg(cropped, quality: 90));
+        fileName = 'avatar.jpg';
+        mimeType = 'image/jpeg';
+      } else {
+        final cropped = await ImageCropper().cropImage(
+          sourcePath: picked.path,
+          aspectRatio: const CropAspectRatio(ratioX: 1, ratioY: 1),
+          compressQuality: 90,
+          uiSettings: [
+            AndroidUiSettings(
+              lockAspectRatio: true,
+              hideBottomControls: false,
+            ),
+            IOSUiSettings(
+              aspectRatioLockEnabled: true,
+              resetAspectRatioEnabled: false,
+            ),
+          ],
+        );
+
+        if (cropped == null) return;
+
+        bytes = await cropped.readAsBytes();
+        fileName = cropped.path.split('/').last;
+        final ext = fileName.split('.').last.toLowerCase();
+        mimeType = ext == 'png'
+            ? 'image/png'
+            : ext == 'webp'
+                ? 'image/webp'
+                : 'image/jpeg';
       }
 
-      final ext = picked.name.split('.').last.toLowerCase();
-      final isJpeg = ext == 'jpg' || ext == 'jpeg';
-      final isPng = ext == 'png';
-      final isWebp = ext == 'webp';
-      if (!isJpeg && !isPng && !isWebp) {
-        _showSnack(loc.profileAvatarInvalidFormat);
+      const maxSize = 3 * 1024 * 1024; // 3MB
+      if (bytes.lengthInBytes > maxSize) {
+        _showSnack(loc.profileAvatarTooLarge);
         return;
       }
 
       setState(() {
         _avatarBytes = null;
       });
-      final rawBytes = await picked.readAsBytes();
       setState(() {
-        _avatarBytes = rawBytes;
-        _avatarFileName =
-            picked.name.isNotEmpty ? picked.name : 'avatar.${ext.isNotEmpty ? ext : 'jpg'}';
-        _avatarMimeType =
-            isPng ? 'image/png' : isWebp ? 'image/webp' : 'image/jpeg';
+        _avatarBytes = bytes;
+        _avatarFileName = fileName;
+        _avatarMimeType = mimeType;
       });
     } catch (e) {
       _showSnack(loc.profileAvatarPrepareFailed(e.toString()));

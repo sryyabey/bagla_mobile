@@ -23,6 +23,8 @@ dependencies:
   share_plus: ^10.0.2
   qr_flutter: ^4.1.0
   image_picker: ^1.1.2
+  image_cropper: ^8.0.2
+  image: ^4.2.0
   cupertino_icons: ^1.0.6
   dio: ^5.4.3+1
   flutter_riverpod: ^2.5.1
