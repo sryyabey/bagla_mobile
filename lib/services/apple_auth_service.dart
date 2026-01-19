@@ -146,7 +146,7 @@ class AppleAuthService {
     if (kIsWeb || defaultTargetPlatform == TargetPlatform.android) {
       return WebAuthenticationOptions(
         clientId: 'com.bagla.app.web',
-        redirectUri: Uri.parse('$apiBaseUrl/api/login/apple'),
+        redirectUri: Uri.parse('$apiBaseUrl/auth/apple/callback'),
       );
     }
     return null;
