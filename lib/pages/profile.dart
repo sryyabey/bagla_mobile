@@ -14,6 +14,7 @@ import '../auth.dart';
 import '../widgets/main_nav.dart';
 import 'package:bagla_mobile/l10n/app_localizations.dart';
 import '../main.dart';
+import '../login_page.dart';
 
 class ProfilePage extends StatefulWidget {
   final bool showBottomNav;
@@ -49,6 +50,7 @@ class _ProfilePageState extends State<ProfilePage> {
       TextEditingController();
   bool _profileSavedRecently = false;
   bool _passwordSavedRecently = false;
+  bool _deletingAccount = false;
 
   bool _loadingProfile = true;
   bool _savingProfile = false;
@@ -385,6 +387,89 @@ class _ProfilePageState extends State<ProfilePage> {
       if (mounted) {
         setState(() {
           _savingPassword = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _deleteAccount() async {
+    if (_deletingAccount) return;
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Hesabı sil'),
+        content: const Text(
+          'Hesabınızı silmek istediğinize emin misiniz? Bu işlem geri alınamaz.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Vazgeç'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.redAccent,
+              foregroundColor: Colors.white,
+            ),
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Hesabı sil'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+
+    final token = await _getToken();
+    if (token == null || token.isEmpty) {
+      _showSnack(loc.profileSessionMissing);
+      return;
+    }
+
+    setState(() {
+      _deletingAccount = true;
+    });
+
+    try {
+      final response = await http.delete(
+        Uri.parse('$apiBaseUrl/api/trash-users'),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Accept': 'application/json',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        _showSnack('Hesap başarıyla kaldırıldı.', success: true);
+        await clearTokens();
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.remove('authToken');
+        if (mounted) {
+          Navigator.pushAndRemoveUntil(
+            context,
+            MaterialPageRoute(
+              builder: (context) => LoginPage(
+                onLocaleChange: (locale) {},
+              ),
+            ),
+            (route) => false,
+          );
+        }
+      } else {
+        String message = 'Hesap silme isteği başarısız oldu.';
+        try {
+          final decoded = jsonDecode(response.body);
+          message = decoded['message']?.toString() ?? message;
+        } catch (_) {}
+        _showSnack('$message (${response.statusCode})');
+      }
+    } catch (e) {
+      _showSnack('Hesap silme isteği sırasında hata oluştu: $e');
+    } finally {
+      if (mounted) {
+        setState(() {
+          _deletingAccount = false;
         });
       }
     }
@@ -756,6 +841,37 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
+  Widget _buildDeleteAccountSection() {
+    return _sectionCard(
+      title: 'Hesabı sil',
+      subtitle: 'Bu işlem geri alınamaz.',
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          ElevatedButton.icon(
+            onPressed: _deletingAccount ? null : _deleteAccount,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.redAccent,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+            icon: _deletingAccount
+                ? const SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Icon(Icons.delete_forever),
+            label: Text(_deletingAccount ? 'İşleniyor...' : 'Hesabı sil'),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final currentLang = Localizations.localeOf(context).languageCode;
@@ -846,6 +962,8 @@ class _ProfilePageState extends State<ProfilePage> {
                     _buildLanguageSelector(),
                     const SizedBox(height: 12),
                     _buildPasswordForm(),
+                    const SizedBox(height: 12),
+                    _buildDeleteAccountSection(),
                   ],
                 ),
               ),

@@ -440,6 +440,12 @@ abstract class AppLocalizations {
   /// **'QR could not be downloaded: {error}'**
   String dashboardQrDownloadFailed(Object error);
 
+  /// No description provided for @dashboardLinkOpenFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Link could not be opened.'**
+  String get dashboardLinkOpenFailed;
+
   /// No description provided for @dashboardWhatsAppFailed.
   ///
   /// In en, this message translates to:
@@ -497,7 +503,7 @@ abstract class AppLocalizations {
   /// No description provided for @quickAppointment.
   ///
   /// In en, this message translates to:
-  /// **'Quick Appointment'**
+  /// **'Add Appointment'**
   String get quickAppointment;
 
   /// No description provided for @showFilter.
@@ -641,7 +647,7 @@ abstract class AppLocalizations {
   /// No description provided for @quickAppointmentTitle.
   ///
   /// In en, this message translates to:
-  /// **'Quick Appointment'**
+  /// **'Add Appointment'**
   String get quickAppointmentTitle;
 
   /// No description provided for @quickAppointmentSubtitle.

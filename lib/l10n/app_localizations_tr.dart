@@ -198,6 +198,9 @@ class AppLocalizationsTr extends AppLocalizations {
   }
 
   @override
+  String get dashboardLinkOpenFailed => 'Bağlantı açılamadı.';
+
+  @override
   String get dashboardWhatsAppFailed => 'WhatsApp açılamadı.';
 
   @override
@@ -228,7 +231,7 @@ class AppLocalizationsTr extends AppLocalizations {
   String get total => 'Toplam';
 
   @override
-  String get quickAppointment => 'Hızlı Randevu';
+  String get quickAppointment => 'Randevu Ekle';
 
   @override
   String get showFilter => 'Filtrele';
@@ -301,7 +304,7 @@ class AppLocalizationsTr extends AppLocalizations {
   String get save => 'Kaydet';
 
   @override
-  String get quickAppointmentTitle => 'Hızlı Randevu';
+  String get quickAppointmentTitle => 'Randevu Ekle';
 
   @override
   String get quickAppointmentSubtitle =>

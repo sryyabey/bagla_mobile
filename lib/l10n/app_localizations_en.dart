@@ -198,6 +198,9 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get dashboardLinkOpenFailed => 'Link could not be opened.';
+
+  @override
   String get dashboardWhatsAppFailed => 'WhatsApp could not be opened.';
 
   @override
@@ -228,7 +231,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get total => 'Total';
 
   @override
-  String get quickAppointment => 'Quick Appointment';
+  String get quickAppointment => 'Add Appointment';
 
   @override
   String get showFilter => 'Filter';
@@ -301,7 +304,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get save => 'Save';
 
   @override
-  String get quickAppointmentTitle => 'Quick Appointment';
+  String get quickAppointmentTitle => 'Add Appointment';
 
   @override
   String get quickAppointmentSubtitle =>

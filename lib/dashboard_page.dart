@@ -215,6 +215,33 @@ class _DashboardPageState extends State<DashboardPage> {
     }
   }
 
+  Future<void> _openBioLink(String link) async {
+    final loc = AppLocalizations.of(context)!;
+    final trimmed = link.trim();
+    if (trimmed.isEmpty) return;
+    Uri? uri = Uri.tryParse(trimmed);
+    if (uri == null) {
+      _showSnack(loc.dashboardLinkOpenFailed);
+      return;
+    }
+    if (!uri.hasScheme) {
+      uri = Uri.tryParse('https://$trimmed');
+    }
+    if (uri == null) {
+      _showSnack(loc.dashboardLinkOpenFailed);
+      return;
+    }
+    try {
+      final launched =
+          await launchUrl(uri, mode: LaunchMode.externalApplication);
+      if (!launched && mounted) {
+        _showSnack(loc.dashboardLinkOpenFailed);
+      }
+    } catch (_) {
+      _showSnack(loc.dashboardLinkOpenFailed);
+    }
+  }
+
   Rect _shareOrigin(BuildContext sourceContext) {
     final box = sourceContext.findRenderObject();
     if (box is RenderBox && box.hasSize) {
@@ -493,10 +520,16 @@ class _DashboardPageState extends State<DashboardPage> {
           Row(
             children: [
               Expanded(
-                child: Text(
-                  link,
-                  style: const TextStyle(color: Colors.blue),
-                  overflow: TextOverflow.ellipsis,
+                child: GestureDetector(
+                  onTap: () => _openBioLink(link),
+                  child: Text(
+                    link,
+                    style: const TextStyle(
+                      color: Colors.blue,
+                      decoration: TextDecoration.underline,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ),
               ),
               IconButton(
@@ -534,17 +567,83 @@ class _DashboardPageState extends State<DashboardPage> {
 
   Widget _buildPackInfo(Map<String, dynamic>? packInfo) {
     final loc = AppLocalizations.of(context)!;
-    if (packInfo == null) return const SizedBox.shrink();
+    if (packInfo == null) {
+      return Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: Colors.grey.shade200),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.04),
+              blurRadius: 10,
+              offset: const Offset(0, 6),
+            )
+          ],
+        ),
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.blueGrey.withOpacity(0.12),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child:
+                      const Icon(Icons.inbox_outlined, color: Colors.blueGrey),
+                ),
+                const SizedBox(width: 10),
+                Text(
+                  loc.dashboardPackageInfo,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+            const Text(
+              'Aktif paketiniz bulunmuyor. SMS işlemleri için paket alın.',
+              style: TextStyle(color: Colors.black87),
+            ),
+            const SizedBox(height: 12),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const SmsPacksPage()),
+                  );
+                },
+                icon: const Icon(Icons.shopping_cart_outlined),
+                label: const Text('Paket Al'),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+    final remainingSms = (packInfo['remaining_sms'] ?? 0).toString();
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey.shade200),
+        gradient: const LinearGradient(
+          colors: [Color(0xFF0F172A), Color(0xFF1E293B)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.white.withOpacity(0.08)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.03),
-            blurRadius: 8,
-            offset: const Offset(0, 4),
+            color: Colors.black.withOpacity(0.25),
+            blurRadius: 18,
+            offset: const Offset(0, 10),
           )
         ],
       ),
@@ -552,31 +651,101 @@ class _DashboardPageState extends State<DashboardPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            loc.dashboardPackageInfo,
-            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.12),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child:
+                    const Icon(Icons.local_offer, color: Colors.white, size: 18),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  loc.dashboardPackageInfo,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w800,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+              Flexible(
+                fit: FlexFit.loose,
+                child: Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF22D3EE),
+                    borderRadius: BorderRadius.circular(18),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.sms, size: 14, color: Color(0xFF0F172A)),
+                      const SizedBox(width: 6),
+                      Flexible(
+                        child: Text(
+                          '${loc.dashboardRemainingSms}: $remainingSms',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
+                            color: Color(0xFF0F172A),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
           ),
           const SizedBox(height: 12),
           ListTile(
             dense: true,
             contentPadding: EdgeInsets.zero,
-            leading: const Icon(Icons.bolt, color: Colors.orange),
-            title: Text(packInfo['pack_name']?.toString() ?? '-'),
-            subtitle: Text(loc.dashboardPackageName),
+            leading: const Icon(Icons.bolt, color: Color(0xFF38BDF8)),
+            title: Text(
+              packInfo['pack_name']?.toString() ?? '-',
+              style: const TextStyle(color: Colors.white),
+            ),
+            subtitle: Text(
+              loc.dashboardPackageName,
+              style: const TextStyle(color: Colors.white70),
+            ),
           ),
           ListTile(
             dense: true,
             contentPadding: EdgeInsets.zero,
-            leading: const Icon(Icons.play_circle_outline),
-            title: Text(packInfo['activated_at']?.toString() ?? '-'),
-            subtitle: Text(loc.dashboardStart),
+            leading: const Icon(Icons.play_circle_outline,
+                color: Color(0xFF34D399)),
+            title: Text(
+              packInfo['activated_at']?.toString() ?? '-',
+              style: const TextStyle(color: Colors.white),
+            ),
+            subtitle: Text(
+              loc.dashboardStart,
+              style: const TextStyle(color: Colors.white70),
+            ),
           ),
           ListTile(
             dense: true,
             contentPadding: EdgeInsets.zero,
-            leading: const Icon(Icons.timer_off_outlined),
-            title: Text(packInfo['expired_at']?.toString() ?? '-'),
-            subtitle: Text(loc.dashboardEnd),
+            leading: const Icon(Icons.timer_off_outlined,
+                color: Color(0xFFFBBF24)),
+            title: Text(
+              packInfo['expired_at']?.toString() ?? '-',
+              style: const TextStyle(color: Colors.white),
+            ),
+            subtitle: Text(
+              loc.dashboardEnd,
+              style: const TextStyle(color: Colors.white70),
+            ),
           ),
         ],
       ),

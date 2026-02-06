@@ -356,7 +356,7 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
                   });
                 },
                 style: buttonStyleOnLight,
-                icon: const Icon(Icons.flash_on),
+                icon: const Icon(Icons.add_circle_outline),
                 label: Text(loc.quickAppointment),
               ),
               OutlinedButton.icon(
@@ -799,12 +799,12 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
       );
 
       if (response.statusCode == 200 || response.statusCode == 201) {
-        _showSnack('Quick randevu oluşturuldu.', success: true);
+        _showSnack('Randevu oluşturuldu.', success: true);
         await _fetchAppointments();
         _resetQuickForm();
       } else {
         String message =
-            'Quick randevu oluşturulamadı (HTTP ${response.statusCode}).';
+            'Randevu oluşturulamadı (HTTP ${response.statusCode}).';
         try {
           final decoded = jsonDecode(response.body);
           message = decoded['message']?.toString() ?? message;
@@ -812,7 +812,7 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
         _showSnack(message);
       }
     } catch (e) {
-      _showSnack('Quick randevu oluşturulamadı: $e');
+      _showSnack('Randevu oluşturulamadı: $e');
     } finally {
       if (mounted) {
         setState(() {
@@ -3004,9 +3004,9 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
                         valueColor: AlwaysStoppedAnimation(Colors.white),
                       ),
                     )
-                  : const Icon(Icons.flash_on),
+                  : const Icon(Icons.event_available),
               label: Text(
-                  _savingQuick ? 'Gönderiliyor...' : 'Quick Randevu Oluştur'),
+                  _savingQuick ? 'Gönderiliyor...' : 'Randevu Oluştur'),
             ),
           ),
         ],
