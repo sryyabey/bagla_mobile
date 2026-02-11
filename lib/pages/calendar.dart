@@ -290,10 +290,9 @@ class CalendarPage extends ConsumerStatefulWidget {
 class _CalendarPageState extends ConsumerState<CalendarPage> {
   late DateTime _weekStart;
   String? _lastErrorMessage;
-  static const Color _backgroundColor = Color(0xFFF7F9FC);
   static const Color _primaryColor = Color(0xFF6366F1);
 
-  AppLocalizations get loc => AppLocalizations.of(context)!;
+  AppLocalizations get loc => AppLocalizations.of(context);
 
   @override
   void initState() {
@@ -331,26 +330,6 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
     return day.isWorking && prefWorking;
   }
 
-  String _dayShortLabel(WeekDayInfo day) {
-    switch (day.dayOfWeekIso) {
-      case 1:
-        return loc.dayMonShort;
-      case 2:
-        return loc.dayTueShort;
-      case 3:
-        return loc.dayWedShort;
-      case 4:
-        return loc.dayThuShort;
-      case 5:
-        return loc.dayFriShort;
-      case 6:
-        return loc.daySatShort;
-      case 7:
-      default:
-        return loc.daySunShort;
-    }
-  }
-
   String _dayFullLabel(WeekDayInfo day) {
     switch (day.dayOfWeekIso) {
       case 1:
@@ -371,41 +350,22 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
     }
   }
 
-  Widget _buildDayChips(List<WeekDayInfo> days) {
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      child: Row(
-        children: days.map((d) {
-          final selected = d.isToday;
-          return Padding(
-            padding: const EdgeInsets.only(right: 8),
-            child: Chip(
-              label: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(_dayShortLabel(d)),
-                  Text(
-                    d.displayDate,
-                    style: const TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                ],
-              ),
-              backgroundColor:
-                  selected ? _primaryColor.withOpacity(0.18) : Colors.white,
-              side: BorderSide(
-                  color: selected
-                      ? _primaryColor.withOpacity(0.5)
-                      : Colors.grey.shade300),
-            ),
-          );
-        }).toList(),
-      ),
-    );
+  String _monthTitle() {
+    final localeTag = Localizations.localeOf(context).toLanguageTag();
+    final formatter = DateFormat('MMMM yyyy', localeTag);
+    final text = formatter.format(_weekStart);
+    return text[0].toUpperCase() + text.substring(1);
   }
 
-  Widget _buildGrid(WeeklyCalendarData data) {
-    final days = data.weekDays;
-    final timeGrid = data.timeGrid;
+  int _dayNumber(WeekDayInfo day) {
+    final parts = day.date.split('-');
+    if (parts.length == 3) {
+      return int.tryParse(parts[2]) ?? 0;
+    }
+    return 0;
+  }
+
+  Widget _buildDayList(WeeklyCalendarData data) {
     final appointmentsBySlot = data.appointmentsBySlot;
     final statusColors = data.statusColors;
     final workingPrefs = data.workingPreferences;
@@ -417,23 +377,10 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
       return _bootstrapColor(mapped);
     }
 
-    Widget buildCell(WeekDayInfo day, String time) {
+    Widget buildSlotCard(WeekDayInfo day, String time) {
       final working = _dayWorking(day, workingPrefs);
       if (!working) {
-        return Container(
-          height: 64,
-          decoration: BoxDecoration(
-            color: Colors.grey.shade50,
-            border: Border.all(color: Colors.grey.shade200),
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Center(
-            child: Text(
-              loc.calendarClosed,
-              style: const TextStyle(color: Colors.grey),
-            ),
-          ),
-        );
+        return const SizedBox.shrink();
       }
 
       final key = '${day.date}_$time';
@@ -450,188 +397,201 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
         final color = statusColorFor(appointment);
 
         return Container(
-          height: 64,
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
           decoration: BoxDecoration(
-            color: color.withOpacity(0.1),
-            border: Border.all(color: color.withOpacity(0.4)),
-            borderRadius: BorderRadius.circular(8),
+            color: color.withValues(alpha: 0.1),
+            border: Border.all(color: color.withValues(alpha: 0.4)),
+            borderRadius: BorderRadius.circular(12),
           ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+          child: Row(
             children: [
               Text(
-                fullName.isNotEmpty ? fullName : loc.calendarCustomer,
-                style:
-                    const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
-                overflow: TextOverflow.ellipsis,
+                time,
+                style: const TextStyle(fontWeight: FontWeight.w700),
               ),
-              const SizedBox(height: 2),
-              Row(
-                children: [
-                  Icon(Icons.circle, color: color, size: 10),
-                  const SizedBox(width: 6),
-                  Expanded(
-                    child: Text(
-                      phone.isNotEmpty ? phone : '',
-                      style:
-                          const TextStyle(fontSize: 11, color: Colors.black87),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      fullName.isNotEmpty ? fullName : loc.calendarCustomer,
+                      style: const TextStyle(
+                          fontWeight: FontWeight.bold, fontSize: 14),
                       overflow: TextOverflow.ellipsis,
                     ),
-                  ),
-                ],
+                    const SizedBox(height: 2),
+                    Text(
+                      phone.isNotEmpty ? phone : '',
+                      style: const TextStyle(fontSize: 12, color: Colors.black87),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
               ),
+              Icon(Icons.check, color: color),
             ],
           ),
         );
       }
 
-      return Container(
-        height: 64,
-        decoration: BoxDecoration(
-          color: Colors.white,
-          border: Border.all(color: Colors.grey.shade300),
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: Center(
-          child: IconButton(
-            icon: const Icon(Icons.add),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => AppointmentsPage(
-                    initialQuickDate: day.date,
-                    initialQuickTime: time,
-                    autoShowQuick: true,
-                  ),
+      return InkWell(
+        borderRadius: BorderRadius.circular(12),
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => AppointmentsPage(
+                initialQuickDate: day.date,
+                initialQuickTime: time,
+                autoShowQuick: true,
+              ),
+            ),
+          );
+        },
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            border: Border.all(color: Colors.grey.shade300),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Row(
+            children: [
+              Text(
+                time,
+                style: const TextStyle(fontWeight: FontWeight.w600),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  loc.calendarCustomer,
+                  style: const TextStyle(color: Colors.black54),
                 ),
-              );
-            },
+              ),
+              const Icon(Icons.add_circle_outline, color: _primaryColor),
+            ],
           ),
         ),
       );
     }
 
-    return Expanded(
-      child: Scrollbar(
-        thumbVisibility: true,
-        child: SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: SizedBox(
-            width: (days.length + 1) * 140,
-            child: Scrollbar(
-              thumbVisibility: true,
-              child: Container(
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(14),
-                  border: Border.all(color: Colors.grey.shade200),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.03),
-                      blurRadius: 10,
-                      offset: const Offset(0, 6),
-                    )
-                  ],
-                ),
-                child: ListView.builder(
-                  itemCount: timeGrid.length + 1,
-                  itemBuilder: (context, rowIndex) {
-                    if (rowIndex == 0) {
-                      return Row(
-                        children: [
-                          Container(
-                            width: 120,
-                            padding: const EdgeInsets.all(8),
-                            decoration: BoxDecoration(
-                              color: Colors.grey.shade100,
-                              borderRadius: const BorderRadius.only(
-                                topLeft: Radius.circular(14),
-                              ),
-                            ),
-                            child: Text(
-                              loc.calendarTimeLabel,
-                              style: const TextStyle(fontWeight: FontWeight.bold),
-                            ),
-                          ),
-                          ...days.map((d) {
-                            return Container(
-                              width: 140,
-                              padding: const EdgeInsets.all(8),
-                              color: d.isToday
-                                  ? _primaryColor.withOpacity(0.08)
-                                  : Colors.grey.shade50,
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                _dayFullLabel(d),
-                                style: const TextStyle(
-                                    fontWeight: FontWeight.bold),
-                              ),
-                              Text(
-                                d.displayDate,
-                                style:
-                                    const TextStyle(color: Colors.black54),
-                              ),
-                            ],
-                          ),
-                        );
-                      }),
-                        ],
-                      );
-                    }
-
-                    final time = timeGrid[rowIndex - 1];
-                    return Row(
-                      children: [
-                        Container(
-                          width: 120,
-                          height: 64,
-                          padding: const EdgeInsets.all(8),
-                          color: Colors.grey.shade100,
-                          child: Align(
-                            alignment: Alignment.centerLeft,
-                            child: Text(
-                              time,
-                              style: const TextStyle(
-                                  fontWeight: FontWeight.w600, fontSize: 13),
-                            ),
-                          ),
-                        ),
-                        ...days.map((d) {
-                          final slots = data.timeSlotsByDay[d.date] ?? const [];
-                          final hasSlot = slots.any((s) => s.time == time);
-                          if (!hasSlot) {
-                            return Container(
-                              width: 140,
-                              height: 64,
-                              decoration: BoxDecoration(
-                                color: Colors.grey.shade50,
-                                border: Border.all(color: Colors.grey.shade200),
-                              ),
-                              child: const Center(
-                                child: Text(
-                                  '-',
-                                  style: TextStyle(color: Colors.grey),
-                                ),
-                              ),
-                            );
-                          }
-                          return SizedBox(
-                            width: 140,
-                            child: buildCell(d, time),
-                          );
-                        }).toList(),
-                      ],
-                    );
-                  },
+    Widget buildDaySection(WeekDayInfo day) {
+      final slots = data.timeSlotsByDay[day.date] ?? const [];
+      final working = _dayWorking(day, workingPrefs);
+      return Container(
+        margin: const EdgeInsets.only(bottom: 12),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(14),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.04),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Column(
+          children: [
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+              decoration: BoxDecoration(
+                color: Colors.grey.shade50,
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(14),
                 ),
               ),
+              child: Row(
+                children: [
+                  Container(
+                    width: 44,
+                    height: 44,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: day.isToday
+                          ? _primaryColor.withValues(alpha: 0.15)
+                          : Colors.grey.shade200,
+                    ),
+                    child: Center(
+                      child: Text(
+                        _dayNumber(day).toString(),
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: day.isToday ? _primaryColor : Colors.black87,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      _dayFullLabel(day),
+                      style: const TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                  const Icon(Icons.keyboard_arrow_up, color: Colors.blueGrey),
+                  const SizedBox(width: 4),
+                  const Icon(Icons.keyboard_arrow_down, color: Colors.blueGrey),
+                ],
+              ),
             ),
-          ),
+            if (!working)
+              Padding(
+                padding: const EdgeInsets.all(12),
+                child: Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade100,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    loc.calendarClosed,
+                    style: const TextStyle(color: Colors.black54),
+                  ),
+                ),
+              )
+            else if (slots.isEmpty)
+              Padding(
+                padding: const EdgeInsets.all(12),
+                child: Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade100,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    loc.calendarNoData,
+                    style: const TextStyle(color: Colors.black54),
+                  ),
+                ),
+              )
+            else
+              Padding(
+                padding: const EdgeInsets.fromLTRB(12, 10, 12, 12),
+                child: Column(
+                  children: slots.map((slot) {
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 8),
+                      child: buildSlotCard(day, slot.time),
+                    );
+                  }).toList(),
+                ),
+              ),
+          ],
         ),
+      );
+    }
+
+    return Expanded(
+      child: ListView.builder(
+        itemCount: data.weekDays.length,
+        itemBuilder: (context, index) => buildDaySection(data.weekDays[index]),
       ),
     );
   }
@@ -642,13 +602,13 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
       margin: const EdgeInsets.symmetric(vertical: 8),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: _primaryColor.withOpacity(0.08),
+        color: _primaryColor.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: _primaryColor.withOpacity(0.2)),
+        border: Border.all(color: _primaryColor.withValues(alpha: 0.2)),
       ),
       child: Row(
         children: [
-          Icon(Icons.info_outline, color: _primaryColor),
+          const Icon(Icons.info_outline, color: _primaryColor),
           const SizedBox(width: 10),
           Expanded(
             child: Text(
@@ -718,56 +678,56 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              crossAxisAlignment: WrapCrossAlignment.center,
+            Row(
               children: [
-                ElevatedButton.icon(
-                  onPressed: () => _changeWeek(-1),
-                  icon: const Icon(Icons.chevron_left),
-                  label: Text(loc.calendarPrev),
+                Text(
+                  _monthTitle(),
+                  style: const TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
-                ElevatedButton(
+                const SizedBox(width: 4),
+                const Icon(Icons.keyboard_arrow_down, color: Colors.black54),
+                const Spacer(),
+                TextButton(
                   onPressed: _goToday,
                   child: Text(loc.calendarToday),
-                ),
-                ElevatedButton.icon(
-                  onPressed: () => _changeWeek(1),
-                  icon: const Icon(Icons.chevron_right),
-                  label: Text(loc.calendarNext),
-                ),
-                asyncData.when(
-                  data: (d) => Padding(
-                    padding: const EdgeInsets.only(left: 8),
-                    child: Text(
-                      d.weekRangeText,
-                      style: const TextStyle(
-                          fontWeight: FontWeight.bold, fontSize: 16),
-                    ),
-                  ),
-                  loading: () => Padding(
-                    padding: const EdgeInsets.only(left: 8),
-                    child: Text(loc.calendarLoading),
-                  ),
-                  error: (_, __) => const SizedBox.shrink(),
                 ),
               ],
             ),
             const SizedBox(height: 12),
-            asyncData.when(
-              data: (d) => _buildDayChips(d.weekDays),
-              loading: () => const LinearProgressIndicator(minHeight: 2),
-              error: (e, _) {
-                return Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                  child: Text(
-                    'Hata: ${e.toString()}',
-                    style: const TextStyle(color: Colors.red),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
+              child: Row(
+                children: [
+                  IconButton(
+                    onPressed: () => _changeWeek(-1),
+                    icon: const Icon(Icons.chevron_left),
                   ),
-                );
-              },
+                  Expanded(
+                    child: Center(
+                      child: asyncData.when(
+                        data: (d) => Text(
+                          d.weekRangeText,
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 18,
+                          ),
+                        ),
+                        loading: () => Text(loc.calendarLoading),
+                        error: (_, __) => const SizedBox.shrink(),
+                      ),
+                    ),
+                  ),
+                  IconButton(
+                    onPressed: () => _changeWeek(1),
+                    icon: const Icon(Icons.chevron_right),
+                  ),
+                ],
+              ),
             ),
+            const Divider(height: 1),
             const SizedBox(height: 8),
             asyncData.when(
               data: (d) =>
@@ -778,15 +738,22 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
             const SizedBox(height: 4),
             asyncData.when(
               data: (d) {
-                if (d.timeGrid.isEmpty || d.weekDays.isEmpty) {
+                if (d.weekDays.isEmpty) {
                   return Text(loc.calendarNoData);
                 }
-                return _buildGrid(d);
+                return _buildDayList(d);
               },
               loading: () => const Expanded(
                 child: Center(child: CircularProgressIndicator()),
               ),
-              error: (e, _) => const SizedBox.shrink(),
+              error: (e, _) => Expanded(
+                child: Center(
+                  child: Text(
+                    'Hata: ${e.toString()}',
+                    style: const TextStyle(color: Colors.red),
+                  ),
+                ),
+              ),
             ),
           ],
         ),

@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
@@ -22,6 +23,10 @@ class SmsPacksPage extends StatefulWidget {
 
 class _SmsPacksPageState extends State<SmsPacksPage> {
   AppLocalizations get loc => AppLocalizations.of(context)!;
+  bool get _isIosPaymentRestricted =>
+      !kIsWeb && defaultTargetPlatform == TargetPlatform.iOS;
+  static const String _iosPurchaseRestrictionMessage =
+      'iOS uygulamasında SMS paket satın alma işlemi, Apple App Store politikaları gereği desteklenmemektedir.\nSatın alma işlemleri web sitesi üzerinden gerçekleştirilebilir.';
   bool _loading = true;
   bool _purchasing = false;
   String? _error;
@@ -694,7 +699,8 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
                 const SizedBox(height: 12),
                 Text(
                   loc.smsPacksFeatures,
-                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+                  style: const TextStyle(
+                      fontSize: 18, fontWeight: FontWeight.w700),
                 ),
                 const SizedBox(height: 10),
                 ...details.map((d) {
@@ -743,8 +749,7 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
 
   String _getNameById(List<Map<String, dynamic>> list, int? id) {
     if (id == null) return '';
-    final match =
-        list.firstWhere((item) => item['id'] == id, orElse: () => {});
+    final match = list.firstWhere((item) => item['id'] == id, orElse: () => {});
     return match['name']?.toString() ?? '';
   }
 
@@ -892,6 +897,10 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
   }
 
   Future<void> _purchasePack() async {
+    if (_isIosPaymentRestricted) {
+      _showSnack(_iosPurchaseRestrictionMessage);
+      return;
+    }
     if (_selectedPack == null) {
       _showSnack(loc.smsPacksSelectPack);
       return;
@@ -1154,7 +1163,8 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text('${loc.smsPacksPackLabel}: $packName'),
-              if (packType.isNotEmpty) Text('${loc.smsPacksTypeLabel}: $packType'),
+              if (packType.isNotEmpty)
+                Text('${loc.smsPacksTypeLabel}: $packType'),
               Text('${loc.smsPacksAmountLabel}: ₺$total'),
               if (invoice.isNotEmpty)
                 Text('${loc.smsPacksInvoiceLabel}: $invoice'),
@@ -1706,28 +1716,30 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
           ),
         ),
         const SizedBox(height: 12),
-        DropdownButtonFormField<String>(
-          decoration: const InputDecoration(
-            labelText: 'Ödeme Yöntemi',
-            border: OutlineInputBorder(),
+        if (!_isIosPaymentRestricted) ...[
+          DropdownButtonFormField<String>(
+            decoration: const InputDecoration(
+              labelText: 'Ödeme Yöntemi',
+              border: OutlineInputBorder(),
+            ),
+            value: _selectedPayment,
+            onChanged: (val) {
+              if (val == null) return;
+              setState(() {
+                _selectedPayment = val;
+              });
+            },
+            items: _paymentOptions
+                .map(
+                  (opt) => DropdownMenuItem(
+                    value: opt['value'],
+                    child: Text(opt['label'] ?? ''),
+                  ),
+                )
+                .toList(),
           ),
-          value: _selectedPayment,
-          onChanged: (val) {
-            if (val == null) return;
-            setState(() {
-              _selectedPayment = val;
-            });
-          },
-          items: _paymentOptions
-              .map(
-                (opt) => DropdownMenuItem(
-                  value: opt['value'],
-                  child: Text(opt['label'] ?? ''),
-                ),
-              )
-              .toList(),
-        ),
-        const SizedBox(height: 12),
+          const SizedBox(height: 12),
+        ],
         TextField(
           controller: _noteController,
           maxLines: 3,
@@ -1773,11 +1785,13 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
     final smsCount = pack['sms_count']?.toString() ?? '-';
     final price = pack['price']?.toString() ?? '-';
     final priceWithTax = pack['price_with_tax']?.toString() ?? '';
-    final paymentLabel = (_paymentOptions.firstWhere(
-          (e) => e['value'] == _selectedPayment,
-          orElse: () => _paymentOptions.first,
-        )['label'] ??
-        '');
+    final paymentLabel = _isIosPaymentRestricted
+        ? '-'
+        : (_paymentOptions.firstWhere(
+              (e) => e['value'] == _selectedPayment,
+              orElse: () => _paymentOptions.first,
+            )['label'] ??
+            '');
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1839,7 +1853,8 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
         const SizedBox(height: 8),
         Text('${loc.smsPacksSmsLabel}: $smsCount'),
         if (_companyController.text.trim().isNotEmpty)
-          Text('${loc.smsPacksCompanyLabel}: ${_companyController.text.trim()}'),
+          Text(
+              '${loc.smsPacksCompanyLabel}: ${_companyController.text.trim()}'),
         const SizedBox(height: 8),
         const SizedBox(height: 16),
         Text(
@@ -1864,6 +1879,16 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
             '${loc.smsPacksPhoneLabel}: ${_selectedPhoneCode != null && _selectedPhoneCode!.isNotEmpty ? '+$_selectedPhoneCode ' : ''}${_phoneController.text}',
           ),
         Text('${loc.smsPacksPaymentLabel}: $paymentLabel'),
+        if (_isIosPaymentRestricted) ...[
+          const SizedBox(height: 8),
+          const Text(
+            _iosPurchaseRestrictionMessage,
+            style: TextStyle(
+              color: Colors.orange,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
         if (_taxNumberController.text.isNotEmpty)
           Text('${loc.smsPacksTaxNumberLabel}: ${_taxNumberController.text}'),
         if (_taxOfficeController.text.isNotEmpty)
@@ -1882,7 +1907,9 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
         SizedBox(
           width: double.infinity,
           child: ElevatedButton.icon(
-            onPressed: _purchasing ? null : _purchasePack,
+            onPressed: _isIosPaymentRestricted
+                ? null
+                : (_purchasing ? null : _purchasePack),
             icon: _purchasing
                 ? const SizedBox(
                     width: 16,
@@ -1943,8 +1970,14 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
       setState(() {
         _currentStep = 2;
       });
-      _purchasePack();
+      if (!_isIosPaymentRestricted) {
+        _purchasePack();
+      }
     } else {
+      if (_isIosPaymentRestricted) {
+        _showSnack(_iosPurchaseRestrictionMessage);
+        return;
+      }
       _purchasePack();
     }
   }

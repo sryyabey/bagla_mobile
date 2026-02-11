@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:bagla_mobile/config.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
@@ -9,8 +10,6 @@ import 'sms_packs.dart';
 import 'working_preferences.dart';
 import '../widgets/main_nav.dart';
 import 'package:bagla_mobile/l10n/app_localizations.dart';
-
-
 
 class AppointmentsPage extends StatefulWidget {
   final String? initialQuickDate;
@@ -34,6 +33,10 @@ class AppointmentsPage extends StatefulWidget {
 
 class _AppointmentsPageState extends State<AppointmentsPage> {
   AppLocalizations get loc => AppLocalizations.of(context)!;
+  bool get _isIosPaymentRestricted =>
+      !kIsWeb && defaultTargetPlatform == TargetPlatform.iOS;
+  static const String _iosPurchaseRestrictionMessage =
+      'iOS uygulamasında SMS paket satın alma işlemi, Apple App Store politikaları gereği desteklenmemektedir.\nSatın alma işlemleri web sitesi üzerinden gerçekleştirilebilir.';
   // Palette for consistent look
   static const Color primaryColor = Color(0xFF6366F1);
   static const Color secondaryColor = Color(0xFF8B5CF6);
@@ -344,11 +347,17 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
               ElevatedButton.icon(
                 onPressed: () {
                   if (!_hasUserPack) {
-                    _showSnack('Randevu işlemleri için paket alınız.');
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (_) => const SmsPacksPage()),
+                    _showSnack(
+                      _isIosPaymentRestricted
+                          ? _iosPurchaseRestrictionMessage
+                          : 'Randevu işlemleri için paket alınız.',
                     );
+                    if (!_isIosPaymentRestricted) {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => const SmsPacksPage()),
+                      );
+                    }
                     return;
                   }
                   setState(() {
@@ -737,7 +746,11 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
   Future<void> _submitQuickAppointment() async {
     if (_savingQuick) return;
     if (!_hasUserPack) {
-      _showSnack('Randevu işlemleri için paket alınız.');
+      _showSnack(
+        _isIosPaymentRestricted
+            ? _iosPurchaseRestrictionMessage
+            : 'Randevu işlemleri için paket alınız.',
+      );
       return;
     }
 
@@ -1222,7 +1235,11 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
   }) async {
     if (_creatingRebook) return;
     if (!_hasUserPack) {
-      _showSnack('Randevu işlemleri için paket alınız.');
+      _showSnack(
+        _isIosPaymentRestricted
+            ? _iosPurchaseRestrictionMessage
+            : 'Randevu işlemleri için paket alınız.',
+      );
       return;
     }
 
@@ -1482,24 +1499,24 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
                             child: TextField(
                               controller: dateCtrl,
                               readOnly: true,
-                           decoration: InputDecoration(
-                                 labelText: loc.date,
-                                 hintText: 'Takvimden seçin',
-                               ),
+                              decoration: InputDecoration(
+                                labelText: loc.date,
+                                hintText: 'Takvimden seçin',
+                              ),
                               onTap: pickDate,
                             ),
                           ),
                           const SizedBox(width: 12),
                           Expanded(
-                         child: TextField(
-                            controller: timeCtrl,
-                            readOnly: true,
-                            decoration: InputDecoration(
-                              labelText: loc.timeSelect,
-                              hintText: 'Slot seçin',
+                            child: TextField(
+                              controller: timeCtrl,
+                              readOnly: true,
+                              decoration: InputDecoration(
+                                labelText: loc.timeSelect,
+                                hintText: 'Slot seçin',
+                              ),
                             ),
                           ),
-                        ),
                         ],
                       ),
                       const SizedBox(height: 8),
@@ -1596,11 +1613,11 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
                           }).toList(),
                         ),
                       const SizedBox(height: 8),
-                     TextField(
-                       controller: notesCtrl,
-                       maxLines: 2,
-                       decoration: InputDecoration(labelText: loc.note),
-                     ),
+                      TextField(
+                        controller: notesCtrl,
+                        maxLines: 2,
+                        decoration: InputDecoration(labelText: loc.note),
+                      ),
                       const SizedBox(height: 8),
                       SwitchListTile(
                         title: const Text('SMS Gönderilmesin'),
@@ -1767,11 +1784,11 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                       Text(
-                             loc.customerPreview,
-                             style: const TextStyle(
-                                 fontSize: 16, fontWeight: FontWeight.bold),
-                           ),
+                          Text(
+                            loc.customerPreview,
+                            style: const TextStyle(
+                                fontSize: 16, fontWeight: FontWeight.bold),
+                          ),
                           IconButton(
                             icon: const Icon(Icons.close),
                             onPressed: () => Navigator.of(ctx).pop(),
@@ -1860,17 +1877,18 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
                           ),
                         ),
                         const SizedBox(height: 12),
-                         Row(
-                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                           children: [
-                             Text(
-                               loc.recentAppointments,
-                               style: const TextStyle(
-                                   fontSize: 14, fontWeight: FontWeight.bold),
-                             ),
-                             const Icon(Icons.history, size: 18, color: Colors.grey),
-                           ],
-                         ),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              loc.recentAppointments,
+                              style: const TextStyle(
+                                  fontSize: 14, fontWeight: FontWeight.bold),
+                            ),
+                            const Icon(Icons.history,
+                                size: 18, color: Colors.grey),
+                          ],
+                        ),
                         const SizedBox(height: 8),
                         if (recent.isEmpty)
                           const Text('Kayıt bulunamadı.')
@@ -2081,12 +2099,12 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                             Text(
-                               loc.reschedule,
-                               style: const TextStyle(
-                                   fontSize: 16, fontWeight: FontWeight.bold),
-                             ),
-                             const SizedBox(height: 4),
+                            Text(
+                              loc.reschedule,
+                              style: const TextStyle(
+                                  fontSize: 16, fontWeight: FontWeight.bold),
+                            ),
+                            const SizedBox(height: 4),
                             Text(
                               customerName,
                               style: const TextStyle(
@@ -2105,27 +2123,27 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
                     const SizedBox(height: 8),
                     Row(
                       children: [
-                 Expanded(
-                   child: TextField(
-                     controller: dateCtrl,
-                     readOnly: true,
-                     decoration: InputDecoration(
-                       labelText: loc.date,
-                       hintText: 'Takvimden seçin',
-                     ),
-                     onTap: pickDate,
-                   ),
-                 ),
+                        Expanded(
+                          child: TextField(
+                            controller: dateCtrl,
+                            readOnly: true,
+                            decoration: InputDecoration(
+                              labelText: loc.date,
+                              hintText: 'Takvimden seçin',
+                            ),
+                            onTap: pickDate,
+                          ),
+                        ),
                         const SizedBox(width: 12),
                         Expanded(
-                             child: TextField(
-                             controller: timeCtrl,
-                             readOnly: true,
-                             decoration: InputDecoration(
-                               labelText: loc.timeSelect,
-                               hintText: 'Slot seçin',
-                             ),
-                           ),
+                          child: TextField(
+                            controller: timeCtrl,
+                            readOnly: true,
+                            decoration: InputDecoration(
+                              labelText: loc.timeSelect,
+                              hintText: 'Slot seçin',
+                            ),
+                          ),
                         ),
                       ],
                     ),
@@ -2225,28 +2243,28 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
                       maxLines: 2,
                       decoration: InputDecoration(labelText: loc.note),
                     ),
-                     SwitchListTile(
-                       contentPadding: EdgeInsets.zero,
-                       title: Text(loc.doNotSendSms),
-                       subtitle: Text(loc.smsOffForAppointment),
-                       value: localNoSms,
-                       onChanged: (val) {
-                         setModalState(() {
-                           localNoSms = val;
-                         });
-                       },
-                     ),
-                     SwitchListTile(
-                       contentPadding: EdgeInsets.zero,
-                       title: Text(loc.doNotSendReminder),
-                       subtitle: Text(loc.reminderOffForAppointment),
-                       value: localNoReminder,
-                       onChanged: (val) {
-                         setModalState(() {
-                           localNoReminder = val;
-                         });
-                       },
-                     ),
+                    SwitchListTile(
+                      contentPadding: EdgeInsets.zero,
+                      title: Text(loc.doNotSendSms),
+                      subtitle: Text(loc.smsOffForAppointment),
+                      value: localNoSms,
+                      onChanged: (val) {
+                        setModalState(() {
+                          localNoSms = val;
+                        });
+                      },
+                    ),
+                    SwitchListTile(
+                      contentPadding: EdgeInsets.zero,
+                      title: Text(loc.doNotSendReminder),
+                      subtitle: Text(loc.reminderOffForAppointment),
+                      value: localNoReminder,
+                      onChanged: (val) {
+                        setModalState(() {
+                          localNoReminder = val;
+                        });
+                      },
+                    ),
                     const SizedBox(height: 12),
                     Container(
                       padding: const EdgeInsets.symmetric(vertical: 10),
@@ -2674,20 +2692,23 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
   Widget _buildQuickForm() {
     if (!_hasUserPack) {
       return _sectionCard(
-      title: loc.quickAppointmentTitle,
+        title: loc.quickAppointmentTitle,
         actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const SmsPacksPage()),
-              );
-            },
-            child: const Text('Paket Al'),
-          ),
+          if (!_isIosPaymentRestricted)
+            TextButton(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const SmsPacksPage()),
+                );
+              },
+              child: const Text('Paket Al'),
+            ),
         ],
-        child: const Text(
-          'Randevu işlemleri için paket alınız.',
+        child: Text(
+          _isIosPaymentRestricted
+              ? _iosPurchaseRestrictionMessage
+              : 'Randevu işlemleri için paket alınız.',
           style: TextStyle(fontWeight: FontWeight.w600),
         ),
       );
@@ -2729,10 +2750,10 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
                 const Icon(Icons.tips_and_updates, color: Colors.blueGrey),
                 const SizedBox(width: 10),
                 Expanded(
-                      child: Text(
-                        loc.quickAppointmentSubtitle,
-                        style: const TextStyle(color: Colors.black87),
-                      ),
+                  child: Text(
+                    loc.quickAppointmentSubtitle,
+                    style: const TextStyle(color: Colors.black87),
+                  ),
                 ),
               ],
             ),
@@ -3005,8 +3026,7 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
                       ),
                     )
                   : const Icon(Icons.event_available),
-              label: Text(
-                  _savingQuick ? 'Gönderiliyor...' : 'Randevu Oluştur'),
+              label: Text(_savingQuick ? 'Gönderiliyor...' : 'Randevu Oluştur'),
             ),
           ),
         ],

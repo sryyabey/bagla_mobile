@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:ui' as ui;
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:bagla_mobile/l10n/app_localizations.dart';
@@ -43,6 +44,9 @@ class DashboardPage extends StatefulWidget {
 }
 
 class _DashboardPageState extends State<DashboardPage> {
+  bool get _isIosStorefront => !kIsWeb && Platform.isIOS;
+  static const String _iosPurchaseRestrictionMessage =
+      'iOS uygulamasında SMS paket satın alma işlemi, Apple App Store politikaları gereği desteklenmemektedir.\nSatın alma işlemleri web sitesi üzerinden gerçekleştirilebilir.';
   bool _loading = true;
   String? _error;
   Map<String, dynamic>? _dashboardData;
@@ -181,7 +185,8 @@ class _DashboardPageState extends State<DashboardPage> {
         color: Colors.black,
         emptyColor: Colors.white,
       );
-      final imageData = await painter.toImageData(600, format: ui.ImageByteFormat.png);
+      final imageData =
+          await painter.toImageData(600, format: ui.ImageByteFormat.png);
       final bytes = imageData?.buffer.asUint8List();
       if (bytes == null) throw 'Görsel oluşturulamadı';
 
@@ -292,7 +297,8 @@ class _DashboardPageState extends State<DashboardPage> {
               ),
               Text(
                 loc.dashboardQrTitle,
-                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                style:
+                    const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 12),
               QrImageView(
@@ -607,24 +613,28 @@ class _DashboardPageState extends State<DashboardPage> {
               ],
             ),
             const SizedBox(height: 10),
-            const Text(
-              'Aktif paketiniz bulunmuyor. SMS işlemleri için paket alın.',
-              style: TextStyle(color: Colors.black87),
+            Text(
+              _isIosStorefront
+                  ? _iosPurchaseRestrictionMessage
+                  : 'Aktif paketiniz bulunmuyor. SMS işlemleri için paket alın.',
+              style: const TextStyle(color: Colors.black87),
             ),
-            const SizedBox(height: 12),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton.icon(
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => const SmsPacksPage()),
-                  );
-                },
-                icon: const Icon(Icons.shopping_cart_outlined),
-                label: const Text('Paket Al'),
+            if (!_isIosStorefront) ...[
+              const SizedBox(height: 12),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const SmsPacksPage()),
+                    );
+                  },
+                  icon: const Icon(Icons.shopping_cart_outlined),
+                  label: const Text('Paket Al'),
+                ),
               ),
-            ),
+            ],
           ],
         ),
       );
@@ -659,8 +669,8 @@ class _DashboardPageState extends State<DashboardPage> {
                   color: Colors.white.withOpacity(0.12),
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child:
-                    const Icon(Icons.local_offer, color: Colors.white, size: 18),
+                child: const Icon(Icons.local_offer,
+                    color: Colors.white, size: 18),
               ),
               const SizedBox(width: 10),
               Expanded(
@@ -722,8 +732,8 @@ class _DashboardPageState extends State<DashboardPage> {
           ListTile(
             dense: true,
             contentPadding: EdgeInsets.zero,
-            leading: const Icon(Icons.play_circle_outline,
-                color: Color(0xFF34D399)),
+            leading:
+                const Icon(Icons.play_circle_outline, color: Color(0xFF34D399)),
             title: Text(
               packInfo['activated_at']?.toString() ?? '-',
               style: const TextStyle(color: Colors.white),
@@ -736,8 +746,8 @@ class _DashboardPageState extends State<DashboardPage> {
           ListTile(
             dense: true,
             contentPadding: EdgeInsets.zero,
-            leading: const Icon(Icons.timer_off_outlined,
-                color: Color(0xFFFBBF24)),
+            leading:
+                const Icon(Icons.timer_off_outlined, color: Color(0xFFFBBF24)),
             title: Text(
               packInfo['expired_at']?.toString() ?? '-',
               style: const TextStyle(color: Colors.white),
@@ -998,8 +1008,8 @@ class _DashboardPageState extends State<DashboardPage> {
           const SizedBox(height: 12),
           Row(
             children: [
-              _buildStatCard(loc.dashboardTopClicks, totalClicks,
-                  Icons.visibility),
+              _buildStatCard(
+                  loc.dashboardTopClicks, totalClicks, Icons.visibility),
               const SizedBox(width: 12),
               _buildStatCard(
                   loc.dashboardRemainingSms, remainingSms, Icons.sms),
@@ -1204,13 +1214,14 @@ class _DashboardPageState extends State<DashboardPage> {
                 _navigateToPage(const CalendarPage(), 'calendar');
               },
             ),
-            ListTile(
-              leading: const Icon(Icons.sms_outlined),
-              title: Text(loc.dashboardSmsPacks),
-              onTap: () {
-                _navigateToPage(const SmsPacksPage(), 'sms_packs');
-              },
-            ),
+            if (!_isIosStorefront)
+              ListTile(
+                leading: const Icon(Icons.sms_outlined),
+                title: Text(loc.dashboardSmsPacks),
+                onTap: () {
+                  _navigateToPage(const SmsPacksPage(), 'sms_packs');
+                },
+              ),
             ListTile(
               leading: const Icon(Icons.receipt_long),
               title: Text(loc.dashboardOrders),
@@ -1305,8 +1316,7 @@ class _DashboardPageState extends State<DashboardPage> {
                                 ),
                                 const SizedBox(height: 12),
                                 ElevatedButton.icon(
-                                  onPressed: () =>
-                                      _fetchDashboard(force: true),
+                                  onPressed: () => _fetchDashboard(force: true),
                                   icon: const Icon(Icons.refresh),
                                   label: Text(loc.dashboardRetry),
                                 ),
@@ -1325,8 +1335,7 @@ class _DashboardPageState extends State<DashboardPage> {
                                 ),
                                 const SizedBox(height: 12),
                                 ElevatedButton.icon(
-                                  onPressed: () =>
-                                      _fetchDashboard(force: true),
+                                  onPressed: () => _fetchDashboard(force: true),
                                   icon: const Icon(Icons.refresh),
                                   label: Text(loc.dashboardRetry),
                                 ),
