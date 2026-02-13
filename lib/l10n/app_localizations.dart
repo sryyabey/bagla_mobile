@@ -836,6 +836,84 @@ abstract class AppLocalizations {
   /// **'No data for this week.'**
   String get calendarNoData;
 
+  /// No description provided for @calendarSlotsFilled.
+  ///
+  /// In en, this message translates to:
+  /// **'{booked}/{total} slots filled'**
+  String calendarSlotsFilled(Object booked, Object total);
+
+  /// No description provided for @calendarAddAppointment.
+  ///
+  /// In en, this message translates to:
+  /// **'Add appointment'**
+  String get calendarAddAppointment;
+
+  /// No description provided for @calendarActionNew.
+  ///
+  /// In en, this message translates to:
+  /// **'New'**
+  String get calendarActionNew;
+
+  /// No description provided for @calendarActionEdit.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit'**
+  String get calendarActionEdit;
+
+  /// No description provided for @calendarFetchAvailableSlots.
+  ///
+  /// In en, this message translates to:
+  /// **'Get available slots'**
+  String get calendarFetchAvailableSlots;
+
+  /// No description provided for @calendarDateHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick from calendar'**
+  String get calendarDateHint;
+
+  /// No description provided for @calendarTimeSlotHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Select slot'**
+  String get calendarTimeSlotHint;
+
+  /// No description provided for @calendarSelectDateFirst.
+  ///
+  /// In en, this message translates to:
+  /// **'Select a date first.'**
+  String get calendarSelectDateFirst;
+
+  /// No description provided for @calendarDateTimeRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Date and time are required.'**
+  String get calendarDateTimeRequired;
+
+  /// No description provided for @calendarCreateSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'New appointment created.'**
+  String get calendarCreateSuccess;
+
+  /// No description provided for @calendarUpdateSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Appointment updated.'**
+  String get calendarUpdateSuccess;
+
+  /// No description provided for @calendarCreateFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Appointment could not be created'**
+  String get calendarCreateFailed;
+
+  /// No description provided for @calendarUpdateFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Appointment could not be updated'**
+  String get calendarUpdateFailed;
+
   /// No description provided for @dayMonShort.
   ///
   /// In en, this message translates to:

@@ -411,6 +411,47 @@ class AppLocalizationsTr extends AppLocalizations {
   String get calendarNoData => 'Bu hafta için veri yok.';
 
   @override
+  String calendarSlotsFilled(Object booked, Object total) {
+    return '$booked/$total slot dolu';
+  }
+
+  @override
+  String get calendarAddAppointment => 'Randevu ekle';
+
+  @override
+  String get calendarActionNew => 'Yeni';
+
+  @override
+  String get calendarActionEdit => 'Düzenle';
+
+  @override
+  String get calendarFetchAvailableSlots => 'Boş Saatleri Getir';
+
+  @override
+  String get calendarDateHint => 'Takvimden seçin';
+
+  @override
+  String get calendarTimeSlotHint => 'Slot seçin';
+
+  @override
+  String get calendarSelectDateFirst => 'Önce tarih seçin.';
+
+  @override
+  String get calendarDateTimeRequired => 'Tarih ve saat zorunludur.';
+
+  @override
+  String get calendarCreateSuccess => 'Yeni randevu oluşturuldu.';
+
+  @override
+  String get calendarUpdateSuccess => 'Randevu güncellendi.';
+
+  @override
+  String get calendarCreateFailed => 'Randevu oluşturulamadı';
+
+  @override
+  String get calendarUpdateFailed => 'Randevu güncellenemedi';
+
+  @override
   String get dayMonShort => 'Pzt';
 
   @override

@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:bagla_mobile/config.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import '../dashboard_page.dart';
@@ -29,6 +30,68 @@ class AppointmentsPage extends StatefulWidget {
 
   @override
   State<AppointmentsPage> createState() => _AppointmentsPageState();
+}
+
+class _PhoneMaskFormatter extends TextInputFormatter {
+  static final RegExp _digitsOnly = RegExp(r'\D');
+
+  String _mask(String raw) {
+    final digits = raw.replaceAll(_digitsOnly, '');
+    final limited = digits.length > 10 ? digits.substring(0, 10) : digits;
+    final b = StringBuffer();
+
+    if (limited.isNotEmpty) {
+      b.write('(');
+      b.write(limited.substring(0, limited.length.clamp(0, 3)));
+      if (limited.length >= 3) b.write(')');
+    }
+    if (limited.length > 3) {
+      b.write(' ');
+      b.write(limited.substring(3, limited.length.clamp(3, 6)));
+    }
+    if (limited.length > 6) {
+      b.write(' ');
+      b.write(limited.substring(6, limited.length.clamp(6, 8)));
+    }
+    if (limited.length > 8) {
+      b.write(' ');
+      b.write(limited.substring(8, limited.length.clamp(8, 10)));
+    }
+    return b.toString();
+  }
+
+  int _digitCount(String text, int endOffset) {
+    final left = text.substring(0, endOffset.clamp(0, text.length));
+    return left.replaceAll(_digitsOnly, '').length;
+  }
+
+  int _offsetForDigits(String masked, int digits) {
+    if (digits <= 0) return 0;
+    int seen = 0;
+    for (int i = 0; i < masked.length; i++) {
+      final c = masked.codeUnitAt(i);
+      if (c >= 48 && c <= 57) {
+        seen++;
+        if (seen == digits) return i + 1;
+      }
+    }
+    return masked.length;
+  }
+
+  @override
+  TextEditingValue formatEditUpdate(
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
+    final masked = _mask(newValue.text);
+    final digitsBefore = _digitCount(newValue.text, newValue.selection.end);
+    final target = _offsetForDigits(masked, digitsBefore);
+    return TextEditingValue(
+      text: masked,
+      selection: TextSelection.collapsed(offset: target),
+      composing: TextRange.empty,
+    );
+  }
 }
 
 class _AppointmentsPageState extends State<AppointmentsPage> {
@@ -74,7 +137,7 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
   bool _loadingCountries = false;
   String? _countriesError;
   int? _selectedCountryId;
-  bool _isFormattingPhone = false;
+  final _phoneMaskFormatter = _PhoneMaskFormatter();
   List<Map<String, dynamic>> _appointmentStatuses = [];
   bool _loadingStatuses = false;
   String? _statusesError;
@@ -95,8 +158,6 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
       24 * 12,
       (i) =>
           '${(i ~/ 12).toString().padLeft(2, '0')}:${((i % 12) * 5).toString().padLeft(2, '0')}');
-  String _lastPhoneDigits = '';
-  int _lastPhoneTextLength = 0;
   bool _hasUserPack = true;
 
   ButtonStyle _mainButtonStyle() => ElevatedButton.styleFrom(
@@ -446,9 +507,8 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
   @override
   void initState() {
     super.initState();
-    _quickPhoneController.addListener(_formatPhoneInput);
     if (widget.initialQuickDate != null) {
-      _quickDateController.text = widget.initialQuickDate!;
+      _quickDateController.text = _normalizeSlotDate(widget.initialQuickDate!);
     }
     if (widget.initialQuickTime != null) {
       _quickTimeController.text = widget.initialQuickTime!;
@@ -471,7 +531,6 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
 
   @override
   void dispose() {
-    _quickPhoneController.removeListener(_formatPhoneInput);
     _quickNameController.dispose();
     _quickLastNameController.dispose();
     _quickCountryIdController.dispose();
@@ -699,8 +758,6 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
       _quickDateController.clear();
       _quickTimeController.clear();
       _quickNoteController.clear();
-      _lastPhoneDigits = '';
-      _lastPhoneTextLength = 0;
       _selectedSlotTime = null;
       _timeSlots = [];
       _slotsError = null;
@@ -761,6 +818,7 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
     final phone = _quickPhoneController.text.trim();
     final email = _quickEmailController.text.trim();
     final date = _quickDateController.text.trim();
+    final normalizedDate = _normalizeSlotDate(date);
     final time = (_selectedSlotTime ?? _quickTimeController.text).trim();
     final note = _quickNoteController.text.trim();
 
@@ -768,7 +826,7 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
         lastName.isEmpty ||
         countryId == null ||
         phone.isEmpty ||
-        date.isEmpty ||
+        normalizedDate.isEmpty ||
         time.isEmpty) {
       _showSnack('İsim, soyisim, ülke, telefon, tarih ve saat zorunludur.');
       return;
@@ -802,7 +860,7 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
           'country_id': countryId,
           'phone': phone,
           'email': email,
-          'date': date,
+          'date': normalizedDate,
           'time': time,
           'note': note,
           'is_first_appointment': _quickIsFirstAppointment ? 1 : 0,
@@ -979,63 +1037,6 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
     return '$day-$month-$year';
   }
 
-  String _maskPhone(String raw) {
-    final digits = raw.replaceAll(RegExp(r'\D'), '');
-    final buffer = StringBuffer();
-    int idx = 0;
-    if (digits.length > 0) {
-      buffer.write('(');
-      for (; idx < digits.length && idx < 3; idx++) {
-        buffer.write(digits[idx]);
-      }
-      if (digits.length >= 3) buffer.write(')');
-    }
-    if (digits.length > 3) {
-      buffer.write(' ');
-      for (; idx < digits.length && idx < 6; idx++) {
-        buffer.write(digits[idx]);
-      }
-    }
-    if (digits.length > 6) {
-      buffer.write(' ');
-      for (; idx < digits.length && idx < 8; idx++) {
-        buffer.write(digits[idx]);
-      }
-    }
-    if (digits.length > 8) {
-      buffer.write(' ');
-      for (; idx < digits.length && idx < 10; idx++) {
-        buffer.write(digits[idx]);
-      }
-    }
-    return buffer.toString();
-  }
-
-  void _formatPhoneInput() {
-    if (_isFormattingPhone) return;
-    _isFormattingPhone = true;
-    final currentRaw = _quickPhoneController.text;
-    final currentDigits = currentRaw.replaceAll(RegExp(r'\D'), '');
-
-    // Allow backspace on formatting chars by trimming a digit when only mask chars were removed.
-    String normalizedDigits = currentDigits;
-    if (currentRaw.length < _lastPhoneTextLength &&
-        currentDigits.length == _lastPhoneDigits.length &&
-        _lastPhoneDigits.isNotEmpty) {
-      normalizedDigits =
-          _lastPhoneDigits.substring(0, _lastPhoneDigits.length - 1);
-    }
-
-    final formatted = _maskPhone(normalizedDigits);
-    _quickPhoneController.value = _quickPhoneController.value.copyWith(
-      text: formatted,
-      selection: TextSelection.collapsed(offset: formatted.length),
-    );
-    _lastPhoneDigits = normalizedDigits;
-    _lastPhoneTextLength = formatted.length;
-    _isFormattingPhone = false;
-  }
-
   Future<void> _pickQuickDate() async {
     final today = DateTime.now();
     final minDate = DateTime(today.year, today.month, today.day);
@@ -1129,28 +1130,44 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: Colors.blue.shade100),
       ),
-      child: Row(
-        children: [
-          const Icon(Icons.info_outline, color: Colors.blue),
-          const SizedBox(width: 10),
-          const Expanded(
-            child: Text(
-              'Lütfen çalışma saatlerinizi ayarlayınız.',
-              style: TextStyle(fontWeight: FontWeight.w600),
-            ),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => const WorkingPreferencesPage(),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final compact = constraints.maxWidth < 420;
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  const Icon(Icons.info_outline, color: Colors.blue),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      loc.calendarWorkingHoursPrompt,
+                      maxLines: compact ? 3 : 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(fontWeight: FontWeight.w600),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 10),
+              Align(
+                alignment: Alignment.centerRight,
+                child: ElevatedButton(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const WorkingPreferencesPage(),
+                      ),
+                    );
+                  },
+                  child: Text(loc.setWorkingHours),
                 ),
-              );
-            },
-            child: Text(loc.setWorkingHours),
-          ),
-        ],
+              ),
+            ],
+          );
+        },
       ),
     );
   }
@@ -2834,6 +2851,12 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
                       child: TextField(
                         controller: _quickPhoneController,
                         keyboardType: TextInputType.phone,
+                        inputFormatters: [
+                          FilteringTextInputFormatter.allow(
+                            RegExp(r'[\d()\s]'),
+                          ),
+                          _phoneMaskFormatter,
+                        ],
                         decoration: const InputDecoration(
                           labelText: 'Telefon',
                           hintText: 'Örn: 5554443322',

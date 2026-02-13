@@ -123,6 +123,25 @@
   "calendarNext": "Next",
   "calendarLoading": "Loading...",
   "calendarNoData": "No data for this week.",
+  "calendarSlotsFilled": "{booked}/{total} slots filled",
+  "@calendarSlotsFilled": {
+    "placeholders": {
+      "booked": {},
+      "total": {}
+    }
+  },
+  "calendarAddAppointment": "Add appointment",
+  "calendarActionNew": "New",
+  "calendarActionEdit": "Edit",
+  "calendarFetchAvailableSlots": "Get available slots",
+  "calendarDateHint": "Pick from calendar",
+  "calendarTimeSlotHint": "Select slot",
+  "calendarSelectDateFirst": "Select a date first.",
+  "calendarDateTimeRequired": "Date and time are required.",
+  "calendarCreateSuccess": "New appointment created.",
+  "calendarUpdateSuccess": "Appointment updated.",
+  "calendarCreateFailed": "Appointment could not be created",
+  "calendarUpdateFailed": "Appointment could not be updated",
   "dayMonShort": "Mon",
   "dayTueShort": "Tue",
   "dayWedShort": "Wed",

@@ -123,6 +123,25 @@
   "calendarNext": "Sonraki",
   "calendarLoading": "Yükleniyor...",
   "calendarNoData": "Bu hafta için veri yok.",
+  "calendarSlotsFilled": "{booked}/{total} slot dolu",
+  "@calendarSlotsFilled": {
+    "placeholders": {
+      "booked": {},
+      "total": {}
+    }
+  },
+  "calendarAddAppointment": "Randevu ekle",
+  "calendarActionNew": "Yeni",
+  "calendarActionEdit": "Düzenle",
+  "calendarFetchAvailableSlots": "Boş Saatleri Getir",
+  "calendarDateHint": "Takvimden seçin",
+  "calendarTimeSlotHint": "Slot seçin",
+  "calendarSelectDateFirst": "Önce tarih seçin.",
+  "calendarDateTimeRequired": "Tarih ve saat zorunludur.",
+  "calendarCreateSuccess": "Yeni randevu oluşturuldu.",
+  "calendarUpdateSuccess": "Randevu güncellendi.",
+  "calendarCreateFailed": "Randevu oluşturulamadı",
+  "calendarUpdateFailed": "Randevu güncellenemedi",
   "dayMonShort": "Pzt",
   "dayTueShort": "Sal",
   "dayWedShort": "Çar",

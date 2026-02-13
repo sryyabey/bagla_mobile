@@ -290,6 +290,11 @@ class CalendarPage extends ConsumerStatefulWidget {
 class _CalendarPageState extends ConsumerState<CalendarPage> {
   late DateTime _weekStart;
   String? _lastErrorMessage;
+  String? _expandedDayDate;
+  String? _autoFocusedWeekKey;
+  String? _autoExpandedWeekKey;
+  final Map<String, GlobalKey> _daySectionKeys = {};
+  bool _slotActionBusy = false;
   static const Color _primaryColor = Color(0xFF6366F1);
 
   AppLocalizations get loc => AppLocalizations.of(context);
@@ -313,13 +318,572 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
   void _changeWeek(int deltaWeeks) {
     setState(() {
       _weekStart = _weekStart.add(Duration(days: 7 * deltaWeeks));
+      _expandedDayDate = null;
+      _autoFocusedWeekKey = null;
+      _autoExpandedWeekKey = null;
+      _daySectionKeys.clear();
     });
   }
 
-  void _goToday() {
+  void _setWeekStartFromDate(DateTime date) {
     setState(() {
-      _weekStart = _startOfWeek(DateTime.now());
+      _weekStart = _startOfWeek(date);
+      _expandedDayDate = null;
+      _autoFocusedWeekKey = null;
+      _autoExpandedWeekKey = null;
+      _daySectionKeys.clear();
     });
+  }
+
+  Future<void> _pickWeekFromCalendar() async {
+    final now = DateTime.now();
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: _weekStart,
+      firstDate: DateTime(now.year - 5, 1, 1),
+      lastDate: DateTime(now.year + 5, 12, 31),
+      initialDatePickerMode: DatePickerMode.day,
+    );
+    if (picked == null) return;
+    _setWeekStartFromDate(picked);
+  }
+
+  String _toIsoDate(DateTime dt) {
+    return '${dt.year.toString().padLeft(4, '0')}-${dt.month.toString().padLeft(2, '0')}-${dt.day.toString().padLeft(2, '0')}';
+  }
+
+  String _formatDateDisplay(DateTime date) {
+    final day = date.day.toString().padLeft(2, '0');
+    final month = date.month.toString().padLeft(2, '0');
+    final year = date.year.toString();
+    return '$day-$month-$year';
+  }
+
+  DateTime _parseInputDateOrNow(String value) {
+    final trimmed = value.trim();
+    if (trimmed.isEmpty) return DateTime.now();
+    final parts = trimmed.split('-');
+    if (parts.length == 3) {
+      try {
+        if (parts[0].length == 2) {
+          final day = int.parse(parts[0]);
+          final month = int.parse(parts[1]);
+          final year = int.parse(parts[2]);
+          return DateTime(year, month, day);
+        }
+        if (parts[0].length == 4) {
+          final year = int.parse(parts[0]);
+          final month = int.parse(parts[1]);
+          final day = int.parse(parts[2]);
+          return DateTime(year, month, day);
+        }
+      } catch (_) {}
+    }
+    try {
+      return DateTime.parse(trimmed);
+    } catch (_) {
+      return DateTime.now();
+    }
+  }
+
+  String _normalizeSlotDate(String rawDate) {
+    final trimmed = rawDate.trim();
+    final parts = trimmed.split('-');
+    if (parts.length == 3 && parts[0].length == 2 && parts[1].length == 2) {
+      return trimmed;
+    }
+    try {
+      final parsed = DateTime.parse(trimmed);
+      final day = parsed.day.toString().padLeft(2, '0');
+      final month = parsed.month.toString().padLeft(2, '0');
+      final year = parsed.year.toString();
+      return '$day-$month-$year';
+    } catch (_) {
+      return trimmed;
+    }
+  }
+
+  DateTime _clampDate(DateTime date, DateTime min, DateTime max) {
+    if (date.isBefore(min)) return min;
+    if (date.isAfter(max)) return max;
+    return date;
+  }
+
+  String? _normalizeDateToApi(String input) {
+    final trimmed = input.trim();
+    if (trimmed.isEmpty) return null;
+    final parts = trimmed.split('-');
+    try {
+      if (parts.length == 3) {
+        if (parts[0].length == 2) {
+          final day = int.parse(parts[0]);
+          final month = int.parse(parts[1]);
+          final year = int.parse(parts[2]);
+          final dt = DateTime(year, month, day);
+          return _toIsoDate(dt);
+        }
+        if (parts[0].length == 4) {
+          final year = int.parse(parts[0]);
+          final month = int.parse(parts[1]);
+          final day = int.parse(parts[2]);
+          final dt = DateTime(year, month, day);
+          return _toIsoDate(dt);
+        }
+      }
+      final parsed = DateTime.parse(trimmed);
+      return _toIsoDate(parsed);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  String _weekIdentity(WeeklyCalendarData data) => _toIsoDate(data.weekStart);
+
+  void _syncExpandedDayAndFocus(WeeklyCalendarData data) {
+    if (data.weekDays.isEmpty) return;
+
+    final weekKey = _weekIdentity(data);
+    final dates = data.weekDays.map((d) => d.date).toSet();
+    final hasValidExpanded =
+        _expandedDayDate != null && dates.contains(_expandedDayDate);
+
+    String? selected = hasValidExpanded ? _expandedDayDate : null;
+    if (!hasValidExpanded && _autoExpandedWeekKey != weekKey) {
+      final todayIso = _toIsoDate(DateTime.now());
+      selected = dates.contains(todayIso) ? todayIso : data.weekDays.first.date;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        setState(() {
+          _expandedDayDate = selected;
+          _autoExpandedWeekKey = weekKey;
+        });
+      });
+    }
+
+    if (_autoFocusedWeekKey == weekKey) return;
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || selected == null) return;
+      final targetKey = _daySectionKeys[selected];
+      final targetContext = targetKey?.currentContext;
+      if (targetContext != null) {
+        Scrollable.ensureVisible(
+          targetContext,
+          duration: const Duration(milliseconds: 280),
+          curve: Curves.easeOutCubic,
+          alignment: 0.05,
+        );
+      }
+      _autoFocusedWeekKey = weekKey;
+    });
+  }
+
+  String? _nearestUpcomingSlotTime(List<SlotInfo> slots, String dayIso) {
+    if (slots.isEmpty) return null;
+    final todayIso = _toIsoDate(DateTime.now());
+    if (dayIso != todayIso) return null;
+    final now = DateFormat('HH:mm').format(DateTime.now());
+    for (final slot in slots) {
+      if (slot.time.compareTo(now) >= 0) return slot.time;
+    }
+    return slots.first.time;
+  }
+
+  int? _asInt(dynamic value) {
+    if (value is int) return value;
+    return int.tryParse(value?.toString() ?? '');
+  }
+
+  int? _resolveStatusId(Map<String, dynamic> appointment) {
+    final topLevel = _asInt(appointment['appointment_status_id']);
+    if (topLevel != null) return topLevel;
+    if (appointment['appointment_status'] is Map) {
+      return _asInt((appointment['appointment_status'] as Map)['id']);
+    }
+    return null;
+  }
+
+  Future<void> _refreshWeek() async {
+    ref.invalidate(weeklyCalendarProvider(_weekStart));
+  }
+
+  Future<void> _showSlotActionSheet({
+    required Map<String, dynamic> appointment,
+    required String initialDate,
+    required String initialTime,
+    required bool createNewForCustomer,
+  }) async {
+    final appointmentId = _asInt(appointment['id']);
+    final customerId = _asInt(appointment['customer_id']);
+    final statusId = _resolveStatusId(appointment);
+    if (customerId == null) {
+      _showSnack('Müşteri bilgisi bulunamadı.');
+      return;
+    }
+    if (!createNewForCustomer && appointmentId == null) {
+      _showSnack('Randevu bilgisi bulunamadı.');
+      return;
+    }
+    if (statusId == null) {
+      _showSnack('Randevu durumu bulunamadı.');
+      return;
+    }
+
+    final parsedInitialDate = _parseInputDateOrNow(initialDate);
+    final dateCtrl = TextEditingController(
+      text: _formatDateDisplay(parsedInitialDate),
+    );
+    final timeCtrl = TextEditingController(text: initialTime);
+    final notesCtrl =
+        TextEditingController(text: appointment['notes']?.toString() ?? '');
+    bool localNoSms = appointment['no_sms'] == true || appointment['no_sms'] == 1;
+    bool localNoReminder =
+        appointment['no_reminder'] == true || appointment['no_reminder'] == 1;
+    List<Map<String, dynamic>> localSlots = [];
+    bool localLoadingSlots = false;
+    String? localSlotsError;
+    String? localSelectedTime = initialTime;
+
+    await showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (ctx, setModalState) {
+            Future<void> loadSlots() async {
+              final rawDate = dateCtrl.text.trim();
+              if (rawDate.isEmpty) {
+                _showSnack(loc.calendarSelectDateFirst);
+                return;
+              }
+              final date = _normalizeSlotDate(rawDate);
+
+              final token = await _getToken();
+              if (token == null || token.isEmpty) {
+                _showSnack(loc.calendarSessionMissing);
+                return;
+              }
+
+              setModalState(() {
+                localLoadingSlots = true;
+                localSlotsError = null;
+                localSlots = [];
+              });
+
+              final dio = Dio(
+                BaseOptions(
+                  baseUrl: apiBaseUrl,
+                  headers: {
+                    'Authorization': 'Bearer $token',
+                    'Accept': 'application/json',
+                  },
+                ),
+              );
+
+              try {
+                final resp = await dio.get(
+                  '/api/appointments/time-slots',
+                  queryParameters: {'date': date},
+                );
+                final raw = resp.data is Map
+                    ? ((resp.data as Map)['data'] ?? resp.data)
+                    : resp.data;
+                final slots = raw is List
+                    ? raw
+                        .map((e) => Map<String, dynamic>.from(e as Map))
+                        .toList()
+                    : <Map<String, dynamic>>[];
+
+                setModalState(() {
+                  localSlots = slots;
+                  localLoadingSlots = false;
+                  localSlotsError = null;
+                  final hasSelected = localSlots.any(
+                    (s) => (s['time']?.toString() ?? '') == localSelectedTime,
+                  );
+                  if (!hasSelected) {
+                    localSelectedTime = null;
+                    timeCtrl.clear();
+                  }
+                });
+              } on DioException catch (e) {
+                final status = e.response?.statusCode;
+                final msg = e.response?.data is Map
+                    ? (e.response?.data['message']?.toString() ??
+                        e.response?.data['error']?.toString())
+                    : null;
+                setModalState(() {
+                  localLoadingSlots = false;
+                  localSlotsError =
+                      '${loc.calendarFetchFailedStatus(status ?? '??')}${msg != null ? ': $msg' : ''}';
+                });
+              } catch (e) {
+                setModalState(() {
+                  localLoadingSlots = false;
+                  localSlotsError = loc.calendarFetchFailed(e.toString());
+                });
+              }
+            }
+
+            Future<void> pickDate() async {
+              final now = DateTime.now();
+              final minDate = DateTime(now.year, now.month, now.day);
+              final maxDate = DateTime(now.year + 5, 12, 31);
+              final initial = _clampDate(
+                _parseInputDateOrNow(dateCtrl.text.trim()),
+                minDate,
+                maxDate,
+              );
+              final picked = await showDatePicker(
+                context: ctx,
+                initialDate: initial,
+                firstDate: minDate,
+                lastDate: maxDate,
+              );
+              if (picked == null) return;
+              setModalState(() {
+                dateCtrl.text = _formatDateDisplay(picked);
+                localSlots = [];
+                localSlotsError = null;
+                localSelectedTime = null;
+                timeCtrl.clear();
+              });
+              await loadSlots();
+            }
+
+            Future<void> submit() async {
+              if (_slotActionBusy) return;
+              final dateInput = dateCtrl.text.trim();
+              final time = (localSelectedTime ?? timeCtrl.text).trim();
+              final apiDate = _normalizeDateToApi(dateInput);
+              final createDate = _normalizeSlotDate(dateInput);
+              if ((apiDate == null && !createNewForCustomer) ||
+                  createDate.isEmpty ||
+                  time.isEmpty) {
+                _showSnack(loc.calendarDateTimeRequired);
+                return;
+              }
+
+              final token = await _getToken();
+              if (token == null || token.isEmpty) {
+                _showSnack(loc.calendarSessionMissing);
+                return;
+              }
+
+              setState(() {
+                _slotActionBusy = true;
+              });
+
+              final dio = Dio(
+                BaseOptions(
+                  baseUrl: apiBaseUrl,
+                  headers: {
+                    'Authorization': 'Bearer $token',
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json',
+                  },
+                ),
+              );
+
+              try {
+                final payload = {
+                  'customer_id': customerId,
+                  'appointment_status_id': statusId,
+                  'date': createNewForCustomer ? createDate : apiDate,
+                  'time': time,
+                  'notes': notesCtrl.text.trim(),
+                  'no_sms': localNoSms,
+                  'no_reminder': localNoReminder,
+                };
+
+                if (createNewForCustomer) {
+                  await dio.post('/api/appointments', data: payload);
+                  _showSnack(loc.calendarCreateSuccess, success: true);
+                } else {
+                  await dio.put('/api/appointments/$appointmentId', data: payload);
+                  _showSnack(loc.calendarUpdateSuccess, success: true);
+                }
+
+                if (ctx.mounted) Navigator.of(ctx).pop();
+                await _refreshWeek();
+              } on DioException catch (e) {
+                final status = e.response?.statusCode;
+                final msg = e.response?.data is Map
+                    ? (e.response?.data['message']?.toString() ??
+                        e.response?.data['error']?.toString())
+                    : null;
+                _showSnack(
+                  '${createNewForCustomer ? loc.calendarCreateFailed : loc.calendarUpdateFailed}'
+                  '${status != null ? ' (HTTP $status)' : ''}${msg != null ? ': $msg' : ''}',
+                );
+              } finally {
+                if (mounted) {
+                  setState(() {
+                    _slotActionBusy = false;
+                  });
+                }
+              }
+            }
+
+            return SafeArea(
+              child: Padding(
+                padding: EdgeInsets.only(
+                  left: 16,
+                  right: 16,
+                  top: 16,
+                  bottom: MediaQuery.of(ctx).viewInsets.bottom + 16,
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      createNewForCustomer
+                          ? loc.rescheduleAppointment
+                          : loc.editAppointment,
+                      style: const TextStyle(
+                        fontSize: 17,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: TextField(
+                            controller: dateCtrl,
+                            readOnly: true,
+                            onTap: pickDate,
+                            decoration: InputDecoration(
+                              labelText: loc.date,
+                              hintText: loc.calendarDateHint,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: TextField(
+                            controller: timeCtrl,
+                            readOnly: true,
+                            decoration: InputDecoration(
+                              labelText: loc.timeSelect,
+                              hintText: loc.calendarTimeSlotHint,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        ElevatedButton.icon(
+                          onPressed: localLoadingSlots ? null : loadSlots,
+                          icon: localLoadingSlots
+                              ? const SizedBox(
+                                  width: 16,
+                                  height: 16,
+                                  child: CircularProgressIndicator(strokeWidth: 2),
+                                )
+                              : const Icon(Icons.schedule),
+                          label: Text(loc.calendarFetchAvailableSlots),
+                        ),
+                        const SizedBox(width: 12),
+                        if (localSlotsError != null)
+                          Expanded(
+                            child: Text(
+                              localSlotsError!,
+                              style: const TextStyle(color: Colors.red),
+                            ),
+                          ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    if (localLoadingSlots)
+                      const LinearProgressIndicator(minHeight: 2),
+                    if (localSlots.isNotEmpty)
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: localSlots.map((slot) {
+                          final slotTime = slot['time']?.toString() ?? '';
+                          final booked = slot['booked'] == true || slot['booked'] == 1;
+                          final canUseBooked =
+                              !createNewForCustomer && slotTime == initialTime;
+                          final disabled = booked && !canUseBooked;
+                          final selected = localSelectedTime == slotTime;
+                          return ChoiceChip(
+                            label: Text(slotTime),
+                            selected: selected,
+                            onSelected: disabled
+                                ? null
+                                : (val) {
+                                    if (!val) return;
+                                    setModalState(() {
+                                      localSelectedTime = slotTime;
+                                      timeCtrl.text = slotTime;
+                                      localSlotsError = null;
+                                    });
+                                  },
+                            disabledColor: Colors.grey.shade300,
+                            selectedColor: Colors.green.shade200,
+                            labelStyle: TextStyle(
+                              color: disabled
+                                  ? Colors.grey
+                                  : (selected ? Colors.black : Colors.black87),
+                            ),
+                          );
+                        }).toList(),
+                      ),
+                    const SizedBox(height: 8),
+                    TextField(
+                      controller: notesCtrl,
+                      maxLines: 2,
+                      decoration: InputDecoration(
+                        labelText: loc.note,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    SwitchListTile(
+                      title: Text(loc.doNotSendSms),
+                      value: localNoSms,
+                      onChanged: (val) => setModalState(() => localNoSms = val),
+                      contentPadding: EdgeInsets.zero,
+                    ),
+                    SwitchListTile(
+                      title: Text(loc.doNotSendReminder),
+                      value: localNoReminder,
+                      onChanged: (val) =>
+                          setModalState(() => localNoReminder = val),
+                      contentPadding: EdgeInsets.zero,
+                    ),
+                    const SizedBox(height: 8),
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton.icon(
+                        onPressed: _slotActionBusy ? null : submit,
+                        icon: _slotActionBusy
+                            ? const SizedBox(
+                                width: 16,
+                                height: 16,
+                                child: CircularProgressIndicator(strokeWidth: 2),
+                              )
+                            : Icon(createNewForCustomer ? Icons.add : Icons.save),
+                        label: Text(
+                          createNewForCustomer ? loc.rescheduleAppointment : loc.save,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
   }
 
   bool _dayWorking(WeekDayInfo day, Map<String, dynamic> prefs) {
@@ -357,6 +921,12 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
     return text[0].toUpperCase() + text.substring(1);
   }
 
+  String _localizedWeekRangeText(WeeklyCalendarData data) {
+    final localeTag = Localizations.localeOf(context).toLanguageTag();
+    final formatter = DateFormat('d MMM', localeTag);
+    return '${formatter.format(data.weekStart)} - ${formatter.format(data.weekEnd)}';
+  }
+
   int _dayNumber(WeekDayInfo day) {
     final parts = day.date.split('-');
     if (parts.length == 3) {
@@ -366,6 +936,7 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
   }
 
   Widget _buildDayList(WeeklyCalendarData data) {
+    _syncExpandedDayAndFocus(data);
     final appointmentsBySlot = data.appointmentsBySlot;
     final statusColors = data.statusColors;
     final workingPrefs = data.workingPreferences;
@@ -377,7 +948,11 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
       return _bootstrapColor(mapped);
     }
 
-    Widget buildSlotCard(WeekDayInfo day, String time) {
+    Widget buildSlotCard(
+      WeekDayInfo day,
+      String time, {
+      bool isNowFocus = false,
+    }) {
       final working = _dayWorking(day, workingPrefs);
       if (!working) {
         return const SizedBox.shrink();
@@ -395,13 +970,25 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
             '${customer?['name'] ?? ''} ${customer?['lastname'] ?? ''}'.trim();
         final phone = customer?['phone']?.toString() ?? '';
         final color = statusColorFor(appointment);
+        final statusName =
+            appointment['appointment_status']?['name']?.toString() ?? 'Randevu';
 
         return Container(
+          constraints: const BoxConstraints(minHeight: 62),
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
           decoration: BoxDecoration(
             color: color.withValues(alpha: 0.1),
             border: Border.all(color: color.withValues(alpha: 0.4)),
             borderRadius: BorderRadius.circular(12),
+            boxShadow: isNowFocus
+                ? [
+                    BoxShadow(
+                      color: color.withValues(alpha: 0.22),
+                      blurRadius: 10,
+                      offset: const Offset(0, 3),
+                    ),
+                  ]
+                : null,
           ),
           child: Row(
             children: [
@@ -426,10 +1013,80 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
                       style: const TextStyle(fontSize: 12, color: Colors.black87),
                       overflow: TextOverflow.ellipsis,
                     ),
+                    const SizedBox(height: 4),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 2,
+                      ),
+                      decoration: BoxDecoration(
+                        color: color.withValues(alpha: 0.16),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Text(
+                        statusName,
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                          color: color.withValues(alpha: 0.95),
+                        ),
+                      ),
+                    ),
                   ],
                 ),
               ),
-              Icon(Icons.check, color: color),
+              const SizedBox(width: 8),
+              Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  SizedBox(
+                    height: 30,
+                    child: OutlinedButton(
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(horizontal: 10),
+                        side: BorderSide(color: color.withValues(alpha: 0.6)),
+                        visualDensity: VisualDensity.compact,
+                      ),
+                      onPressed: _slotActionBusy
+                          ? null
+                          : () => _showSlotActionSheet(
+                                appointment: appointment,
+                                initialDate: day.date,
+                                initialTime: time,
+                                createNewForCustomer: true,
+                              ),
+                      child: Text(
+                        loc.calendarActionNew,
+                        style: const TextStyle(fontSize: 11),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  SizedBox(
+                    height: 30,
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(horizontal: 10),
+                        visualDensity: VisualDensity.compact,
+                        backgroundColor: color.withValues(alpha: 0.95),
+                        foregroundColor: Colors.white,
+                      ),
+                      onPressed: _slotActionBusy
+                          ? null
+                          : () => _showSlotActionSheet(
+                                appointment: appointment,
+                                initialDate: day.date,
+                                initialTime: time,
+                                createNewForCustomer: false,
+                              ),
+                      child: Text(
+                        loc.calendarActionEdit,
+                        style: const TextStyle(fontSize: 11),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ],
           ),
         );
@@ -450,11 +1107,19 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
           );
         },
         child: Container(
+          constraints: const BoxConstraints(minHeight: 62),
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
           decoration: BoxDecoration(
             color: Colors.white,
             border: Border.all(color: Colors.grey.shade300),
             borderRadius: BorderRadius.circular(12),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.03),
+                blurRadius: 6,
+                offset: const Offset(0, 1),
+              ),
+            ],
           ),
           child: Row(
             children: [
@@ -465,8 +1130,11 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
               const SizedBox(width: 12),
               Expanded(
                 child: Text(
-                  loc.calendarCustomer,
-                  style: const TextStyle(color: Colors.black54),
+                  loc.calendarAddAppointment,
+                  style: TextStyle(
+                    color: _primaryColor.withValues(alpha: 0.95),
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ),
               const Icon(Icons.add_circle_outline, color: _primaryColor),
@@ -477,112 +1145,166 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
     }
 
     Widget buildDaySection(WeekDayInfo day) {
+      final sectionKey = _daySectionKeys.putIfAbsent(day.date, () => GlobalKey());
       final slots = data.timeSlotsByDay[day.date] ?? const [];
       final working = _dayWorking(day, workingPrefs);
+      final isExpanded = _expandedDayDate == day.date;
+      final focusSlot = _nearestUpcomingSlotTime(slots, day.date);
+      final bookedCount = slots.where((slot) {
+        final key = '${day.date}_${slot.time}';
+        final appts = appointmentsBySlot[key] ?? const [];
+        return appts.isNotEmpty;
+      }).length;
+
       return Container(
+        key: sectionKey,
         margin: const EdgeInsets.only(bottom: 12),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(14),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.04),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
+              color: Colors.black.withValues(alpha: 0.06),
+              blurRadius: 14,
+              offset: const Offset(0, 4),
+            ),
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.02),
+              blurRadius: 2,
+              offset: const Offset(0, 1),
             ),
           ],
         ),
         child: Column(
           children: [
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-              decoration: BoxDecoration(
-                color: Colors.grey.shade50,
-                borderRadius: const BorderRadius.vertical(
-                  top: Radius.circular(14),
+            InkWell(
+              borderRadius: BorderRadius.circular(14),
+              onTap: () {
+                setState(() {
+                  _expandedDayDate =
+                      _expandedDayDate == day.date ? null : day.date;
+                });
+              },
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade50,
+                  borderRadius: BorderRadius.vertical(
+                    top: const Radius.circular(14),
+                    bottom: Radius.circular(isExpanded ? 0 : 14),
+                  ),
                 ),
-              ),
-              child: Row(
-                children: [
-                  Container(
-                    width: 44,
-                    height: 44,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: day.isToday
-                          ? _primaryColor.withValues(alpha: 0.15)
-                          : Colors.grey.shade200,
-                    ),
-                    child: Center(
-                      child: Text(
-                        _dayNumber(day).toString(),
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          color: day.isToday ? _primaryColor : Colors.black87,
+                child: Row(
+                  children: [
+                    Container(
+                      width: 44,
+                      height: 44,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: day.isToday
+                            ? _primaryColor.withValues(alpha: 0.15)
+                            : Colors.grey.shade200,
+                      ),
+                      child: Center(
+                        child: Text(
+                          _dayNumber(day).toString(),
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: day.isToday ? _primaryColor : Colors.black87,
+                          ),
                         ),
                       ),
                     ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      _dayFullLabel(day),
-                      style: const TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.w700,
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            _dayFullLabel(day),
+                            style: const TextStyle(
+                              fontSize: 19,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            loc.calendarSlotsFilled(bookedCount, slots.length),
+                            style: const TextStyle(
+                              fontSize: 12,
+                              color: Colors.black54,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                  ),
-                  const Icon(Icons.keyboard_arrow_up, color: Colors.blueGrey),
-                  const SizedBox(width: 4),
-                  const Icon(Icons.keyboard_arrow_down, color: Colors.blueGrey),
-                ],
+                    AnimatedRotation(
+                      duration: const Duration(milliseconds: 180),
+                      turns: isExpanded ? 0.5 : 0,
+                      child: const Icon(
+                        Icons.keyboard_arrow_down,
+                        color: Colors.blueGrey,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
-            if (!working)
-              Padding(
-                padding: const EdgeInsets.all(12),
-                child: Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: Colors.grey.shade100,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Text(
-                    loc.calendarClosed,
-                    style: const TextStyle(color: Colors.black54),
-                  ),
-                ),
-              )
-            else if (slots.isEmpty)
-              Padding(
-                padding: const EdgeInsets.all(12),
-                child: Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: Colors.grey.shade100,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Text(
-                    loc.calendarNoData,
-                    style: const TextStyle(color: Colors.black54),
-                  ),
-                ),
-              )
-            else
-              Padding(
-                padding: const EdgeInsets.fromLTRB(12, 10, 12, 12),
-                child: Column(
-                  children: slots.map((slot) {
-                    return Padding(
-                      padding: const EdgeInsets.only(bottom: 8),
-                      child: buildSlotCard(day, slot.time),
-                    );
-                  }).toList(),
-                ),
+            ClipRect(
+              child: AnimatedSize(
+                duration: const Duration(milliseconds: 220),
+                curve: Curves.easeOutCubic,
+                child: !isExpanded
+                    ? const SizedBox.shrink()
+                    : (!working)
+                        ? Padding(
+                            padding: const EdgeInsets.all(12),
+                            child: Container(
+                              width: double.infinity,
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: Colors.grey.shade100,
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Text(
+                                loc.calendarClosed,
+                                style: const TextStyle(color: Colors.black54),
+                              ),
+                            ),
+                          )
+                        : (slots.isEmpty)
+                            ? Padding(
+                                padding: const EdgeInsets.all(12),
+                                child: Container(
+                                  width: double.infinity,
+                                  padding: const EdgeInsets.all(12),
+                                  decoration: BoxDecoration(
+                                    color: Colors.grey.shade100,
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: Text(
+                                    loc.calendarNoData,
+                                    style: const TextStyle(color: Colors.black54),
+                                  ),
+                                ),
+                              )
+                            : Padding(
+                                padding: const EdgeInsets.fromLTRB(12, 10, 12, 12),
+                                child: Column(
+                                  children: slots.map((slot) {
+                                    return Padding(
+                                      padding: const EdgeInsets.only(bottom: 8),
+                                      child: buildSlotCard(
+                                        day,
+                                        slot.time,
+                                        isNowFocus: slot.time == focusSlot,
+                                      ),
+                                    );
+                                  }).toList(),
+                                ),
+                              ),
               ),
+            ),
           ],
         ),
       );
@@ -590,6 +1312,7 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
 
     return Expanded(
       child: ListView.builder(
+        padding: EdgeInsets.only(bottom: widget.showBottomNav ? 96 : 20),
         itemCount: data.weekDays.length,
         itemBuilder: (context, index) => buildDaySection(data.weekDays[index]),
       ),
@@ -673,89 +1396,125 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
               ]
             : null,
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Text(
-                  _monthTitle(),
-                  style: const TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                const SizedBox(width: 4),
-                const Icon(Icons.keyboard_arrow_down, color: Colors.black54),
-                const Spacer(),
-                TextButton(
-                  onPressed: _goToday,
-                  child: Text(loc.calendarToday),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
-              child: Row(
+      body: GestureDetector(
+        behavior: HitTestBehavior.translucent,
+        onHorizontalDragEnd: (details) {
+          final velocity = details.primaryVelocity ?? 0;
+          if (velocity > 350) {
+            _changeWeek(-1);
+          } else if (velocity < -350) {
+            _changeWeek(1);
+          }
+        },
+        child: Padding(
+          padding: const EdgeInsets.all(12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
                 children: [
-                  IconButton(
-                    onPressed: () => _changeWeek(-1),
-                    icon: const Icon(Icons.chevron_left),
-                  ),
-                  Expanded(
-                    child: Center(
-                      child: asyncData.when(
-                        data: (d) => Text(
-                          d.weekRangeText,
-                          style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 18,
+                  InkWell(
+                    borderRadius: BorderRadius.circular(8),
+                    onTap: _pickWeekFromCalendar,
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 2,
+                        vertical: 4,
+                      ),
+                      child: Row(
+                        children: [
+                          Text(
+                            _monthTitle(),
+                            style: const TextStyle(
+                              fontSize: 24,
+                              fontWeight: FontWeight.w700,
+                            ),
                           ),
-                        ),
-                        loading: () => Text(loc.calendarLoading),
-                        error: (_, __) => const SizedBox.shrink(),
+                          const SizedBox(width: 4),
+                          const Icon(
+                            Icons.keyboard_arrow_down,
+                            color: Colors.black54,
+                          ),
+                        ],
                       ),
                     ),
                   ),
-                  IconButton(
-                    onPressed: () => _changeWeek(1),
-                    icon: const Icon(Icons.chevron_right),
-                  ),
+                  const Spacer(),
                 ],
               ),
-            ),
-            const Divider(height: 1),
-            const SizedBox(height: 8),
-            asyncData.when(
-              data: (d) =>
-                  d.hasTimeSlots ? const SizedBox.shrink() : _buildWorkingPrefCallout(),
-              loading: () => const SizedBox.shrink(),
-              error: (_, __) => const SizedBox.shrink(),
-            ),
-            const SizedBox(height: 4),
-            asyncData.when(
-              data: (d) {
-                if (d.weekDays.isEmpty) {
-                  return Text(loc.calendarNoData);
-                }
-                return _buildDayList(d);
-              },
-              loading: () => const Expanded(
-                child: Center(child: CircularProgressIndicator()),
+              const SizedBox(height: 12),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: Colors.grey.shade200),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.04),
+                      blurRadius: 10,
+                      offset: const Offset(0, 3),
+                    ),
+                  ],
+                ),
+                child: Row(
+                  children: [
+                    IconButton(
+                      onPressed: () => _changeWeek(-1),
+                      icon: const Icon(Icons.chevron_left),
+                    ),
+                    Expanded(
+                      child: Center(
+                        child: asyncData.when(
+                          data: (d) => Text(
+                            _localizedWeekRangeText(d),
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 18,
+                            ),
+                          ),
+                          loading: () => Text(loc.calendarLoading),
+                          error: (_, __) => const SizedBox.shrink(),
+                        ),
+                      ),
+                    ),
+                    IconButton(
+                      onPressed: () => _changeWeek(1),
+                      icon: const Icon(Icons.chevron_right),
+                    ),
+                  ],
+                ),
               ),
-              error: (e, _) => Expanded(
-                child: Center(
-                  child: Text(
-                    'Hata: ${e.toString()}',
-                    style: const TextStyle(color: Colors.red),
+              const Divider(height: 1),
+              const SizedBox(height: 8),
+              asyncData.when(
+                data: (d) =>
+                    d.hasTimeSlots ? const SizedBox.shrink() : _buildWorkingPrefCallout(),
+                loading: () => const SizedBox.shrink(),
+                error: (_, __) => const SizedBox.shrink(),
+              ),
+              const SizedBox(height: 4),
+              asyncData.when(
+                data: (d) {
+                  if (d.weekDays.isEmpty) {
+                    return Text(loc.calendarNoData);
+                  }
+                  return _buildDayList(d);
+                },
+                loading: () => const Expanded(
+                  child: Center(child: CircularProgressIndicator()),
+                ),
+                error: (e, _) => Expanded(
+                  child: Center(
+                    child: Text(
+                      'Hata: ${e.toString()}',
+                      style: const TextStyle(color: Colors.red),
+                    ),
                   ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
       bottomNavigationBar: widget.showBottomNav

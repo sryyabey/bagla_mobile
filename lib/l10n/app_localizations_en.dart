@@ -409,6 +409,47 @@ class AppLocalizationsEn extends AppLocalizations {
   String get calendarNoData => 'No data for this week.';
 
   @override
+  String calendarSlotsFilled(Object booked, Object total) {
+    return '$booked/$total slots filled';
+  }
+
+  @override
+  String get calendarAddAppointment => 'Add appointment';
+
+  @override
+  String get calendarActionNew => 'New';
+
+  @override
+  String get calendarActionEdit => 'Edit';
+
+  @override
+  String get calendarFetchAvailableSlots => 'Get available slots';
+
+  @override
+  String get calendarDateHint => 'Pick from calendar';
+
+  @override
+  String get calendarTimeSlotHint => 'Select slot';
+
+  @override
+  String get calendarSelectDateFirst => 'Select a date first.';
+
+  @override
+  String get calendarDateTimeRequired => 'Date and time are required.';
+
+  @override
+  String get calendarCreateSuccess => 'New appointment created.';
+
+  @override
+  String get calendarUpdateSuccess => 'Appointment updated.';
+
+  @override
+  String get calendarCreateFailed => 'Appointment could not be created';
+
+  @override
+  String get calendarUpdateFailed => 'Appointment could not be updated';
+
+  @override
   String get dayMonShort => 'Mon';
 
   @override
