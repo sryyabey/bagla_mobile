@@ -51,6 +51,154 @@ class AppLocalizationsEn extends AppLocalizations {
   String get myLinks => 'My Links';
 
   @override
+  String get customersTitle => 'My Contacts';
+
+  @override
+  String get customersSessionMissing =>
+      'Session not found. Please log in again.';
+
+  @override
+  String customersLoadFailedStatus(Object status) {
+    return 'Customers could not be loaded (HTTP $status).';
+  }
+
+  @override
+  String customersLoadFailed(Object error) {
+    return 'Customers could not be loaded: $error';
+  }
+
+  @override
+  String get customersSearchHint => 'Search contact (name, phone, email)';
+
+  @override
+  String get customersRetry => 'Retry';
+
+  @override
+  String get customersEmpty => 'No contacts yet.';
+
+  @override
+  String get customersLoadMore => 'Load more';
+
+  @override
+  String get customersRefresh => 'Refresh';
+
+  @override
+  String get customersAdd => 'Add Contact';
+
+  @override
+  String get customersEdit => 'Edit Contact';
+
+  @override
+  String get customersDelete => 'Delete';
+
+  @override
+  String get customersDeleteConfirmTitle => 'Delete contact?';
+
+  @override
+  String get customersDeleteConfirmBody =>
+      'Are you sure you want to delete this contact?';
+
+  @override
+  String get customersCancel => 'Cancel';
+
+  @override
+  String get customersSave => 'Save';
+
+  @override
+  String get customersSaving => 'Saving...';
+
+  @override
+  String get customersName => 'Full Name';
+
+  @override
+  String get customersPhone => 'Phone';
+
+  @override
+  String get customersEmail => 'Email';
+
+  @override
+  String get customersAddress => 'Address';
+
+  @override
+  String get customersNotes => 'Notes';
+
+  @override
+  String get customersValidation => 'Full Name and Phone are required.';
+
+  @override
+  String get customersCreateSuccess => 'Contact created.';
+
+  @override
+  String get customersUpdateSuccess => 'Contact updated.';
+
+  @override
+  String customersSaveFailedStatus(Object status) {
+    return 'Could not be saved (HTTP $status).';
+  }
+
+  @override
+  String customersSaveFailed(Object error) {
+    return 'Could not be saved: $error';
+  }
+
+  @override
+  String get customersDeleteSuccess => 'Contact deleted.';
+
+  @override
+  String customersDeleteFailedStatus(Object status) {
+    return 'Contact could not be deleted (HTTP $status).';
+  }
+
+  @override
+  String customersDeleteFailed(Object error) {
+    return 'Contact could not be deleted: $error';
+  }
+
+  @override
+  String get customersAppointments => 'Appointments';
+
+  @override
+  String get customersNoAppointments => 'No appointments for this contact.';
+
+  @override
+  String customersAppointmentsLoadFailedStatus(Object status) {
+    return 'Appointments could not be loaded (HTTP $status).';
+  }
+
+  @override
+  String customersAppointmentsLoadFailed(Object error) {
+    return 'Appointments could not be loaded: $error';
+  }
+
+  @override
+  String get customersCreateAppointment => 'Add Appointment';
+
+  @override
+  String get customersAppointmentDate => 'Date';
+
+  @override
+  String get customersAppointmentTime => 'Time';
+
+  @override
+  String get customersAppointmentNote => 'Note';
+
+  @override
+  String get customersFirstAppointment => 'First appointment?';
+
+  @override
+  String get customersNoSms => 'Do not send SMS';
+
+  @override
+  String get customersNoReminder => 'Do not send reminder';
+
+  @override
+  String get customersCreateAppointmentSuccess => 'Appointment created.';
+
+  @override
+  String get customersCreateAppointmentFailed =>
+      'Appointment could not be created.';
+
+  @override
   String get themes => 'Themes';
 
   @override
@@ -71,6 +219,15 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get dashboardHeroSubtitle =>
       'Manage your links and appointments in one place.';
+
+  @override
+  String get dashboardQuickActions => 'Quick Actions';
+
+  @override
+  String get dashboardMenuMain => 'MAIN MENU';
+
+  @override
+  String get dashboardMenuManagement => 'MANAGEMENT';
 
   @override
   String get dashboardDrawerSubtitle =>
@@ -348,6 +505,203 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get appointmentsEmpty => 'No appointments yet.';
+
+  @override
+  String appointmentsCountLabel(Object count) {
+    return '$count records';
+  }
+
+  @override
+  String get appointmentsFilterSubtitle =>
+      'Filter by customer, date and time range';
+
+  @override
+  String get appointmentsPackageRequired =>
+      'Please purchase a package for appointment actions.';
+
+  @override
+  String get appointmentsSessionMissingLogin =>
+      'Session not found. Please log in again.';
+
+  @override
+  String appointmentsCountriesFetchFailedStatus(Object status) {
+    return 'Countries could not be fetched (HTTP $status).';
+  }
+
+  @override
+  String appointmentsCountriesFetchFailed(Object error) {
+    return 'Countries could not be fetched: $error';
+  }
+
+  @override
+  String appointmentsStatusesFetchFailedStatus(Object status) {
+    return 'Statuses could not be fetched (HTTP $status).';
+  }
+
+  @override
+  String appointmentsStatusesFetchFailed(Object error) {
+    return 'Statuses could not be fetched: $error';
+  }
+
+  @override
+  String get appointmentsInvalidStartTime => 'Invalid start time. Format HH:MM';
+
+  @override
+  String get appointmentsInvalidEndTime => 'Invalid end time. Format HH:MM';
+
+  @override
+  String get appointmentsRequiredFields =>
+      'Name, lastname, country, phone, date and time are required.';
+
+  @override
+  String get appointmentsSelectAvailableTime =>
+      'Please select an available time.';
+
+  @override
+  String get appointmentsCreateSuccess => 'Appointment created.';
+
+  @override
+  String appointmentsCreateFailedStatus(Object status) {
+    return 'Appointment could not be created (HTTP $status).';
+  }
+
+  @override
+  String appointmentsCreateFailed(Object error) {
+    return 'Appointment could not be created: $error';
+  }
+
+  @override
+  String get appointmentsEnterDateFirst => 'Enter a date first.';
+
+  @override
+  String appointmentsSlotsFetchFailedStatus(Object status) {
+    return 'Time slots could not be fetched (HTTP $status).';
+  }
+
+  @override
+  String appointmentsSlotsFetchFailed(Object error) {
+    return 'Time slots could not be fetched: $error';
+  }
+
+  @override
+  String get appointmentsDateTimeRequired => 'Date and time are required.';
+
+  @override
+  String get appointmentsUpdateSuccess => 'Appointment updated.';
+
+  @override
+  String appointmentsUpdateFailedStatus(Object status) {
+    return 'Appointment could not be updated (HTTP $status).';
+  }
+
+  @override
+  String appointmentsUpdateFailed(Object error) {
+    return 'Appointment could not be updated: $error';
+  }
+
+  @override
+  String get appointmentsStatusMissing => 'Appointment status not found.';
+
+  @override
+  String get appointmentsRebookSuccess => 'New appointment created.';
+
+  @override
+  String get appointmentsInfoMissing => 'Appointment info not found.';
+
+  @override
+  String appointmentsInfoFetchFailedStatus(Object status) {
+    return 'Information could not be fetched (HTTP $status).';
+  }
+
+  @override
+  String appointmentsInfoFetchFailed(Object error) {
+    return 'Information could not be fetched: $error';
+  }
+
+  @override
+  String get appointmentsNoRecords => 'No records found.';
+
+  @override
+  String get appointmentsClose => 'Close';
+
+  @override
+  String get appointmentsClear => 'Clear';
+
+  @override
+  String get appointmentsCountry => 'Country';
+
+  @override
+  String get appointmentsSelectCountry => 'Select country';
+
+  @override
+  String get appointmentsFieldName => 'Name';
+
+  @override
+  String get appointmentsFieldNameHint => 'e.g. Alex';
+
+  @override
+  String get appointmentsFieldLastName => 'Lastname';
+
+  @override
+  String get appointmentsFieldLastNameHint => 'e.g. Brown';
+
+  @override
+  String get appointmentsFieldNameFilterHint => 'Customer name';
+
+  @override
+  String get appointmentsFieldLastNameFilterHint => 'Customer lastname';
+
+  @override
+  String get appointmentsFieldPhone => 'Phone';
+
+  @override
+  String get appointmentsFieldPhoneHint => 'e.g. 5554443322';
+
+  @override
+  String get appointmentsFieldEmailHint => 'Optional';
+
+  @override
+  String get appointmentsStatusSelectHint => 'Select status';
+
+  @override
+  String get appointmentsStartDate => 'Start Date';
+
+  @override
+  String get appointmentsEndDate => 'End Date';
+
+  @override
+  String get appointmentsStartTime => 'Start Time';
+
+  @override
+  String get appointmentsEndTime => 'End Time';
+
+  @override
+  String get appointmentsBuyPackage => 'Buy Package';
+
+  @override
+  String get appointmentsFirstAppointment => 'Is this first appointment?';
+
+  @override
+  String get appointmentsReminderDisableTitle => 'Do not send reminder';
+
+  @override
+  String get appointmentsSubmitting => 'Submitting...';
+
+  @override
+  String get appointmentsCustomerPreviewTooltip => 'Customer preview';
+
+  @override
+  String get appointmentsRebookTooltip => 'Rebook appointment';
+
+  @override
+  String get appointmentsEditTooltip => 'Edit';
+
+  @override
+  String get appointmentsHomeTooltip => 'Home';
+
+  @override
+  String get iosSmsPurchaseRestrictionMessage =>
+      'SMS package purchasing is not supported in the iOS app due to Apple App Store policies.\nPurchases can be completed on the website.';
 
   @override
   String appointmentsFetchFailedStatus(Object status) {
@@ -1409,6 +1763,43 @@ class AppLocalizationsEn extends AppLocalizations {
   String smsTemplatesFallbackTitle(Object id) {
     return 'Template #$id';
   }
+
+  @override
+  String get smsTemplatesGuideTitle => 'Template Selection';
+
+  @override
+  String get smsTemplatesGuideBody =>
+      'Select one SMS template for each category.';
+
+  @override
+  String get smsTemplatesGuideHint =>
+      'Tap cards to select templates. The selected card is highlighted and reflected in the live preview below.';
+
+  @override
+  String get smsTemplatesMainDescription =>
+      'Message sent when a new appointment is created.';
+
+  @override
+  String get smsTemplatesReminderDescription =>
+      'Message sent as a reminder before the appointment.';
+
+  @override
+  String get smsTemplatesCancelDescription =>
+      'Message sent when an appointment is cancelled.';
+
+  @override
+  String get smsTemplatesUpdateDescription =>
+      'Message sent when appointment date/time is updated.';
+
+  @override
+  String get smsTemplatesPreviewTitle => 'Live Preview';
+
+  @override
+  String get smsTemplatesPreviewEmpty =>
+      'No template selected for this category yet.';
+
+  @override
+  String get smsTemplatesSelected => 'Selected';
 
   @override
   String get supportTitle => 'Support';

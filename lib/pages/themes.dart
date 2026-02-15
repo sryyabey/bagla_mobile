@@ -6,6 +6,7 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import 'package:bagla_mobile/l10n/app_localizations.dart';
+import 'package:bagla_mobile/main_tabs_page.dart';
 
 class ThemesPage extends StatefulWidget {
   const ThemesPage({super.key});
@@ -15,7 +16,7 @@ class ThemesPage extends StatefulWidget {
 }
 
 class _ThemesPageState extends State<ThemesPage> {
-  AppLocalizations get loc => AppLocalizations.of(context)!;
+  AppLocalizations get loc => AppLocalizations.of(context);
   List<Map<String, dynamic>> _themes = [];
   bool _loading = true;
   bool _saving = false;
@@ -27,6 +28,24 @@ class _ThemesPageState extends State<ThemesPage> {
   bool _previewLoading = false;
   String? _previewUrl;
   String? _previewError;
+
+  void _goHome() {
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute(
+        builder: (_) => const MainTabsPage(initialIndex: 0),
+      ),
+      (_) => false,
+    );
+  }
+
+  void _goBack() {
+    final navigator = Navigator.of(context);
+    if (navigator.canPop()) {
+      navigator.pop();
+      return;
+    }
+    _goHome();
+  }
 
   @override
   void initState() {
@@ -153,7 +172,7 @@ class _ThemesPageState extends State<ThemesPage> {
       setState(() {
         _themes = fetchedThemes;
         _userId = userId;
-        final defaultThemeName = 'success';
+        const defaultThemeName = 'success';
         final resolvedThemeName = currentThemeName ??
             selectedThemeNameFromThemes ??
             defaultThemeName;
@@ -165,7 +184,7 @@ class _ThemesPageState extends State<ThemesPage> {
 
         _selectedThemeId = resolvedThemeId;
         _selectedThemeName =
-            resolvedThemeName ?? _resolveThemeNameById(_selectedThemeId);
+            _resolveThemeNameById(_selectedThemeId) ?? resolvedThemeName;
         _loading = false;
       });
 
@@ -242,6 +261,7 @@ class _ThemesPageState extends State<ThemesPage> {
   Future<void> _saveTheme() async {
     final themeId = _selectedThemeId;
     final token = await _getToken();
+    if (!mounted) return;
 
     if (themeId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -309,10 +329,11 @@ class _ThemesPageState extends State<ThemesPage> {
         ),
       );
     } finally {
-      if (!mounted) return;
-      setState(() {
-        _saving = false;
-      });
+      if (mounted) {
+        setState(() {
+          _saving = false;
+        });
+      }
     }
   }
 
@@ -403,8 +424,19 @@ class _ThemesPageState extends State<ThemesPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        automaticallyImplyLeading: false,
+        leading: IconButton(
+          tooltip: MaterialLocalizations.of(context).backButtonTooltip,
+          onPressed: _goBack,
+          icon: const Icon(Icons.arrow_back),
+        ),
         title: Text(loc.themesTitle),
         actions: [
+          IconButton(
+            tooltip: loc.dashboardHome,
+            onPressed: _goHome,
+            icon: const Icon(Icons.home_outlined),
+          ),
           IconButton(
             onPressed: _loading ? null : _fetchThemesAndProfile,
             icon: const Icon(Icons.refresh),

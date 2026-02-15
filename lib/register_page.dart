@@ -36,7 +36,6 @@ class _RegisterPageState extends State<RegisterPage> {
   bool _isAppleLoading = false;
   bool _isAppleAvailable = false;
   String? _error;
-  Map<String, dynamic>? _user;
   final AppleAuthService _appleAuthService = AppleAuthService();
 
   @override
@@ -142,13 +141,6 @@ class _RegisterPageState extends State<RegisterPage> {
         final token = data['token'] ??
             (data['data'] != null ? data['data']['token'] : null) ??
             data['access_token'];
-        final user = data['user'] ??
-            (data['data'] != null ? data['data']['user'] : null);
-        if (user is Map) {
-          setState(() {
-            _user = Map<String, dynamic>.from(user);
-          });
-        }
         if (token != null) {
           await _handleRegisterSuccess(token.toString());
         } else {
@@ -265,9 +257,9 @@ class _RegisterPageState extends State<RegisterPage> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Text(
+                const Text(
                   'Hesap Oluştur',
-                  style: const TextStyle(
+                  style: TextStyle(
                     color: Colors.white,
                     fontSize: 32,
                     fontWeight: FontWeight.bold,
@@ -281,7 +273,7 @@ class _RegisterPageState extends State<RegisterPage> {
                     labelText: 'Ad Soyad',
                     labelStyle: const TextStyle(color: Colors.white70),
                     filled: true,
-                    fillColor: Colors.white.withOpacity(0.2),
+                    fillColor: Colors.white.withValues(alpha: 0.2),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                       borderSide: BorderSide.none,
@@ -298,7 +290,7 @@ class _RegisterPageState extends State<RegisterPage> {
                     labelText: 'E-posta',
                     labelStyle: const TextStyle(color: Colors.white70),
                     filled: true,
-                    fillColor: Colors.white.withOpacity(0.2),
+                    fillColor: Colors.white.withValues(alpha: 0.2),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                       borderSide: BorderSide.none,
@@ -315,7 +307,7 @@ class _RegisterPageState extends State<RegisterPage> {
                     labelText: 'Şifre',
                     labelStyle: const TextStyle(color: Colors.white70),
                     filled: true,
-                    fillColor: Colors.white.withOpacity(0.2),
+                    fillColor: Colors.white.withValues(alpha: 0.2),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                       borderSide: BorderSide.none,
@@ -332,7 +324,7 @@ class _RegisterPageState extends State<RegisterPage> {
                     labelText: 'Şifre (Tekrar)',
                     labelStyle: const TextStyle(color: Colors.white70),
                     filled: true,
-                    fillColor: Colors.white.withOpacity(0.2),
+                    fillColor: Colors.white.withValues(alpha: 0.2),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                       borderSide: BorderSide.none,
@@ -349,7 +341,7 @@ class _RegisterPageState extends State<RegisterPage> {
                     labelText: 'Kullanıcı Adı (opsiyonel)',
                     labelStyle: const TextStyle(color: Colors.white70),
                     filled: true,
-                    fillColor: Colors.white.withOpacity(0.2),
+                    fillColor: Colors.white.withValues(alpha: 0.2),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                       borderSide: BorderSide.none,

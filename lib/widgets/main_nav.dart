@@ -5,7 +5,6 @@ import '../pages/appointments.dart';
 import '../pages/calendar.dart';
 import '../pages/profile.dart';
 import 'package:bagla_mobile/l10n/app_localizations.dart';
-import 'package:flutter/services.dart';
 
 class MainNavBar extends StatelessWidget {
   final int currentIndex;
@@ -48,7 +47,7 @@ class MainNavBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final loc = AppLocalizations.of(context)!;
+    final loc = AppLocalizations.of(context);
     return BottomNavigationBar(
       type: BottomNavigationBarType.fixed,
       currentIndex: currentIndex,

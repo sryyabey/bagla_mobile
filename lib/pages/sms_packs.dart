@@ -22,11 +22,9 @@ class SmsPacksPage extends StatefulWidget {
 }
 
 class _SmsPacksPageState extends State<SmsPacksPage> {
-  AppLocalizations get loc => AppLocalizations.of(context)!;
+  AppLocalizations get loc => AppLocalizations.of(context);
   bool get _isIosPaymentRestricted =>
       !kIsWeb && defaultTargetPlatform == TargetPlatform.iOS;
-  static const String _iosPurchaseRestrictionMessage =
-      'iOS uygulamasında SMS paket satın alma işlemi, Apple App Store politikaları gereği desteklenmemektedir.\nSatın alma işlemleri web sitesi üzerinden gerçekleştirilebilir.';
   bool _loading = true;
   bool _purchasing = false;
   String? _error;
@@ -705,7 +703,7 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
                 const SizedBox(height: 10),
                 ...details.map((d) {
                   final map = d is Map
-                      ? Map<String, dynamic>.from(d as Map)
+                      ? Map<String, dynamic>.from(d)
                       : <String, dynamic>{};
                   return ListTile(
                     dense: true,
@@ -898,7 +896,7 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
 
   Future<void> _purchasePack() async {
     if (_isIosPaymentRestricted) {
-      _showSnack(_iosPurchaseRestrictionMessage);
+      _showSnack(loc.iosSmsPurchaseRestrictionMessage);
       return;
     }
     if (_selectedPack == null) {
@@ -918,10 +916,10 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
     try {
       final planType =
           _selectedPack?['type']?.toString() ?? _selectedType ?? 'sms';
-      final countryNumber =
-          _selectedPhoneCode == null || _selectedPhoneCode!.isEmpty
-              ? ''
-              : '+${_selectedPhoneCode}';
+          final countryNumber =
+              _selectedPhoneCode == null || _selectedPhoneCode!.isEmpty
+                  ? ''
+                  : '+$_selectedPhoneCode';
       final body = {
         'pack_id': _selectedPack!['id'],
         'plan_type': planType,
@@ -979,8 +977,8 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
           }
         } catch (_) {}
         _showSnack(message, success: true);
-        if (transactionId != null && transactionId!.isNotEmpty) {
-          await _startPaytrPayment(token, transactionId!);
+        if (transactionId != null && transactionId.isNotEmpty) {
+          await _startPaytrPayment(token, transactionId);
         }
       } else {
         String message = loc.smsPacksPurchaseFailedStatus(response.statusCode);
@@ -1065,16 +1063,6 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
     });
   }
 
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    // Ensure any stray timer is cleared when leaving the page.
-    ModalRoute.of(context)?.addScopedWillPopCallback(() async {
-      _paymentTimer?.cancel();
-      return true;
-    });
-  }
-
   Future<void> _checkOrderStatus(String transactionId) async {
     try {
       final res = await http.get(
@@ -1104,6 +1092,7 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
         final normalized = status.toLowerCase();
         if (normalized == 'paid' || normalized == 'success') {
           _paymentTimer?.cancel();
+          if (!mounted) return;
           if (Navigator.canPop(context)) {
             Navigator.of(context, rootNavigator: true).pop();
           }
@@ -1115,6 +1104,7 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
           }
         } else if (normalized == 'failed' || normalized == 'canceled') {
           _paymentTimer?.cancel();
+          if (!mounted) return;
           if (Navigator.canPop(context)) {
             Navigator.of(context, rootNavigator: true).pop();
           }
@@ -1248,7 +1238,7 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
           return AnimatedContainer(
             duration: const Duration(milliseconds: 200),
             decoration: BoxDecoration(
-              color: selected ? packColor.withOpacity(0.16) : Colors.white,
+              color: selected ? packColor.withValues(alpha: 0.16) : Colors.white,
               borderRadius: BorderRadius.circular(16),
               border: Border.all(
                 color: selected ? packColor : Colors.grey.shade200,
@@ -1256,7 +1246,7 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
               ),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.04),
+                  color: Colors.black.withValues(alpha: 0.04),
                   blurRadius: 8,
                   offset: const Offset(0, 4),
                 ),
@@ -1280,7 +1270,7 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
                             child: Container(
                               height: 72,
                               width: 72,
-                              color: packColor.withOpacity(0.12),
+                              color: packColor.withValues(alpha: 0.12),
                               child: Image.network(
                                 imageUrl,
                                 fit: BoxFit.cover,
@@ -1296,7 +1286,7 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
                             height: 72,
                             width: 72,
                             decoration: BoxDecoration(
-                              color: packColor.withOpacity(0.15),
+                              color: packColor.withValues(alpha: 0.15),
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: const Icon(Icons.auto_awesome),
@@ -1466,7 +1456,7 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
               labelText: loc.smsPacksSavedAddressesLabel,
               border: const OutlineInputBorder(),
             ),
-            value: _selectedAddressId,
+            initialValue: _selectedAddressId,
             isExpanded: true,
             onChanged: (val) {
               if (val == null) return;
@@ -1570,7 +1560,7 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
               labelText: loc.smsPacksCountry,
               border: const OutlineInputBorder(),
             ),
-            value: _selectedCountryId,
+            initialValue: _selectedCountryId,
             onChanged: (val) {
               if (val == null) return;
               _onCountryChanged(val);
@@ -1614,7 +1604,7 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
               labelText: loc.smsPacksCity,
               border: const OutlineInputBorder(),
             ),
-            value: _selectedCityId,
+            initialValue: _selectedCityId,
             onChanged: _cities.isEmpty ? null : _onCityChanged,
             items: _cities
                 .map(
@@ -1649,7 +1639,7 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
               labelText: loc.smsPacksDistrict,
               border: const OutlineInputBorder(),
             ),
-            value: _selectedDistrictId,
+            initialValue: _selectedDistrictId,
             onChanged: _districts.isEmpty
                 ? null
                 : (val) {
@@ -1675,7 +1665,7 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
             border: const OutlineInputBorder(),
             prefixText:
                 _selectedPhoneCode != null && _selectedPhoneCode!.isNotEmpty
-                    ? '+${_selectedPhoneCode} '
+                    ? '+$_selectedPhoneCode '
                     : null,
           ),
         ),
@@ -1722,7 +1712,7 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
               labelText: 'Ödeme Yöntemi',
               border: OutlineInputBorder(),
             ),
-            value: _selectedPayment,
+            initialValue: _selectedPayment,
             onChanged: (val) {
               if (val == null) return;
               setState(() {
@@ -1881,9 +1871,9 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
         Text('${loc.smsPacksPaymentLabel}: $paymentLabel'),
         if (_isIosPaymentRestricted) ...[
           const SizedBox(height: 8),
-          const Text(
-            _iosPurchaseRestrictionMessage,
-            style: TextStyle(
+          Text(
+            loc.iosSmsPurchaseRestrictionMessage,
+            style: const TextStyle(
               color: Colors.orange,
               fontWeight: FontWeight.w600,
             ),
@@ -1975,7 +1965,7 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
       }
     } else {
       if (_isIosPaymentRestricted) {
-        _showSnack(_iosPurchaseRestrictionMessage);
+        _showSnack(loc.iosSmsPurchaseRestrictionMessage);
         return;
       }
       _purchasePack();
@@ -2097,14 +2087,14 @@ class _PaymentPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return WillPopScope(
-      onWillPop: () async {
-        onExit();
-        return true;
+    return PopScope(
+      canPop: true,
+      onPopInvokedWithResult: (didPop, _) {
+        if (didPop) onExit();
       },
       child: Scaffold(
         appBar: AppBar(
-          title: Text(AppLocalizations.of(context)!.smsPacksPaymentLabel),
+          title: Text(AppLocalizations.of(context).smsPacksPaymentLabel),
           actions: [
             IconButton(
               icon: const Icon(Icons.close),

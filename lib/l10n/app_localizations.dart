@@ -176,6 +176,264 @@ abstract class AppLocalizations {
   /// **'My Links'**
   String get myLinks;
 
+  /// No description provided for @customersTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'My Contacts'**
+  String get customersTitle;
+
+  /// No description provided for @customersSessionMissing.
+  ///
+  /// In en, this message translates to:
+  /// **'Session not found. Please log in again.'**
+  String get customersSessionMissing;
+
+  /// No description provided for @customersLoadFailedStatus.
+  ///
+  /// In en, this message translates to:
+  /// **'Customers could not be loaded (HTTP {status}).'**
+  String customersLoadFailedStatus(Object status);
+
+  /// No description provided for @customersLoadFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Customers could not be loaded: {error}'**
+  String customersLoadFailed(Object error);
+
+  /// No description provided for @customersSearchHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Search contact (name, phone, email)'**
+  String get customersSearchHint;
+
+  /// No description provided for @customersRetry.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry'**
+  String get customersRetry;
+
+  /// No description provided for @customersEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No contacts yet.'**
+  String get customersEmpty;
+
+  /// No description provided for @customersLoadMore.
+  ///
+  /// In en, this message translates to:
+  /// **'Load more'**
+  String get customersLoadMore;
+
+  /// No description provided for @customersRefresh.
+  ///
+  /// In en, this message translates to:
+  /// **'Refresh'**
+  String get customersRefresh;
+
+  /// No description provided for @customersAdd.
+  ///
+  /// In en, this message translates to:
+  /// **'Add Contact'**
+  String get customersAdd;
+
+  /// No description provided for @customersEdit.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit Contact'**
+  String get customersEdit;
+
+  /// No description provided for @customersDelete.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete'**
+  String get customersDelete;
+
+  /// No description provided for @customersDeleteConfirmTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete contact?'**
+  String get customersDeleteConfirmTitle;
+
+  /// No description provided for @customersDeleteConfirmBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Are you sure you want to delete this contact?'**
+  String get customersDeleteConfirmBody;
+
+  /// No description provided for @customersCancel.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel'**
+  String get customersCancel;
+
+  /// No description provided for @customersSave.
+  ///
+  /// In en, this message translates to:
+  /// **'Save'**
+  String get customersSave;
+
+  /// No description provided for @customersSaving.
+  ///
+  /// In en, this message translates to:
+  /// **'Saving...'**
+  String get customersSaving;
+
+  /// No description provided for @customersName.
+  ///
+  /// In en, this message translates to:
+  /// **'Full Name'**
+  String get customersName;
+
+  /// No description provided for @customersPhone.
+  ///
+  /// In en, this message translates to:
+  /// **'Phone'**
+  String get customersPhone;
+
+  /// No description provided for @customersEmail.
+  ///
+  /// In en, this message translates to:
+  /// **'Email'**
+  String get customersEmail;
+
+  /// No description provided for @customersAddress.
+  ///
+  /// In en, this message translates to:
+  /// **'Address'**
+  String get customersAddress;
+
+  /// No description provided for @customersNotes.
+  ///
+  /// In en, this message translates to:
+  /// **'Notes'**
+  String get customersNotes;
+
+  /// No description provided for @customersValidation.
+  ///
+  /// In en, this message translates to:
+  /// **'Full Name and Phone are required.'**
+  String get customersValidation;
+
+  /// No description provided for @customersCreateSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Contact created.'**
+  String get customersCreateSuccess;
+
+  /// No description provided for @customersUpdateSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Contact updated.'**
+  String get customersUpdateSuccess;
+
+  /// No description provided for @customersSaveFailedStatus.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not be saved (HTTP {status}).'**
+  String customersSaveFailedStatus(Object status);
+
+  /// No description provided for @customersSaveFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not be saved: {error}'**
+  String customersSaveFailed(Object error);
+
+  /// No description provided for @customersDeleteSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Contact deleted.'**
+  String get customersDeleteSuccess;
+
+  /// No description provided for @customersDeleteFailedStatus.
+  ///
+  /// In en, this message translates to:
+  /// **'Contact could not be deleted (HTTP {status}).'**
+  String customersDeleteFailedStatus(Object status);
+
+  /// No description provided for @customersDeleteFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Contact could not be deleted: {error}'**
+  String customersDeleteFailed(Object error);
+
+  /// No description provided for @customersAppointments.
+  ///
+  /// In en, this message translates to:
+  /// **'Appointments'**
+  String get customersAppointments;
+
+  /// No description provided for @customersNoAppointments.
+  ///
+  /// In en, this message translates to:
+  /// **'No appointments for this contact.'**
+  String get customersNoAppointments;
+
+  /// No description provided for @customersAppointmentsLoadFailedStatus.
+  ///
+  /// In en, this message translates to:
+  /// **'Appointments could not be loaded (HTTP {status}).'**
+  String customersAppointmentsLoadFailedStatus(Object status);
+
+  /// No description provided for @customersAppointmentsLoadFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Appointments could not be loaded: {error}'**
+  String customersAppointmentsLoadFailed(Object error);
+
+  /// No description provided for @customersCreateAppointment.
+  ///
+  /// In en, this message translates to:
+  /// **'Add Appointment'**
+  String get customersCreateAppointment;
+
+  /// No description provided for @customersAppointmentDate.
+  ///
+  /// In en, this message translates to:
+  /// **'Date'**
+  String get customersAppointmentDate;
+
+  /// No description provided for @customersAppointmentTime.
+  ///
+  /// In en, this message translates to:
+  /// **'Time'**
+  String get customersAppointmentTime;
+
+  /// No description provided for @customersAppointmentNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Note'**
+  String get customersAppointmentNote;
+
+  /// No description provided for @customersFirstAppointment.
+  ///
+  /// In en, this message translates to:
+  /// **'First appointment?'**
+  String get customersFirstAppointment;
+
+  /// No description provided for @customersNoSms.
+  ///
+  /// In en, this message translates to:
+  /// **'Do not send SMS'**
+  String get customersNoSms;
+
+  /// No description provided for @customersNoReminder.
+  ///
+  /// In en, this message translates to:
+  /// **'Do not send reminder'**
+  String get customersNoReminder;
+
+  /// No description provided for @customersCreateAppointmentSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Appointment created.'**
+  String get customersCreateAppointmentSuccess;
+
+  /// No description provided for @customersCreateAppointmentFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Appointment could not be created.'**
+  String get customersCreateAppointmentFailed;
+
   /// No description provided for @themes.
   ///
   /// In en, this message translates to:
@@ -217,6 +475,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Manage your links and appointments in one place.'**
   String get dashboardHeroSubtitle;
+
+  /// No description provided for @dashboardQuickActions.
+  ///
+  /// In en, this message translates to:
+  /// **'Quick Actions'**
+  String get dashboardQuickActions;
+
+  /// No description provided for @dashboardMenuMain.
+  ///
+  /// In en, this message translates to:
+  /// **'MAIN MENU'**
+  String get dashboardMenuMain;
+
+  /// No description provided for @dashboardMenuManagement.
+  ///
+  /// In en, this message translates to:
+  /// **'MANAGEMENT'**
+  String get dashboardMenuManagement;
 
   /// No description provided for @dashboardDrawerSubtitle.
   ///
@@ -733,6 +1009,336 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'No appointments yet.'**
   String get appointmentsEmpty;
+
+  /// No description provided for @appointmentsCountLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} records'**
+  String appointmentsCountLabel(Object count);
+
+  /// No description provided for @appointmentsFilterSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Filter by customer, date and time range'**
+  String get appointmentsFilterSubtitle;
+
+  /// No description provided for @appointmentsPackageRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Please purchase a package for appointment actions.'**
+  String get appointmentsPackageRequired;
+
+  /// No description provided for @appointmentsSessionMissingLogin.
+  ///
+  /// In en, this message translates to:
+  /// **'Session not found. Please log in again.'**
+  String get appointmentsSessionMissingLogin;
+
+  /// No description provided for @appointmentsCountriesFetchFailedStatus.
+  ///
+  /// In en, this message translates to:
+  /// **'Countries could not be fetched (HTTP {status}).'**
+  String appointmentsCountriesFetchFailedStatus(Object status);
+
+  /// No description provided for @appointmentsCountriesFetchFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Countries could not be fetched: {error}'**
+  String appointmentsCountriesFetchFailed(Object error);
+
+  /// No description provided for @appointmentsStatusesFetchFailedStatus.
+  ///
+  /// In en, this message translates to:
+  /// **'Statuses could not be fetched (HTTP {status}).'**
+  String appointmentsStatusesFetchFailedStatus(Object status);
+
+  /// No description provided for @appointmentsStatusesFetchFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Statuses could not be fetched: {error}'**
+  String appointmentsStatusesFetchFailed(Object error);
+
+  /// No description provided for @appointmentsInvalidStartTime.
+  ///
+  /// In en, this message translates to:
+  /// **'Invalid start time. Format HH:MM'**
+  String get appointmentsInvalidStartTime;
+
+  /// No description provided for @appointmentsInvalidEndTime.
+  ///
+  /// In en, this message translates to:
+  /// **'Invalid end time. Format HH:MM'**
+  String get appointmentsInvalidEndTime;
+
+  /// No description provided for @appointmentsRequiredFields.
+  ///
+  /// In en, this message translates to:
+  /// **'Name, lastname, country, phone, date and time are required.'**
+  String get appointmentsRequiredFields;
+
+  /// No description provided for @appointmentsSelectAvailableTime.
+  ///
+  /// In en, this message translates to:
+  /// **'Please select an available time.'**
+  String get appointmentsSelectAvailableTime;
+
+  /// No description provided for @appointmentsCreateSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Appointment created.'**
+  String get appointmentsCreateSuccess;
+
+  /// No description provided for @appointmentsCreateFailedStatus.
+  ///
+  /// In en, this message translates to:
+  /// **'Appointment could not be created (HTTP {status}).'**
+  String appointmentsCreateFailedStatus(Object status);
+
+  /// No description provided for @appointmentsCreateFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Appointment could not be created: {error}'**
+  String appointmentsCreateFailed(Object error);
+
+  /// No description provided for @appointmentsEnterDateFirst.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a date first.'**
+  String get appointmentsEnterDateFirst;
+
+  /// No description provided for @appointmentsSlotsFetchFailedStatus.
+  ///
+  /// In en, this message translates to:
+  /// **'Time slots could not be fetched (HTTP {status}).'**
+  String appointmentsSlotsFetchFailedStatus(Object status);
+
+  /// No description provided for @appointmentsSlotsFetchFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Time slots could not be fetched: {error}'**
+  String appointmentsSlotsFetchFailed(Object error);
+
+  /// No description provided for @appointmentsDateTimeRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Date and time are required.'**
+  String get appointmentsDateTimeRequired;
+
+  /// No description provided for @appointmentsUpdateSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Appointment updated.'**
+  String get appointmentsUpdateSuccess;
+
+  /// No description provided for @appointmentsUpdateFailedStatus.
+  ///
+  /// In en, this message translates to:
+  /// **'Appointment could not be updated (HTTP {status}).'**
+  String appointmentsUpdateFailedStatus(Object status);
+
+  /// No description provided for @appointmentsUpdateFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Appointment could not be updated: {error}'**
+  String appointmentsUpdateFailed(Object error);
+
+  /// No description provided for @appointmentsStatusMissing.
+  ///
+  /// In en, this message translates to:
+  /// **'Appointment status not found.'**
+  String get appointmentsStatusMissing;
+
+  /// No description provided for @appointmentsRebookSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'New appointment created.'**
+  String get appointmentsRebookSuccess;
+
+  /// No description provided for @appointmentsInfoMissing.
+  ///
+  /// In en, this message translates to:
+  /// **'Appointment info not found.'**
+  String get appointmentsInfoMissing;
+
+  /// No description provided for @appointmentsInfoFetchFailedStatus.
+  ///
+  /// In en, this message translates to:
+  /// **'Information could not be fetched (HTTP {status}).'**
+  String appointmentsInfoFetchFailedStatus(Object status);
+
+  /// No description provided for @appointmentsInfoFetchFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Information could not be fetched: {error}'**
+  String appointmentsInfoFetchFailed(Object error);
+
+  /// No description provided for @appointmentsNoRecords.
+  ///
+  /// In en, this message translates to:
+  /// **'No records found.'**
+  String get appointmentsNoRecords;
+
+  /// No description provided for @appointmentsClose.
+  ///
+  /// In en, this message translates to:
+  /// **'Close'**
+  String get appointmentsClose;
+
+  /// No description provided for @appointmentsClear.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear'**
+  String get appointmentsClear;
+
+  /// No description provided for @appointmentsCountry.
+  ///
+  /// In en, this message translates to:
+  /// **'Country'**
+  String get appointmentsCountry;
+
+  /// No description provided for @appointmentsSelectCountry.
+  ///
+  /// In en, this message translates to:
+  /// **'Select country'**
+  String get appointmentsSelectCountry;
+
+  /// No description provided for @appointmentsFieldName.
+  ///
+  /// In en, this message translates to:
+  /// **'Name'**
+  String get appointmentsFieldName;
+
+  /// No description provided for @appointmentsFieldNameHint.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. Alex'**
+  String get appointmentsFieldNameHint;
+
+  /// No description provided for @appointmentsFieldLastName.
+  ///
+  /// In en, this message translates to:
+  /// **'Lastname'**
+  String get appointmentsFieldLastName;
+
+  /// No description provided for @appointmentsFieldLastNameHint.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. Brown'**
+  String get appointmentsFieldLastNameHint;
+
+  /// No description provided for @appointmentsFieldNameFilterHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Customer name'**
+  String get appointmentsFieldNameFilterHint;
+
+  /// No description provided for @appointmentsFieldLastNameFilterHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Customer lastname'**
+  String get appointmentsFieldLastNameFilterHint;
+
+  /// No description provided for @appointmentsFieldPhone.
+  ///
+  /// In en, this message translates to:
+  /// **'Phone'**
+  String get appointmentsFieldPhone;
+
+  /// No description provided for @appointmentsFieldPhoneHint.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. 5554443322'**
+  String get appointmentsFieldPhoneHint;
+
+  /// No description provided for @appointmentsFieldEmailHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Optional'**
+  String get appointmentsFieldEmailHint;
+
+  /// No description provided for @appointmentsStatusSelectHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Select status'**
+  String get appointmentsStatusSelectHint;
+
+  /// No description provided for @appointmentsStartDate.
+  ///
+  /// In en, this message translates to:
+  /// **'Start Date'**
+  String get appointmentsStartDate;
+
+  /// No description provided for @appointmentsEndDate.
+  ///
+  /// In en, this message translates to:
+  /// **'End Date'**
+  String get appointmentsEndDate;
+
+  /// No description provided for @appointmentsStartTime.
+  ///
+  /// In en, this message translates to:
+  /// **'Start Time'**
+  String get appointmentsStartTime;
+
+  /// No description provided for @appointmentsEndTime.
+  ///
+  /// In en, this message translates to:
+  /// **'End Time'**
+  String get appointmentsEndTime;
+
+  /// No description provided for @appointmentsBuyPackage.
+  ///
+  /// In en, this message translates to:
+  /// **'Buy Package'**
+  String get appointmentsBuyPackage;
+
+  /// No description provided for @appointmentsFirstAppointment.
+  ///
+  /// In en, this message translates to:
+  /// **'Is this first appointment?'**
+  String get appointmentsFirstAppointment;
+
+  /// No description provided for @appointmentsReminderDisableTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Do not send reminder'**
+  String get appointmentsReminderDisableTitle;
+
+  /// No description provided for @appointmentsSubmitting.
+  ///
+  /// In en, this message translates to:
+  /// **'Submitting...'**
+  String get appointmentsSubmitting;
+
+  /// No description provided for @appointmentsCustomerPreviewTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Customer preview'**
+  String get appointmentsCustomerPreviewTooltip;
+
+  /// No description provided for @appointmentsRebookTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Rebook appointment'**
+  String get appointmentsRebookTooltip;
+
+  /// No description provided for @appointmentsEditTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit'**
+  String get appointmentsEditTooltip;
+
+  /// No description provided for @appointmentsHomeTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Home'**
+  String get appointmentsHomeTooltip;
+
+  /// No description provided for @iosSmsPurchaseRestrictionMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'SMS package purchasing is not supported in the iOS app due to Apple App Store policies.\nPurchases can be completed on the website.'**
+  String get iosSmsPurchaseRestrictionMessage;
 
   /// No description provided for @appointmentsFetchFailedStatus.
   ///
@@ -2635,6 +3241,66 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Template #{id}'**
   String smsTemplatesFallbackTitle(Object id);
+
+  /// No description provided for @smsTemplatesGuideTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Template Selection'**
+  String get smsTemplatesGuideTitle;
+
+  /// No description provided for @smsTemplatesGuideBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Select one SMS template for each category.'**
+  String get smsTemplatesGuideBody;
+
+  /// No description provided for @smsTemplatesGuideHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap cards to select templates. The selected card is highlighted and reflected in the live preview below.'**
+  String get smsTemplatesGuideHint;
+
+  /// No description provided for @smsTemplatesMainDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Message sent when a new appointment is created.'**
+  String get smsTemplatesMainDescription;
+
+  /// No description provided for @smsTemplatesReminderDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Message sent as a reminder before the appointment.'**
+  String get smsTemplatesReminderDescription;
+
+  /// No description provided for @smsTemplatesCancelDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Message sent when an appointment is cancelled.'**
+  String get smsTemplatesCancelDescription;
+
+  /// No description provided for @smsTemplatesUpdateDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Message sent when appointment date/time is updated.'**
+  String get smsTemplatesUpdateDescription;
+
+  /// No description provided for @smsTemplatesPreviewTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Live Preview'**
+  String get smsTemplatesPreviewTitle;
+
+  /// No description provided for @smsTemplatesPreviewEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No template selected for this category yet.'**
+  String get smsTemplatesPreviewEmpty;
+
+  /// No description provided for @smsTemplatesSelected.
+  ///
+  /// In en, this message translates to:
+  /// **'Selected'**
+  String get smsTemplatesSelected;
 
   /// No description provided for @supportTitle.
   ///

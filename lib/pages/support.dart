@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:bagla_mobile/l10n/app_localizations.dart';
+import 'package:bagla_mobile/main_tabs_page.dart';
 
 class SupportPage extends StatefulWidget {
   const SupportPage({super.key});
@@ -14,7 +15,7 @@ class SupportPage extends StatefulWidget {
 }
 
 class _SupportPageState extends State<SupportPage> {
-  AppLocalizations get loc => AppLocalizations.of(context)!;
+  AppLocalizations get loc => AppLocalizations.of(context);
   final TextEditingController _titleController = TextEditingController();
   final TextEditingController _messageController = TextEditingController();
   static const Color _backgroundColor = Color(0xFFF7F9FC);
@@ -24,6 +25,24 @@ class _SupportPageState extends State<SupportPage> {
   bool _loading = true;
   bool _creating = false;
   String? _error;
+
+  void _goHome() {
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute(
+        builder: (_) => const MainTabsPage(initialIndex: 0),
+      ),
+      (_) => false,
+    );
+  }
+
+  void _goBack() {
+    final navigator = Navigator.of(context);
+    if (navigator.canPop()) {
+      navigator.pop();
+      return;
+    }
+    _goHome();
+  }
 
   @override
   void initState() {
@@ -176,7 +195,7 @@ class _SupportPageState extends State<SupportPage> {
         border: Border.all(color: Colors.grey.shade200),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.03),
+            color: Colors.black.withValues(alpha: 0.03),
             blurRadius: 10,
             offset: const Offset(0, 6),
           )
@@ -270,13 +289,26 @@ class _SupportPageState extends State<SupportPage> {
     return Scaffold(
       backgroundColor: _backgroundColor,
       appBar: AppBar(
+        automaticallyImplyLeading: false,
         elevation: 0,
         backgroundColor: Colors.white,
         foregroundColor: Colors.black87,
+        leading: IconButton(
+          tooltip: MaterialLocalizations.of(context).backButtonTooltip,
+          onPressed: _goBack,
+          icon: const Icon(Icons.arrow_back),
+        ),
         title: Text(
           loc.supportTitle,
           style: const TextStyle(fontWeight: FontWeight.w700),
         ),
+        actions: [
+          IconButton(
+            tooltip: loc.dashboardHome,
+            onPressed: _goHome,
+            icon: const Icon(Icons.home_outlined),
+          ),
+        ],
       ),
       body: RefreshIndicator(
         onRefresh: _fetchTickets,
@@ -327,7 +359,7 @@ class _SupportPageState extends State<SupportPage> {
                     border: Border.all(color: Colors.grey.shade200),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.03),
+                        color: Colors.black.withValues(alpha: 0.03),
                         blurRadius: 8,
                         offset: const Offset(0, 4),
                       )
@@ -355,7 +387,7 @@ class _SupportPageState extends State<SupportPage> {
                               decoration: BoxDecoration(
                                 color: _statusColor(
                                         ticket['status']?.toString())
-                                    .withOpacity(0.1),
+                                    .withValues(alpha: 0.1),
                                 borderRadius: BorderRadius.circular(10),
                               ),
                               child: Text(
@@ -478,7 +510,7 @@ class _TicketDetailSheet extends StatefulWidget {
 }
 
 class _TicketDetailSheetState extends State<_TicketDetailSheet> {
-  AppLocalizations get loc => AppLocalizations.of(context)!;
+  AppLocalizations get loc => AppLocalizations.of(context);
   Map<String, dynamic>? _ticket;
   bool _loading = true;
   bool _replying = false;
@@ -762,7 +794,7 @@ class _TicketDetailSheetState extends State<_TicketDetailSheet> {
                   const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
               decoration: BoxDecoration(
                 color: widget.statusColor(_ticket?['status']?.toString())
-                    .withOpacity(0.1),
+                    .withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Text(
@@ -826,11 +858,12 @@ class _TicketDetailSheetState extends State<_TicketDetailSheet> {
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
           color: (isOwner ? Colors.blue : Colors.grey.shade300)
-              .withOpacity(0.12),
+              .withValues(alpha: 0.12),
           borderRadius: BorderRadius.circular(10),
           border: Border.all(
             color:
-                (isOwner ? Colors.blue : Colors.grey.shade500).withOpacity(0.3),
+                (isOwner ? Colors.blue : Colors.grey.shade500)
+                    .withValues(alpha: 0.3),
           ),
         ),
         child: Column(
@@ -873,7 +906,7 @@ class _TicketDetailSheetState extends State<_TicketDetailSheet> {
         borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 6,
             offset: const Offset(0, -2),
           ),

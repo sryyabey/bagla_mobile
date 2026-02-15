@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:bagla_mobile/l10n/app_localizations.dart';
+import 'package:bagla_mobile/main_tabs_page.dart';
 
 class WorkingPreferencesPage extends StatefulWidget {
   const WorkingPreferencesPage({super.key});
@@ -14,7 +15,7 @@ class WorkingPreferencesPage extends StatefulWidget {
 }
 
 class _WorkingPreferencesPageState extends State<WorkingPreferencesPage> {
-  AppLocalizations get loc => AppLocalizations.of(context)!;
+  AppLocalizations get loc => AppLocalizations.of(context);
   static const Color _backgroundColor = Color(0xFFF7F9FC);
   static const Color _primaryColor = Color(0xFF6366F1);
 
@@ -29,6 +30,24 @@ class _WorkingPreferencesPageState extends State<WorkingPreferencesPage> {
       List.generate(24, (index) => (index + 1) * 5);
   late final List<String> _timeOptions = _buildTimeOptions();
 
+  void _goHome() {
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute(
+        builder: (_) => const MainTabsPage(initialIndex: 0),
+      ),
+      (_) => false,
+    );
+  }
+
+  void _goBack() {
+    final navigator = Navigator.of(context);
+    if (navigator.canPop()) {
+      navigator.pop();
+      return;
+    }
+    _goHome();
+  }
+
   static List<_DayPreference> _defaultPreferences() {
     return List.generate(
       7,
@@ -41,16 +60,6 @@ class _WorkingPreferencesPageState extends State<WorkingPreferencesPage> {
       ),
     );
   }
-
-  final List<String> _dayNames = const [
-    'dayMonFull',
-    'dayTueFull',
-    'dayWedFull',
-    'dayThuFull',
-    'dayFriFull',
-    'daySatFull',
-    'daySunFull',
-  ];
 
   @override
   void initState() {
@@ -229,7 +238,7 @@ class _WorkingPreferencesPageState extends State<WorkingPreferencesPage> {
         border: Border.all(color: Colors.grey.shade200),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.03),
+            color: Colors.black.withValues(alpha: 0.03),
             blurRadius: 10,
             offset: const Offset(0, 6),
           )
@@ -400,13 +409,26 @@ class _WorkingPreferencesPageState extends State<WorkingPreferencesPage> {
     return Scaffold(
       backgroundColor: _backgroundColor,
       appBar: AppBar(
+        automaticallyImplyLeading: false,
         elevation: 0,
         backgroundColor: Colors.white,
         foregroundColor: Colors.black87,
+        leading: IconButton(
+          tooltip: MaterialLocalizations.of(context).backButtonTooltip,
+          onPressed: _goBack,
+          icon: const Icon(Icons.arrow_back),
+        ),
         title: Text(
           loc.workingPrefsTitle,
           style: const TextStyle(fontWeight: FontWeight.w700),
         ),
+        actions: [
+          IconButton(
+            tooltip: loc.dashboardHome,
+            onPressed: _goHome,
+            icon: const Icon(Icons.home_outlined),
+          ),
+        ],
       ),
       body: _buildBody(),
     );
@@ -453,7 +475,7 @@ class _WorkingPreferencesPageState extends State<WorkingPreferencesPage> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 DropdownButtonFormField<int>(
-                  value: _firstAppointmentSessionCount,
+                  initialValue: _firstAppointmentSessionCount,
                   decoration: InputDecoration(
                     labelText: loc.workingPrefsSelect,
                     border: OutlineInputBorder(
@@ -482,7 +504,7 @@ class _WorkingPreferencesPageState extends State<WorkingPreferencesPage> {
             ),
           ),
           const SizedBox(height: 12),
-          ..._preferences.map(_buildDayCard).toList(),
+          ..._preferences.map(_buildDayCard),
           const SizedBox(height: 12),
           _buildHolidaysCard(),
           const SizedBox(height: 20),
@@ -567,7 +589,7 @@ class _WorkingPreferencesPageState extends State<WorkingPreferencesPage> {
               key: ValueKey('start-${pref.dayOfWeek}-$index-${slot.start}'),
               isExpanded: true,
               isDense: true,
-              value: _initialTimeValue(startOptions, slot.start),
+              initialValue: _initialTimeValue(startOptions, slot.start),
               items: startOptions
                   .map(
                     (t) => DropdownMenuItem(
@@ -594,7 +616,7 @@ class _WorkingPreferencesPageState extends State<WorkingPreferencesPage> {
               key: ValueKey('end-${pref.dayOfWeek}-$index-${slot.end}'),
               isExpanded: true,
               isDense: true,
-              value: _initialTimeValue(endOptions, slot.end),
+              initialValue: _initialTimeValue(endOptions, slot.end),
               items: endOptions
                   .map(
                     (t) => DropdownMenuItem(
@@ -622,7 +644,7 @@ class _WorkingPreferencesPageState extends State<WorkingPreferencesPage> {
               isDense: true,
               isExpanded: true,
               iconSize: 20,
-              value: _initialPeriodValue(periodOptions, slot.period),
+              initialValue: _initialPeriodValue(periodOptions, slot.period),
               items: periodOptions
                   .map(
                     (p) => DropdownMenuItem(

@@ -13,6 +13,49 @@
   "onboardDesc3": "Begin free, publish your bio link instantly, upgrade only when you need extras.",
   "menuTitle": "Menu",
   "myLinks": "My Links",
+  "customersTitle": "My Contacts",
+  "customersSessionMissing": "Session not found. Please log in again.",
+  "customersLoadFailedStatus": "Customers could not be loaded (HTTP {status}).",
+  "customersLoadFailed": "Customers could not be loaded: {error}",
+  "customersSearchHint": "Search contact (name, phone, email)",
+  "customersRetry": "Retry",
+  "customersEmpty": "No contacts yet.",
+  "customersLoadMore": "Load more",
+  "customersRefresh": "Refresh",
+  "customersAdd": "Add Contact",
+  "customersEdit": "Edit Contact",
+  "customersDelete": "Delete",
+  "customersDeleteConfirmTitle": "Delete contact?",
+  "customersDeleteConfirmBody": "Are you sure you want to delete this contact?",
+  "customersCancel": "Cancel",
+  "customersSave": "Save",
+  "customersSaving": "Saving...",
+  "customersName": "Full Name",
+  "customersPhone": "Phone",
+  "customersEmail": "Email",
+  "customersAddress": "Address",
+  "customersNotes": "Notes",
+  "customersValidation": "Full Name and Phone are required.",
+  "customersCreateSuccess": "Contact created.",
+  "customersUpdateSuccess": "Contact updated.",
+  "customersSaveFailedStatus": "Could not be saved (HTTP {status}).",
+  "customersSaveFailed": "Could not be saved: {error}",
+  "customersDeleteSuccess": "Contact deleted.",
+  "customersDeleteFailedStatus": "Contact could not be deleted (HTTP {status}).",
+  "customersDeleteFailed": "Contact could not be deleted: {error}",
+  "customersAppointments": "Appointments",
+  "customersNoAppointments": "No appointments for this contact.",
+  "customersAppointmentsLoadFailedStatus": "Appointments could not be loaded (HTTP {status}).",
+  "customersAppointmentsLoadFailed": "Appointments could not be loaded: {error}",
+  "customersCreateAppointment": "Add Appointment",
+  "customersAppointmentDate": "Date",
+  "customersAppointmentTime": "Time",
+  "customersAppointmentNote": "Note",
+  "customersFirstAppointment": "First appointment?",
+  "customersNoSms": "Do not send SMS",
+  "customersNoReminder": "Do not send reminder",
+  "customersCreateAppointmentSuccess": "Appointment created.",
+  "customersCreateAppointmentFailed": "Appointment could not be created.",
   "themes": "Themes",
   "profile": "Profile",
   "support": "Support",
@@ -20,6 +63,9 @@
   "loginButton": "Login",
   "dashboardTitle": "Admin Panel",
   "dashboardHeroSubtitle": "Manage your links and appointments in one place.",
+  "dashboardQuickActions": "Quick Actions",
+  "dashboardMenuMain": "MAIN MENU",
+  "dashboardMenuManagement": "MANAGEMENT",
   "dashboardDrawerSubtitle": "Manage your appointments and contacts here",
   "dashboardTopClicks": "Total Clicks",
   "dashboardRemainingSms": "Remaining SMS",
@@ -106,6 +152,126 @@
   "createAccountEmail": "Create account with email",
   "appointmentsTitle": "Appointments",
   "appointmentsEmpty": "No appointments yet.",
+  "appointmentsCountLabel": "{count} records",
+  "@appointmentsCountLabel": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "appointmentsFilterSubtitle": "Filter by customer, date and time range",
+  "appointmentsPackageRequired": "Please purchase a package for appointment actions.",
+  "appointmentsSessionMissingLogin": "Session not found. Please log in again.",
+  "appointmentsCountriesFetchFailedStatus": "Countries could not be fetched (HTTP {status}).",
+  "@appointmentsCountriesFetchFailedStatus": {
+    "placeholders": {
+      "status": {}
+    }
+  },
+  "appointmentsCountriesFetchFailed": "Countries could not be fetched: {error}",
+  "@appointmentsCountriesFetchFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "appointmentsStatusesFetchFailedStatus": "Statuses could not be fetched (HTTP {status}).",
+  "@appointmentsStatusesFetchFailedStatus": {
+    "placeholders": {
+      "status": {}
+    }
+  },
+  "appointmentsStatusesFetchFailed": "Statuses could not be fetched: {error}",
+  "@appointmentsStatusesFetchFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "appointmentsInvalidStartTime": "Invalid start time. Format HH:MM",
+  "appointmentsInvalidEndTime": "Invalid end time. Format HH:MM",
+  "appointmentsRequiredFields": "Name, lastname, country, phone, date and time are required.",
+  "appointmentsSelectAvailableTime": "Please select an available time.",
+  "appointmentsCreateSuccess": "Appointment created.",
+  "appointmentsCreateFailedStatus": "Appointment could not be created (HTTP {status}).",
+  "@appointmentsCreateFailedStatus": {
+    "placeholders": {
+      "status": {}
+    }
+  },
+  "appointmentsCreateFailed": "Appointment could not be created: {error}",
+  "@appointmentsCreateFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "appointmentsEnterDateFirst": "Enter a date first.",
+  "appointmentsSlotsFetchFailedStatus": "Time slots could not be fetched (HTTP {status}).",
+  "@appointmentsSlotsFetchFailedStatus": {
+    "placeholders": {
+      "status": {}
+    }
+  },
+  "appointmentsSlotsFetchFailed": "Time slots could not be fetched: {error}",
+  "@appointmentsSlotsFetchFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "appointmentsDateTimeRequired": "Date and time are required.",
+  "appointmentsUpdateSuccess": "Appointment updated.",
+  "appointmentsUpdateFailedStatus": "Appointment could not be updated (HTTP {status}).",
+  "@appointmentsUpdateFailedStatus": {
+    "placeholders": {
+      "status": {}
+    }
+  },
+  "appointmentsUpdateFailed": "Appointment could not be updated: {error}",
+  "@appointmentsUpdateFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "appointmentsStatusMissing": "Appointment status not found.",
+  "appointmentsRebookSuccess": "New appointment created.",
+  "appointmentsInfoMissing": "Appointment info not found.",
+  "appointmentsInfoFetchFailedStatus": "Information could not be fetched (HTTP {status}).",
+  "@appointmentsInfoFetchFailedStatus": {
+    "placeholders": {
+      "status": {}
+    }
+  },
+  "appointmentsInfoFetchFailed": "Information could not be fetched: {error}",
+  "@appointmentsInfoFetchFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "appointmentsNoRecords": "No records found.",
+  "appointmentsClose": "Close",
+  "appointmentsClear": "Clear",
+  "appointmentsCountry": "Country",
+  "appointmentsSelectCountry": "Select country",
+  "appointmentsFieldName": "Name",
+  "appointmentsFieldNameHint": "e.g. Alex",
+  "appointmentsFieldLastName": "Lastname",
+  "appointmentsFieldLastNameHint": "e.g. Brown",
+  "appointmentsFieldNameFilterHint": "Customer name",
+  "appointmentsFieldLastNameFilterHint": "Customer lastname",
+  "appointmentsFieldPhone": "Phone",
+  "appointmentsFieldPhoneHint": "e.g. 5554443322",
+  "appointmentsFieldEmailHint": "Optional",
+  "appointmentsStatusSelectHint": "Select status",
+  "appointmentsStartDate": "Start Date",
+  "appointmentsEndDate": "End Date",
+  "appointmentsStartTime": "Start Time",
+  "appointmentsEndTime": "End Time",
+  "appointmentsBuyPackage": "Buy Package",
+  "appointmentsFirstAppointment": "Is this first appointment?",
+  "appointmentsReminderDisableTitle": "Do not send reminder",
+  "appointmentsSubmitting": "Submitting...",
+  "appointmentsCustomerPreviewTooltip": "Customer preview",
+  "appointmentsRebookTooltip": "Rebook appointment",
+  "appointmentsEditTooltip": "Edit",
+  "appointmentsHomeTooltip": "Home",
+  "iosSmsPurchaseRestrictionMessage": "SMS package purchasing is not supported in the iOS app due to Apple App Store policies.\nPurchases can be completed on the website.",
   "appointmentsFetchFailedStatus": "Could not fetch appointments (HTTP {status}).",
   "appointmentsFetchFailed": "Could not fetch appointments: {error}",
   "calendarSessionMissing": "Session not found.",
@@ -429,6 +595,16 @@
   "smsTemplatesSaving": "Saving...",
   "smsTemplatesRefresh": "Refresh",
   "smsTemplatesFallbackTitle": "Template #{id}",
+  "smsTemplatesGuideTitle": "Template Selection",
+  "smsTemplatesGuideBody": "Select one SMS template for each category.",
+  "smsTemplatesGuideHint": "Tap cards to select templates. The selected card is highlighted and reflected in the live preview below.",
+  "smsTemplatesMainDescription": "Message sent when a new appointment is created.",
+  "smsTemplatesReminderDescription": "Message sent as a reminder before the appointment.",
+  "smsTemplatesCancelDescription": "Message sent when an appointment is cancelled.",
+  "smsTemplatesUpdateDescription": "Message sent when appointment date/time is updated.",
+  "smsTemplatesPreviewTitle": "Live Preview",
+  "smsTemplatesPreviewEmpty": "No template selected for this category yet.",
+  "smsTemplatesSelected": "Selected",
   "supportTitle": "Support",
   "supportSessionMissing": "Session not found. Please log in again.",
   "supportFetchFailedStatus": "Support tickets could not be loaded (HTTP {status}).",

@@ -9,6 +9,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../utils/appointment_date_utils.dart';
 import '../widgets/main_nav.dart';
 import 'package:bagla_mobile/l10n/app_localizations.dart';
 
@@ -349,58 +350,19 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
   }
 
   String _toIsoDate(DateTime dt) {
-    return '${dt.year.toString().padLeft(4, '0')}-${dt.month.toString().padLeft(2, '0')}-${dt.day.toString().padLeft(2, '0')}';
+    return AppointmentDateUtils.toIsoDate(dt);
   }
 
   String _formatDateDisplay(DateTime date) {
-    final day = date.day.toString().padLeft(2, '0');
-    final month = date.month.toString().padLeft(2, '0');
-    final year = date.year.toString();
-    return '$day-$month-$year';
+    return AppointmentDateUtils.formatDateDisplay(date);
   }
 
   DateTime _parseInputDateOrNow(String value) {
-    final trimmed = value.trim();
-    if (trimmed.isEmpty) return DateTime.now();
-    final parts = trimmed.split('-');
-    if (parts.length == 3) {
-      try {
-        if (parts[0].length == 2) {
-          final day = int.parse(parts[0]);
-          final month = int.parse(parts[1]);
-          final year = int.parse(parts[2]);
-          return DateTime(year, month, day);
-        }
-        if (parts[0].length == 4) {
-          final year = int.parse(parts[0]);
-          final month = int.parse(parts[1]);
-          final day = int.parse(parts[2]);
-          return DateTime(year, month, day);
-        }
-      } catch (_) {}
-    }
-    try {
-      return DateTime.parse(trimmed);
-    } catch (_) {
-      return DateTime.now();
-    }
+    return AppointmentDateUtils.parseInputDateOrNow(value);
   }
 
   String _normalizeSlotDate(String rawDate) {
-    final trimmed = rawDate.trim();
-    final parts = trimmed.split('-');
-    if (parts.length == 3 && parts[0].length == 2 && parts[1].length == 2) {
-      return trimmed;
-    }
-    try {
-      final parsed = DateTime.parse(trimmed);
-      final day = parsed.day.toString().padLeft(2, '0');
-      final month = parsed.month.toString().padLeft(2, '0');
-      final year = parsed.year.toString();
-      return '$day-$month-$year';
-    } catch (_) {
-      return trimmed;
-    }
+    return AppointmentDateUtils.normalizeSlotDate(rawDate);
   }
 
   DateTime _clampDate(DateTime date, DateTime min, DateTime max) {
@@ -410,31 +372,7 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
   }
 
   String? _normalizeDateToApi(String input) {
-    final trimmed = input.trim();
-    if (trimmed.isEmpty) return null;
-    final parts = trimmed.split('-');
-    try {
-      if (parts.length == 3) {
-        if (parts[0].length == 2) {
-          final day = int.parse(parts[0]);
-          final month = int.parse(parts[1]);
-          final year = int.parse(parts[2]);
-          final dt = DateTime(year, month, day);
-          return _toIsoDate(dt);
-        }
-        if (parts[0].length == 4) {
-          final year = int.parse(parts[0]);
-          final month = int.parse(parts[1]);
-          final day = int.parse(parts[2]);
-          final dt = DateTime(year, month, day);
-          return _toIsoDate(dt);
-        }
-      }
-      final parsed = DateTime.parse(trimmed);
-      return _toIsoDate(parsed);
-    } catch (_) {
-      return null;
-    }
+    return AppointmentDateUtils.normalizeDateToApi(input);
   }
 
   String _weekIdentity(WeeklyCalendarData data) => _toIsoDate(data.weekStart);

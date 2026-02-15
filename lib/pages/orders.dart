@@ -7,6 +7,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../config.dart';
 import '../login_page.dart';
+import '../main_tabs_page.dart';
 import '../auth.dart';
 import 'package:bagla_mobile/l10n/app_localizations.dart';
 
@@ -18,7 +19,7 @@ class OrdersPage extends StatefulWidget {
 }
 
 class _OrdersPageState extends State<OrdersPage> {
-  AppLocalizations get loc => AppLocalizations.of(context)!;
+  AppLocalizations get loc => AppLocalizations.of(context);
   bool _loading = true;
   String? _error;
   List<Map<String, dynamic>> _orders = [];
@@ -26,6 +27,24 @@ class _OrdersPageState extends State<OrdersPage> {
   final int _pageSize = 10;
   String _statusFilter = 'all';
   bool _retrying = false;
+
+  void _goHome() {
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute(
+        builder: (_) => const MainTabsPage(initialIndex: 0),
+      ),
+      (_) => false,
+    );
+  }
+
+  void _goBack() {
+    final navigator = Navigator.of(context);
+    if (navigator.canPop()) {
+      navigator.pop();
+      return;
+    }
+    _goHome();
+  }
 
   @override
   void initState() {
@@ -235,7 +254,7 @@ class _OrdersPageState extends State<OrdersPage> {
                         ),
                       ),
                       Chip(
-                        backgroundColor: _statusColor(status).withOpacity(0.12),
+                        backgroundColor: _statusColor(status).withValues(alpha: 0.12),
                         label: Text(
                           _statusLabel(status),
                           style: TextStyle(
@@ -347,15 +366,16 @@ class _OrdersPageState extends State<OrdersPage> {
                       fontWeight: FontWeight.w700,
                     ),
                   ),
-          Chip(
-            backgroundColor: _statusColor(status).withOpacity(0.12),
-            label: Text(
-              _statusLabel(status),
-              style: TextStyle(
-                color: _statusColor(status),
-                fontWeight: FontWeight.w600,
-              ),
-            ),
+                  Chip(
+                    backgroundColor:
+                        _statusColor(status).withValues(alpha: 0.12),
+                    label: Text(
+                      _statusLabel(status),
+                      style: TextStyle(
+                        color: _statusColor(status),
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
                   ),
                 ],
               ),
@@ -476,7 +496,7 @@ class _OrdersPageState extends State<OrdersPage> {
                       child: SingleChildScrollView(
                         scrollDirection: Axis.horizontal,
                         child: DataTable(
-                          headingRowColor: MaterialStateProperty.all(Colors.grey.shade200),
+                          headingRowColor: WidgetStateProperty.all(Colors.grey.shade200),
                           columns: [
                             const DataColumn(label: Text('#')),
                             DataColumn(label: Text(loc.ordersPack)),
@@ -539,8 +559,19 @@ class _OrdersPageState extends State<OrdersPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        automaticallyImplyLeading: false,
+        leading: IconButton(
+          tooltip: MaterialLocalizations.of(context).backButtonTooltip,
+          onPressed: _goBack,
+          icon: const Icon(Icons.arrow_back),
+        ),
         title: Text(loc.ordersTitle),
         actions: [
+          IconButton(
+            tooltip: loc.dashboardHome,
+            onPressed: _goHome,
+            icon: const Icon(Icons.home_outlined),
+          ),
           IconButton(
             tooltip: loc.ordersRetry,
             onPressed: _loadOrders,

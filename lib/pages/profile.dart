@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'dart:typed_data';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -7,7 +6,6 @@ import 'package:http/http.dart' as http;
 import 'package:image/image.dart' as img;
 import 'package:image_cropper/image_cropper.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:http_parser/http_parser.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:bagla_mobile/config.dart';
 import '../auth.dart';
@@ -31,7 +29,7 @@ class ProfilePage extends StatefulWidget {
 }
 
 class _ProfilePageState extends State<ProfilePage> {
-  AppLocalizations get loc => AppLocalizations.of(context)!;
+  AppLocalizations get loc => AppLocalizations.of(context);
   // Form controller'ları: profil & SEO
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _usernameController = TextEditingController();
@@ -58,7 +56,6 @@ class _ProfilePageState extends State<ProfilePage> {
   String? _avatarUrl;
   Uint8List? _avatarBytes;
   String? _avatarFileName;
-  String _avatarMimeType = 'image/jpeg';
   Map<String, dynamic>? _packInfo;
   static const Color _backgroundColor = Color(0xFFF7F9FC);
   static const Color _primaryColor = Color(0xFF6366F1);
@@ -160,7 +157,6 @@ class _ProfilePageState extends State<ProfilePage> {
     try {
       Uint8List bytes;
       String fileName;
-      String mimeType;
 
       if (kIsWeb) {
         bytes = await picked.readAsBytes();
@@ -168,11 +164,6 @@ class _ProfilePageState extends State<ProfilePage> {
         fileName = picked.name.isNotEmpty
             ? picked.name
             : 'avatar.${ext.isNotEmpty ? ext : 'jpg'}';
-        mimeType = ext == 'png'
-            ? 'image/png'
-            : ext == 'webp'
-                ? 'image/webp'
-                : 'image/jpeg';
       } else if (defaultTargetPlatform == TargetPlatform.android) {
         final originalBytes = await picked.readAsBytes();
         final decoded = img.decodeImage(originalBytes);
@@ -193,7 +184,6 @@ class _ProfilePageState extends State<ProfilePage> {
         );
         bytes = Uint8List.fromList(img.encodeJpg(cropped, quality: 90));
         fileName = 'avatar.jpg';
-        mimeType = 'image/jpeg';
       } else {
         final cropped = await ImageCropper().cropImage(
           sourcePath: picked.path,
@@ -215,12 +205,6 @@ class _ProfilePageState extends State<ProfilePage> {
 
         bytes = await cropped.readAsBytes();
         fileName = cropped.path.split('/').last;
-        final ext = fileName.split('.').last.toLowerCase();
-        mimeType = ext == 'png'
-            ? 'image/png'
-            : ext == 'webp'
-                ? 'image/webp'
-                : 'image/jpeg';
       }
 
       const maxSize = 3 * 1024 * 1024; // 3MB
@@ -235,7 +219,6 @@ class _ProfilePageState extends State<ProfilePage> {
       setState(() {
         _avatarBytes = bytes;
         _avatarFileName = fileName;
-        _avatarMimeType = mimeType;
       });
     } catch (e) {
       _showSnack(loc.profileAvatarPrepareFailed(e.toString()));
@@ -283,7 +266,6 @@ class _ProfilePageState extends State<ProfilePage> {
             'avatar',
             _avatarBytes!,
             filename: _avatarFileName ?? 'avatar.jpg',
-            contentType: MediaType.parse(_avatarMimeType),
           ),
         );
       }
@@ -496,12 +478,12 @@ class _ProfilePageState extends State<ProfilePage> {
         color: Colors.white,
         borderRadius: BorderRadius.circular(14),
         border: Border.all(color: Colors.grey.shade200),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.03),
-            blurRadius: 10,
-            offset: const Offset(0, 6),
-          )
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.03),
+              blurRadius: 10,
+              offset: const Offset(0, 6),
+            )
         ],
       ),
       padding: padding,
@@ -561,7 +543,7 @@ class _ProfilePageState extends State<ProfilePage> {
             shape: BoxShape.circle,
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.08),
+                color: Colors.black.withValues(alpha: 0.08),
                 blurRadius: 12,
                 offset: const Offset(0, 6),
               ),
@@ -645,7 +627,7 @@ class _ProfilePageState extends State<ProfilePage> {
       padding: const EdgeInsets.symmetric(horizontal: 4),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(10),
-        side: BorderSide(color: _primaryColor.withOpacity(0.2)),
+        side: BorderSide(color: _primaryColor.withValues(alpha: 0.2)),
       ),
     );
   }

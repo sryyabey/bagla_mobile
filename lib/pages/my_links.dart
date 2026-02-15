@@ -4,6 +4,7 @@ import 'package:bagla_mobile/config.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:bagla_mobile/l10n/app_localizations.dart';
+import 'package:bagla_mobile/main_tabs_page.dart';
 
 class MyLinksPage extends StatefulWidget {
   const MyLinksPage({super.key});
@@ -13,7 +14,7 @@ class MyLinksPage extends StatefulWidget {
 }
 
 class _MyLinksPageState extends State<MyLinksPage> {
-  AppLocalizations get loc => AppLocalizations.of(context)!;
+  AppLocalizations get loc => AppLocalizations.of(context);
   static const Color _backgroundColor = Color(0xFFF7F9FC);
   static const Color _primaryColor = Color(0xFF6366F1);
 
@@ -31,6 +32,24 @@ class _MyLinksPageState extends State<MyLinksPage> {
   bool showForm = false;
   bool isSavingOrder = false;
   String typeSearchQuery = '';
+
+  void _goHome() {
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute(
+        builder: (_) => const MainTabsPage(initialIndex: 0),
+      ),
+      (_) => false,
+    );
+  }
+
+  void _goBack() {
+    final navigator = Navigator.of(context);
+    if (navigator.canPop()) {
+      navigator.pop();
+      return;
+    }
+    _goHome();
+  }
 
   @override
   void initState() {
@@ -257,7 +276,7 @@ class _MyLinksPageState extends State<MyLinksPage> {
         border: Border.all(color: Colors.grey.shade200),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.03),
+            color: Colors.black.withValues(alpha: 0.03),
             blurRadius: 10,
             offset: const Offset(0, 6),
           )
@@ -293,6 +312,7 @@ class _MyLinksPageState extends State<MyLinksPage> {
 
   Future<void> createLink() async {
     final token = await _getToken();
+    if (!mounted) return;
     final typeId = selectedLinkTypeId;
     final colorId = selectedColorId;
 
@@ -333,6 +353,7 @@ class _MyLinksPageState extends State<MyLinksPage> {
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         await fetchProfileData();
+        if (!mounted) return;
         linkTitleController.clear();
         linkUrlController.clear();
         ScaffoldMessenger.of(context).showSnackBar(
@@ -344,7 +365,7 @@ class _MyLinksPageState extends State<MyLinksPage> {
       } else {
         final decoded = jsonDecode(response.body);
         final message = decoded['message'] ??
-            (decoded['errors'] != null ? decoded['errors'].toString() : null) ??
+            decoded['errors']?.toString() ??
             loc.myLinksCreateFailed;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -362,15 +383,17 @@ class _MyLinksPageState extends State<MyLinksPage> {
         ),
       );
     } finally {
-      if (!mounted) return;
-      setState(() {
-        isSubmitting = false;
-      });
+      if (mounted) {
+        setState(() {
+          isSubmitting = false;
+        });
+      }
     }
   }
 
   Future<void> deleteLink(int id) async {
     final token = await _getToken();
+    if (!mounted) return;
     if (token == null || token.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -400,6 +423,7 @@ class _MyLinksPageState extends State<MyLinksPage> {
       if (!mounted) return;
       if (response.statusCode == 200 || response.statusCode == 204) {
         await fetchProfileData();
+        if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(loc.myLinksDeleteSuccess),
@@ -409,7 +433,7 @@ class _MyLinksPageState extends State<MyLinksPage> {
       } else {
         final decoded = jsonDecode(response.body);
         final message = decoded['message'] ??
-            (decoded['errors'] != null ? decoded['errors'].toString() : null) ??
+            decoded['errors']?.toString() ??
             loc.myLinksDeleteFailed;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -443,6 +467,7 @@ class _MyLinksPageState extends State<MyLinksPage> {
     required int colorId,
   }) async {
     final token = await _getToken();
+    if (!mounted) return;
     if (token == null || token.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -476,6 +501,7 @@ class _MyLinksPageState extends State<MyLinksPage> {
 
       if (response.statusCode == 200) {
         await fetchProfileData();
+        if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(loc.myLinksUpdateSuccess),
@@ -485,7 +511,7 @@ class _MyLinksPageState extends State<MyLinksPage> {
       } else {
         final decoded = jsonDecode(response.body);
         final message = decoded['message'] ??
-            (decoded['errors'] != null ? decoded['errors'].toString() : null) ??
+            decoded['errors']?.toString() ??
             loc.myLinksUpdateFailed;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -632,7 +658,7 @@ class _MyLinksPageState extends State<MyLinksPage> {
                     ),
                     const SizedBox(height: 8),
                     DropdownButtonFormField<int>(
-                      value: modalEffectiveTypeValue,
+                      initialValue: modalEffectiveTypeValue,
                       items: modalFilteredTypes.isNotEmpty
                           ? modalFilteredTypes
                               .map(
@@ -678,7 +704,7 @@ class _MyLinksPageState extends State<MyLinksPage> {
                     ),
                     const SizedBox(height: 12),
                     DropdownButtonFormField<int>(
-                      value: colorId,
+                      initialValue: colorId,
                       items: colors
                           .map(
                             (color) => DropdownMenuItem<int>(
@@ -760,7 +786,7 @@ class _MyLinksPageState extends State<MyLinksPage> {
           ),
           const SizedBox(height: 8),
           DropdownButtonFormField<int>(
-            value: effectiveTypeValue,
+            initialValue: effectiveTypeValue,
             items: filteredTypes.isNotEmpty
                 ? filteredTypes
                     .map(
@@ -812,7 +838,7 @@ class _MyLinksPageState extends State<MyLinksPage> {
           ),
           const SizedBox(height: 12),
           DropdownButtonFormField<int>(
-            value: selectedColorId,
+            initialValue: selectedColorId,
             items: colors
                 .map(
                   (color) => DropdownMenuItem<int>(
@@ -889,7 +915,7 @@ class _MyLinksPageState extends State<MyLinksPage> {
         border: Border.all(color: Colors.grey.shade200),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.03),
+            color: Colors.black.withValues(alpha: 0.03),
             blurRadius: 8,
             offset: const Offset(0, 4),
           )
@@ -901,7 +927,7 @@ class _MyLinksPageState extends State<MyLinksPage> {
           Container(
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: _primaryColor.withOpacity(0.08),
+              color: _primaryColor.withValues(alpha: 0.08),
               borderRadius: BorderRadius.circular(10),
             ),
             child: const Icon(Icons.link, color: _primaryColor),
@@ -1024,59 +1050,31 @@ class _MyLinksPageState extends State<MyLinksPage> {
     );
   }
 
-  Widget _debugStatus() {
-    if (isLoading) return const SizedBox.shrink();
-
-    List<String> errors = [];
-
-    if (links.isEmpty) {
-      errors.add(loc.myLinksDebugNoLinks);
-    }
-    if (linkTypes.isEmpty) {
-      errors.add(loc.myLinksDebugNoTypes);
-    }
-    if (colors.isEmpty) {
-      errors.add(loc.myLinksDebugNoColors);
-    }
-
-    if (errors.isEmpty) return const SizedBox.shrink();
-
-    return _sectionCard(
-      title: loc.myLinksDebugTitle,
-      subtitle: loc.myLinksDebugSubtitle,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: errors
-            .map(
-              (e) => Padding(
-                padding: const EdgeInsets.symmetric(vertical: 4),
-                child: Text(
-                  e,
-                  style: const TextStyle(
-                    color: Colors.red,
-                    fontSize: 13,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-            )
-            .toList(),
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: _backgroundColor,
       appBar: AppBar(
+        automaticallyImplyLeading: false,
         elevation: 0,
         backgroundColor: Colors.white,
         foregroundColor: Colors.black87,
+        leading: IconButton(
+          tooltip: MaterialLocalizations.of(context).backButtonTooltip,
+          icon: const Icon(Icons.arrow_back),
+          onPressed: _goBack,
+        ),
         title: Text(
           loc.myLinksTitle,
           style: const TextStyle(fontWeight: FontWeight.w700),
         ),
+        actions: [
+          IconButton(
+            tooltip: loc.dashboardHome,
+            icon: const Icon(Icons.home_outlined),
+            onPressed: _goHome,
+          ),
+        ],
       ),
       body: SafeArea(
         child: isLoading

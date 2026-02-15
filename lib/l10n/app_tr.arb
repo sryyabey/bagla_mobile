@@ -13,6 +13,49 @@
   "onboardDesc3": "Ücretsiz başla, biyolinkini anında yayınla; ihtiyaç oldukça paketleri aç.",
   "menuTitle": "Menü",
   "myLinks": "Linklerim",
+  "customersTitle": "Kişilerim",
+  "customersSessionMissing": "Oturum bulunamadı. Lütfen tekrar giriş yapın.",
+  "customersLoadFailedStatus": "Kişiler alınamadı (HTTP {status}).",
+  "customersLoadFailed": "Kişiler alınamadı: {error}",
+  "customersSearchHint": "Kişi ara (ad, telefon, e-posta)",
+  "customersRetry": "Tekrar dene",
+  "customersEmpty": "Henüz kişi yok.",
+  "customersLoadMore": "Daha fazla yükle",
+  "customersRefresh": "Yenile",
+  "customersAdd": "Kişi Ekle",
+  "customersEdit": "Kişiyi Düzenle",
+  "customersDelete": "Sil",
+  "customersDeleteConfirmTitle": "Kişi silinsin mi?",
+  "customersDeleteConfirmBody": "Bu kişiyi silmek istediğinizden emin misiniz?",
+  "customersCancel": "Vazgeç",
+  "customersSave": "Kaydet",
+  "customersSaving": "Kaydediliyor...",
+  "customersName": "Ad Soyad",
+  "customersPhone": "Telefon",
+  "customersEmail": "E-posta",
+  "customersAddress": "Adres",
+  "customersNotes": "Notlar",
+  "customersValidation": "Ad Soyad ve Telefon zorunludur.",
+  "customersCreateSuccess": "Kişi oluşturuldu.",
+  "customersUpdateSuccess": "Kişi güncellendi.",
+  "customersSaveFailedStatus": "Kaydedilemedi (HTTP {status}).",
+  "customersSaveFailed": "Kaydedilemedi: {error}",
+  "customersDeleteSuccess": "Kişi silindi.",
+  "customersDeleteFailedStatus": "Kişi silinemedi (HTTP {status}).",
+  "customersDeleteFailed": "Kişi silinemedi: {error}",
+  "customersAppointments": "Randevular",
+  "customersNoAppointments": "Bu kişi için randevu yok.",
+  "customersAppointmentsLoadFailedStatus": "Randevular alınamadı (HTTP {status}).",
+  "customersAppointmentsLoadFailed": "Randevular alınamadı: {error}",
+  "customersCreateAppointment": "Randevu Ekle",
+  "customersAppointmentDate": "Tarih",
+  "customersAppointmentTime": "Saat",
+  "customersAppointmentNote": "Not",
+  "customersFirstAppointment": "İlk randevu mu?",
+  "customersNoSms": "SMS gönderme",
+  "customersNoReminder": "Hatırlatma gönderme",
+  "customersCreateAppointmentSuccess": "Randevu oluşturuldu.",
+  "customersCreateAppointmentFailed": "Randevu oluşturulamadı.",
   "themes": "Temalar",
   "profile": "Profil",
   "support": "Destek",
@@ -20,6 +63,9 @@
   "loginButton": "Giriş",
   "dashboardTitle": "Yönetim Paneli",
   "dashboardHeroSubtitle": "Linklerini ve randevularını tek yerden yönet.",
+  "dashboardQuickActions": "Hızlı Erişim",
+  "dashboardMenuMain": "ANA MENÜ",
+  "dashboardMenuManagement": "YÖNETİM",
   "dashboardDrawerSubtitle": "Randevu ve iletişimlerinizi buradan yönetin",
   "dashboardTopClicks": "Toplam Tıklama",
   "dashboardRemainingSms": "Kalan SMS",
@@ -106,6 +152,126 @@
   "createAccountEmail": "E-posta ile hesap oluştur",
   "appointmentsTitle": "Randevular",
   "appointmentsEmpty": "Henüz randevu yok.",
+  "appointmentsCountLabel": "{count} kayıt",
+  "@appointmentsCountLabel": {
+    "placeholders": {
+      "count": {}
+    }
+  },
+  "appointmentsFilterSubtitle": "Müşteri, tarih ve saat aralığına göre filtreleyin",
+  "appointmentsPackageRequired": "Randevu işlemleri için paket alınız.",
+  "appointmentsSessionMissingLogin": "Oturum bulunamadı. Lütfen tekrar giriş yapın.",
+  "appointmentsCountriesFetchFailedStatus": "Ülkeler alınamadı (HTTP {status}).",
+  "@appointmentsCountriesFetchFailedStatus": {
+    "placeholders": {
+      "status": {}
+    }
+  },
+  "appointmentsCountriesFetchFailed": "Ülkeler alınamadı: {error}",
+  "@appointmentsCountriesFetchFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "appointmentsStatusesFetchFailedStatus": "Durumlar alınamadı (HTTP {status}).",
+  "@appointmentsStatusesFetchFailedStatus": {
+    "placeholders": {
+      "status": {}
+    }
+  },
+  "appointmentsStatusesFetchFailed": "Durumlar alınamadı: {error}",
+  "@appointmentsStatusesFetchFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "appointmentsInvalidStartTime": "Geçersiz başlangıç saati. Format HH:MM",
+  "appointmentsInvalidEndTime": "Geçersiz bitiş saati. Format HH:MM",
+  "appointmentsRequiredFields": "İsim, soyisim, ülke, telefon, tarih ve saat zorunludur.",
+  "appointmentsSelectAvailableTime": "Lütfen uygun bir saat seçin.",
+  "appointmentsCreateSuccess": "Randevu oluşturuldu.",
+  "appointmentsCreateFailedStatus": "Randevu oluşturulamadı (HTTP {status}).",
+  "@appointmentsCreateFailedStatus": {
+    "placeholders": {
+      "status": {}
+    }
+  },
+  "appointmentsCreateFailed": "Randevu oluşturulamadı: {error}",
+  "@appointmentsCreateFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "appointmentsEnterDateFirst": "Önce tarih girin.",
+  "appointmentsSlotsFetchFailedStatus": "Saatler alınamadı (HTTP {status}).",
+  "@appointmentsSlotsFetchFailedStatus": {
+    "placeholders": {
+      "status": {}
+    }
+  },
+  "appointmentsSlotsFetchFailed": "Saatler alınamadı: {error}",
+  "@appointmentsSlotsFetchFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "appointmentsDateTimeRequired": "Tarih ve saat zorunludur.",
+  "appointmentsUpdateSuccess": "Randevu güncellendi.",
+  "appointmentsUpdateFailedStatus": "Randevu güncellenemedi (HTTP {status}).",
+  "@appointmentsUpdateFailedStatus": {
+    "placeholders": {
+      "status": {}
+    }
+  },
+  "appointmentsUpdateFailed": "Randevu güncellenemedi: {error}",
+  "@appointmentsUpdateFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "appointmentsStatusMissing": "Randevu durumu bulunamadı.",
+  "appointmentsRebookSuccess": "Yeni randevu oluşturuldu.",
+  "appointmentsInfoMissing": "Randevu bilgisi bulunamadı.",
+  "appointmentsInfoFetchFailedStatus": "Bilgiler alınamadı (HTTP {status}).",
+  "@appointmentsInfoFetchFailedStatus": {
+    "placeholders": {
+      "status": {}
+    }
+  },
+  "appointmentsInfoFetchFailed": "Bilgiler alınamadı: {error}",
+  "@appointmentsInfoFetchFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "appointmentsNoRecords": "Kayıt bulunamadı.",
+  "appointmentsClose": "Kapat",
+  "appointmentsClear": "Temizle",
+  "appointmentsCountry": "Ülke",
+  "appointmentsSelectCountry": "Ülke seçin",
+  "appointmentsFieldName": "Ad",
+  "appointmentsFieldNameHint": "Örn: Ali",
+  "appointmentsFieldLastName": "Soyad",
+  "appointmentsFieldLastNameHint": "Örn: Kara",
+  "appointmentsFieldNameFilterHint": "Müşteri adı",
+  "appointmentsFieldLastNameFilterHint": "Müşteri soyadı",
+  "appointmentsFieldPhone": "Telefon",
+  "appointmentsFieldPhoneHint": "Örn: 5554443322",
+  "appointmentsFieldEmailHint": "Opsiyonel",
+  "appointmentsStatusSelectHint": "Durum seçin",
+  "appointmentsStartDate": "Başlangıç Tarihi",
+  "appointmentsEndDate": "Bitiş Tarihi",
+  "appointmentsStartTime": "Başlangıç Saati",
+  "appointmentsEndTime": "Bitiş Saati",
+  "appointmentsBuyPackage": "Paket Al",
+  "appointmentsFirstAppointment": "İlk randevu mu?",
+  "appointmentsReminderDisableTitle": "Hatırlatma gönderme",
+  "appointmentsSubmitting": "Gönderiliyor...",
+  "appointmentsCustomerPreviewTooltip": "Müşteri önizleme",
+  "appointmentsRebookTooltip": "Yeniden randevu ver",
+  "appointmentsEditTooltip": "Düzenle",
+  "appointmentsHomeTooltip": "Anasayfa",
+  "iosSmsPurchaseRestrictionMessage": "iOS uygulamasında SMS paket satın alma işlemi, Apple App Store politikaları gereği desteklenmemektedir.\nSatın alma işlemleri web sitesi üzerinden gerçekleştirilebilir.",
   "appointmentsFetchFailedStatus": "Randevular alınamadı (HTTP {status}).",
   "appointmentsFetchFailed": "Randevular alınamadı: {error}",
   "calendarSessionMissing": "Oturum bulunamadı.",
@@ -429,6 +595,16 @@
   "smsTemplatesSaving": "Kaydediliyor...",
   "smsTemplatesRefresh": "Yenile",
   "smsTemplatesFallbackTitle": "Şablon #{id}",
+  "smsTemplatesGuideTitle": "Şablon Seçimi",
+  "smsTemplatesGuideBody": "Her kategori için bir SMS şablonu seçin.",
+  "smsTemplatesGuideHint": "Kartlara dokunarak seçiminizi yapın. Seçili kart belirgin şekilde işaretlenir ve aşağıdaki önizleme alanına yansır.",
+  "smsTemplatesMainDescription": "Yeni randevu oluşturulduğunda gönderilen mesaj.",
+  "smsTemplatesReminderDescription": "Randevu öncesinde hatırlatma için gönderilen mesaj.",
+  "smsTemplatesCancelDescription": "Randevu iptal edildiğinde gönderilen mesaj.",
+  "smsTemplatesUpdateDescription": "Randevu günü/saati değiştiğinde gönderilen mesaj.",
+  "smsTemplatesPreviewTitle": "Canlı Önizleme",
+  "smsTemplatesPreviewEmpty": "Bu kategori için henüz şablon seçilmedi.",
+  "smsTemplatesSelected": "Seçili",
   "supportTitle": "Destek",
   "supportSessionMissing": "Oturum bulunamadı. Lütfen tekrar giriş yapın.",
   "supportFetchFailedStatus": "Destek kayıtları alınamadı (HTTP {status}).",

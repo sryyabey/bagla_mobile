@@ -51,6 +51,153 @@ class AppLocalizationsTr extends AppLocalizations {
   String get myLinks => 'Linklerim';
 
   @override
+  String get customersTitle => 'Kişilerim';
+
+  @override
+  String get customersSessionMissing =>
+      'Oturum bulunamadı. Lütfen tekrar giriş yapın.';
+
+  @override
+  String customersLoadFailedStatus(Object status) {
+    return 'Kişiler alınamadı (HTTP $status).';
+  }
+
+  @override
+  String customersLoadFailed(Object error) {
+    return 'Kişiler alınamadı: $error';
+  }
+
+  @override
+  String get customersSearchHint => 'Kişi ara (ad, telefon, e-posta)';
+
+  @override
+  String get customersRetry => 'Tekrar dene';
+
+  @override
+  String get customersEmpty => 'Henüz kişi yok.';
+
+  @override
+  String get customersLoadMore => 'Daha fazla yükle';
+
+  @override
+  String get customersRefresh => 'Yenile';
+
+  @override
+  String get customersAdd => 'Kişi Ekle';
+
+  @override
+  String get customersEdit => 'Kişiyi Düzenle';
+
+  @override
+  String get customersDelete => 'Sil';
+
+  @override
+  String get customersDeleteConfirmTitle => 'Kişi silinsin mi?';
+
+  @override
+  String get customersDeleteConfirmBody =>
+      'Bu kişiyi silmek istediğinizden emin misiniz?';
+
+  @override
+  String get customersCancel => 'Vazgeç';
+
+  @override
+  String get customersSave => 'Kaydet';
+
+  @override
+  String get customersSaving => 'Kaydediliyor...';
+
+  @override
+  String get customersName => 'Ad Soyad';
+
+  @override
+  String get customersPhone => 'Telefon';
+
+  @override
+  String get customersEmail => 'E-posta';
+
+  @override
+  String get customersAddress => 'Adres';
+
+  @override
+  String get customersNotes => 'Notlar';
+
+  @override
+  String get customersValidation => 'Ad Soyad ve Telefon zorunludur.';
+
+  @override
+  String get customersCreateSuccess => 'Kişi oluşturuldu.';
+
+  @override
+  String get customersUpdateSuccess => 'Kişi güncellendi.';
+
+  @override
+  String customersSaveFailedStatus(Object status) {
+    return 'Kaydedilemedi (HTTP $status).';
+  }
+
+  @override
+  String customersSaveFailed(Object error) {
+    return 'Kaydedilemedi: $error';
+  }
+
+  @override
+  String get customersDeleteSuccess => 'Kişi silindi.';
+
+  @override
+  String customersDeleteFailedStatus(Object status) {
+    return 'Kişi silinemedi (HTTP $status).';
+  }
+
+  @override
+  String customersDeleteFailed(Object error) {
+    return 'Kişi silinemedi: $error';
+  }
+
+  @override
+  String get customersAppointments => 'Randevular';
+
+  @override
+  String get customersNoAppointments => 'Bu kişi için randevu yok.';
+
+  @override
+  String customersAppointmentsLoadFailedStatus(Object status) {
+    return 'Randevular alınamadı (HTTP $status).';
+  }
+
+  @override
+  String customersAppointmentsLoadFailed(Object error) {
+    return 'Randevular alınamadı: $error';
+  }
+
+  @override
+  String get customersCreateAppointment => 'Randevu Ekle';
+
+  @override
+  String get customersAppointmentDate => 'Tarih';
+
+  @override
+  String get customersAppointmentTime => 'Saat';
+
+  @override
+  String get customersAppointmentNote => 'Not';
+
+  @override
+  String get customersFirstAppointment => 'İlk randevu mu?';
+
+  @override
+  String get customersNoSms => 'SMS gönderme';
+
+  @override
+  String get customersNoReminder => 'Hatırlatma gönderme';
+
+  @override
+  String get customersCreateAppointmentSuccess => 'Randevu oluşturuldu.';
+
+  @override
+  String get customersCreateAppointmentFailed => 'Randevu oluşturulamadı.';
+
+  @override
   String get themes => 'Temalar';
 
   @override
@@ -71,6 +218,15 @@ class AppLocalizationsTr extends AppLocalizations {
   @override
   String get dashboardHeroSubtitle =>
       'Linklerini ve randevularını tek yerden yönet.';
+
+  @override
+  String get dashboardQuickActions => 'Hızlı Erişim';
+
+  @override
+  String get dashboardMenuMain => 'ANA MENÜ';
+
+  @override
+  String get dashboardMenuManagement => 'YÖNETİM';
 
   @override
   String get dashboardDrawerSubtitle =>
@@ -348,6 +504,203 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get appointmentsEmpty => 'Henüz randevu yok.';
+
+  @override
+  String appointmentsCountLabel(Object count) {
+    return '$count kayıt';
+  }
+
+  @override
+  String get appointmentsFilterSubtitle =>
+      'Müşteri, tarih ve saat aralığına göre filtreleyin';
+
+  @override
+  String get appointmentsPackageRequired =>
+      'Randevu işlemleri için paket alınız.';
+
+  @override
+  String get appointmentsSessionMissingLogin =>
+      'Oturum bulunamadı. Lütfen tekrar giriş yapın.';
+
+  @override
+  String appointmentsCountriesFetchFailedStatus(Object status) {
+    return 'Ülkeler alınamadı (HTTP $status).';
+  }
+
+  @override
+  String appointmentsCountriesFetchFailed(Object error) {
+    return 'Ülkeler alınamadı: $error';
+  }
+
+  @override
+  String appointmentsStatusesFetchFailedStatus(Object status) {
+    return 'Durumlar alınamadı (HTTP $status).';
+  }
+
+  @override
+  String appointmentsStatusesFetchFailed(Object error) {
+    return 'Durumlar alınamadı: $error';
+  }
+
+  @override
+  String get appointmentsInvalidStartTime =>
+      'Geçersiz başlangıç saati. Format HH:MM';
+
+  @override
+  String get appointmentsInvalidEndTime => 'Geçersiz bitiş saati. Format HH:MM';
+
+  @override
+  String get appointmentsRequiredFields =>
+      'İsim, soyisim, ülke, telefon, tarih ve saat zorunludur.';
+
+  @override
+  String get appointmentsSelectAvailableTime => 'Lütfen uygun bir saat seçin.';
+
+  @override
+  String get appointmentsCreateSuccess => 'Randevu oluşturuldu.';
+
+  @override
+  String appointmentsCreateFailedStatus(Object status) {
+    return 'Randevu oluşturulamadı (HTTP $status).';
+  }
+
+  @override
+  String appointmentsCreateFailed(Object error) {
+    return 'Randevu oluşturulamadı: $error';
+  }
+
+  @override
+  String get appointmentsEnterDateFirst => 'Önce tarih girin.';
+
+  @override
+  String appointmentsSlotsFetchFailedStatus(Object status) {
+    return 'Saatler alınamadı (HTTP $status).';
+  }
+
+  @override
+  String appointmentsSlotsFetchFailed(Object error) {
+    return 'Saatler alınamadı: $error';
+  }
+
+  @override
+  String get appointmentsDateTimeRequired => 'Tarih ve saat zorunludur.';
+
+  @override
+  String get appointmentsUpdateSuccess => 'Randevu güncellendi.';
+
+  @override
+  String appointmentsUpdateFailedStatus(Object status) {
+    return 'Randevu güncellenemedi (HTTP $status).';
+  }
+
+  @override
+  String appointmentsUpdateFailed(Object error) {
+    return 'Randevu güncellenemedi: $error';
+  }
+
+  @override
+  String get appointmentsStatusMissing => 'Randevu durumu bulunamadı.';
+
+  @override
+  String get appointmentsRebookSuccess => 'Yeni randevu oluşturuldu.';
+
+  @override
+  String get appointmentsInfoMissing => 'Randevu bilgisi bulunamadı.';
+
+  @override
+  String appointmentsInfoFetchFailedStatus(Object status) {
+    return 'Bilgiler alınamadı (HTTP $status).';
+  }
+
+  @override
+  String appointmentsInfoFetchFailed(Object error) {
+    return 'Bilgiler alınamadı: $error';
+  }
+
+  @override
+  String get appointmentsNoRecords => 'Kayıt bulunamadı.';
+
+  @override
+  String get appointmentsClose => 'Kapat';
+
+  @override
+  String get appointmentsClear => 'Temizle';
+
+  @override
+  String get appointmentsCountry => 'Ülke';
+
+  @override
+  String get appointmentsSelectCountry => 'Ülke seçin';
+
+  @override
+  String get appointmentsFieldName => 'Ad';
+
+  @override
+  String get appointmentsFieldNameHint => 'Örn: Ali';
+
+  @override
+  String get appointmentsFieldLastName => 'Soyad';
+
+  @override
+  String get appointmentsFieldLastNameHint => 'Örn: Kara';
+
+  @override
+  String get appointmentsFieldNameFilterHint => 'Müşteri adı';
+
+  @override
+  String get appointmentsFieldLastNameFilterHint => 'Müşteri soyadı';
+
+  @override
+  String get appointmentsFieldPhone => 'Telefon';
+
+  @override
+  String get appointmentsFieldPhoneHint => 'Örn: 5554443322';
+
+  @override
+  String get appointmentsFieldEmailHint => 'Opsiyonel';
+
+  @override
+  String get appointmentsStatusSelectHint => 'Durum seçin';
+
+  @override
+  String get appointmentsStartDate => 'Başlangıç Tarihi';
+
+  @override
+  String get appointmentsEndDate => 'Bitiş Tarihi';
+
+  @override
+  String get appointmentsStartTime => 'Başlangıç Saati';
+
+  @override
+  String get appointmentsEndTime => 'Bitiş Saati';
+
+  @override
+  String get appointmentsBuyPackage => 'Paket Al';
+
+  @override
+  String get appointmentsFirstAppointment => 'İlk randevu mu?';
+
+  @override
+  String get appointmentsReminderDisableTitle => 'Hatırlatma gönderme';
+
+  @override
+  String get appointmentsSubmitting => 'Gönderiliyor...';
+
+  @override
+  String get appointmentsCustomerPreviewTooltip => 'Müşteri önizleme';
+
+  @override
+  String get appointmentsRebookTooltip => 'Yeniden randevu ver';
+
+  @override
+  String get appointmentsEditTooltip => 'Düzenle';
+
+  @override
+  String get appointmentsHomeTooltip => 'Anasayfa';
+
+  @override
+  String get iosSmsPurchaseRestrictionMessage =>
+      'iOS uygulamasında SMS paket satın alma işlemi, Apple App Store politikaları gereği desteklenmemektedir.\nSatın alma işlemleri web sitesi üzerinden gerçekleştirilebilir.';
 
   @override
   String appointmentsFetchFailedStatus(Object status) {
@@ -1414,6 +1767,43 @@ class AppLocalizationsTr extends AppLocalizations {
   String smsTemplatesFallbackTitle(Object id) {
     return 'Şablon #$id';
   }
+
+  @override
+  String get smsTemplatesGuideTitle => 'Şablon Seçimi';
+
+  @override
+  String get smsTemplatesGuideBody =>
+      'Her kategori için bir SMS şablonu seçin.';
+
+  @override
+  String get smsTemplatesGuideHint =>
+      'Kartlara dokunarak seçiminizi yapın. Seçili kart belirgin şekilde işaretlenir ve aşağıdaki önizleme alanına yansır.';
+
+  @override
+  String get smsTemplatesMainDescription =>
+      'Yeni randevu oluşturulduğunda gönderilen mesaj.';
+
+  @override
+  String get smsTemplatesReminderDescription =>
+      'Randevu öncesinde hatırlatma için gönderilen mesaj.';
+
+  @override
+  String get smsTemplatesCancelDescription =>
+      'Randevu iptal edildiğinde gönderilen mesaj.';
+
+  @override
+  String get smsTemplatesUpdateDescription =>
+      'Randevu günü/saati değiştiğinde gönderilen mesaj.';
+
+  @override
+  String get smsTemplatesPreviewTitle => 'Canlı Önizleme';
+
+  @override
+  String get smsTemplatesPreviewEmpty =>
+      'Bu kategori için henüz şablon seçilmedi.';
+
+  @override
+  String get smsTemplatesSelected => 'Seçili';
 
   @override
   String get supportTitle => 'Destek';

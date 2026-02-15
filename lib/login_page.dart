@@ -240,15 +240,6 @@ class _LoginPageState extends State<LoginPage> {
     return null;
   }
 
-  void _onLocaleChanged(Locale? newLocale) {
-    if (newLocale != null) {
-      setState(() {
-        _locale = newLocale;
-      });
-      widget.onLocaleChange(newLocale);
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     return Localizations.override(
@@ -256,7 +247,7 @@ class _LoginPageState extends State<LoginPage> {
       locale: _locale,
       child: Builder(
         builder: (ctx) {
-          final loc = AppLocalizations.of(ctx)!;
+          final loc = AppLocalizations.of(ctx);
           return Scaffold(
             body: Container(
               color: const Color(0xFF0A84FF),
@@ -295,7 +286,7 @@ class _LoginPageState extends State<LoginPage> {
                         height: 120,
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
-                          color: Colors.white.withOpacity(0.15),
+                          color: Colors.white.withValues(alpha: 0.15),
                         ),
                         child: Center(
                           child: ClipOval(
@@ -326,7 +317,7 @@ class _LoginPageState extends State<LoginPage> {
                           labelText: loc.emailLabel,
                           labelStyle: const TextStyle(color: Colors.white70),
                           filled: true,
-                          fillColor: Colors.white.withOpacity(0.2),
+                          fillColor: Colors.white.withValues(alpha: 0.2),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
                             borderSide: BorderSide.none,
@@ -344,7 +335,7 @@ class _LoginPageState extends State<LoginPage> {
                           labelText: loc.passwordLabel,
                           labelStyle: const TextStyle(color: Colors.white70),
                           filled: true,
-                          fillColor: Colors.white.withOpacity(0.2),
+                          fillColor: Colors.white.withValues(alpha: 0.2),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
                             borderSide: BorderSide.none,

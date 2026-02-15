@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+import '../utils/appointment_date_utils.dart';
 import '../dashboard_page.dart';
 import 'sms_packs.dart';
 import 'working_preferences.dart';
@@ -95,11 +96,9 @@ class _PhoneMaskFormatter extends TextInputFormatter {
 }
 
 class _AppointmentsPageState extends State<AppointmentsPage> {
-  AppLocalizations get loc => AppLocalizations.of(context)!;
+  AppLocalizations get loc => AppLocalizations.of(context);
   bool get _isIosPaymentRestricted =>
       !kIsWeb && defaultTargetPlatform == TargetPlatform.iOS;
-  static const String _iosPurchaseRestrictionMessage =
-      'iOS uygulamasında SMS paket satın alma işlemi, Apple App Store politikaları gereği desteklenmemektedir.\nSatın alma işlemleri web sitesi üzerinden gerçekleştirilebilir.';
   // Palette for consistent look
   static const Color primaryColor = Color(0xFF6366F1);
   static const Color secondaryColor = Color(0xFF8B5CF6);
@@ -196,6 +195,7 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
     required Widget child,
     String? title,
     String? subtitle,
+    IconData? leadingIcon,
     List<Widget>? actions,
     EdgeInsetsGeometry padding = const EdgeInsets.all(16),
   }) {
@@ -207,7 +207,7 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
         border: Border.all(color: Colors.grey.shade200),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.03),
+            color: Colors.black.withValues(alpha: 0.03),
             blurRadius: 10,
             offset: const Offset(0, 6),
           ),
@@ -231,11 +231,42 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           if (title != null)
-                            Text(
-                              title,
-                              style: const TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w700,
+                            Row(
+                              children: [
+                                if (leadingIcon != null) ...[
+                                  Container(
+                                    padding: const EdgeInsets.all(6),
+                                    decoration: BoxDecoration(
+                                      color:
+                                          primaryColor.withValues(alpha: 0.1),
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: Icon(
+                                      leadingIcon,
+                                      size: 16,
+                                      color: primaryColor,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                ],
+                                Expanded(
+                                  child: Text(
+                                    title,
+                                    style: const TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          if (title == null && leadingIcon != null)
+                            Padding(
+                              padding: const EdgeInsets.only(bottom: 2),
+                              child: Icon(
+                                leadingIcon,
+                                size: 16,
+                                color: primaryColor,
                               ),
                             ),
                           if (subtitle != null)
@@ -265,10 +296,12 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
   Widget _statPill(String label, String value, IconData icon, Color color) {
     final bool isLight = color.computeLuminance() > 0.7;
     final Color iconColor = isLight ? primaryColor : color;
-    final Color bgColor =
-        isLight ? Colors.white.withOpacity(0.16) : color.withOpacity(0.08);
-    final Color borderColor =
-        isLight ? Colors.white.withOpacity(0.3) : color.withOpacity(0.2);
+    final Color bgColor = isLight
+        ? Colors.white.withValues(alpha: 0.16)
+        : color.withValues(alpha: 0.08);
+    final Color borderColor = isLight
+        ? Colors.white.withValues(alpha: 0.3)
+        : color.withValues(alpha: 0.2);
     final Color labelColor = isLight ? Colors.white70 : Colors.black54;
     final Color valueColor = isLight ? Colors.white : Colors.black87;
     return Expanded(
@@ -288,7 +321,7 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
                 borderRadius: BorderRadius.circular(12),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
+                    color: Colors.black.withValues(alpha: 0.05),
                     blurRadius: 10,
                     offset: const Offset(0, 6),
                   ),
@@ -351,7 +384,7 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.08),
+            color: Colors.black.withValues(alpha: 0.08),
             blurRadius: 18,
             offset: const Offset(0, 10),
           )
@@ -394,7 +427,7 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
           Row(
             children: [
               _statPill(loc.today, '$todayCount', Icons.event_available,
-                  Colors.white70.withOpacity(0.95)),
+                  Colors.white70.withValues(alpha: 0.95)),
               const SizedBox(width: 12),
               _statPill(loc.total, '$totalCount', Icons.calendar_today,
                   Colors.white70),
@@ -408,11 +441,11 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
               ElevatedButton.icon(
                 onPressed: () {
                   if (!_hasUserPack) {
-                    _showSnack(
-                      _isIosPaymentRestricted
-                          ? _iosPurchaseRestrictionMessage
-                          : 'Randevu işlemleri için paket alınız.',
-                    );
+                      _showSnack(
+                        _isIosPaymentRestricted
+                            ? loc.iosSmsPurchaseRestrictionMessage
+                            : loc.appointmentsPackageRequired,
+                      );
                     if (!_isIosPaymentRestricted) {
                       Navigator.push(
                         context,
@@ -564,7 +597,7 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
     if (token == null || token.isEmpty) {
       setState(() {
         _loadingList = false;
-        _error = 'Oturum bulunamadı. Lütfen tekrar giriş yapın.';
+        _error = loc.appointmentsSessionMissingLogin;
       });
       return;
     }
@@ -640,7 +673,7 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
     if (token == null || token.isEmpty) {
       setState(() {
         _loadingCountries = false;
-        _countriesError = 'Oturum bulunamadı.';
+        _countriesError = loc.calendarSessionMissing;
       });
       return;
     }
@@ -674,13 +707,14 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
       } else {
         setState(() {
           _loadingCountries = false;
-          _countriesError = 'Ülkeler alınamadı (HTTP ${response.statusCode}).';
+          _countriesError = loc.appointmentsCountriesFetchFailedStatus(
+              response.statusCode.toString());
         });
       }
     } catch (e) {
       setState(() {
         _loadingCountries = false;
-        _countriesError = 'Ülkeler alınamadı: $e';
+        _countriesError = loc.appointmentsCountriesFetchFailed(e.toString());
       });
     }
   }
@@ -695,7 +729,7 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
     if (token == null || token.isEmpty) {
       setState(() {
         _loadingStatuses = false;
-        _statusesError = 'Oturum bulunamadı.';
+        _statusesError = loc.calendarSessionMissing;
       });
       return;
     }
@@ -725,13 +759,14 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
       } else {
         setState(() {
           _loadingStatuses = false;
-          _statusesError = 'Durumlar alınamadı (HTTP ${response.statusCode}).';
+          _statusesError = loc.appointmentsStatusesFetchFailedStatus(
+              response.statusCode.toString());
         });
       }
     } catch (e) {
       setState(() {
         _loadingStatuses = false;
-        _statusesError = 'Durumlar alınamadı: $e';
+        _statusesError = loc.appointmentsStatusesFetchFailed(e.toString());
       });
     }
   }
@@ -772,12 +807,12 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
     final filters = _buildValidFilters();
     if (_filterTimeFromController.text.trim().isNotEmpty &&
         !_isValidTime(_filterTimeFromController.text.trim())) {
-      _showSnack('Geçersiz başlangıç saati. Format HH:MM');
+      _showSnack(loc.appointmentsInvalidStartTime);
       return;
     }
     if (_filterTimeToController.text.trim().isNotEmpty &&
         !_isValidTime(_filterTimeToController.text.trim())) {
-      _showSnack('Geçersiz bitiş saati. Format HH:MM');
+      _showSnack(loc.appointmentsInvalidEndTime);
       return;
     }
     setState(() {
@@ -805,8 +840,8 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
     if (!_hasUserPack) {
       _showSnack(
         _isIosPaymentRestricted
-            ? _iosPurchaseRestrictionMessage
-            : 'Randevu işlemleri için paket alınız.',
+            ? loc.iosSmsPurchaseRestrictionMessage
+            : loc.appointmentsPackageRequired,
       );
       return;
     }
@@ -828,17 +863,17 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
         phone.isEmpty ||
         normalizedDate.isEmpty ||
         time.isEmpty) {
-      _showSnack('İsim, soyisim, ülke, telefon, tarih ve saat zorunludur.');
+      _showSnack(loc.appointmentsRequiredFields);
       return;
     }
     if (_timeSlots.isNotEmpty && time.isEmpty) {
-      _showSnack('Lütfen uygun bir saat seçin.');
+      _showSnack(loc.appointmentsSelectAvailableTime);
       return;
     }
 
     final token = await _getToken();
     if (token == null || token.isEmpty) {
-      _showSnack('Oturum bulunamadı. Lütfen tekrar giriş yapın.');
+      _showSnack(loc.appointmentsSessionMissingLogin);
       return;
     }
 
@@ -870,12 +905,12 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
       );
 
       if (response.statusCode == 200 || response.statusCode == 201) {
-        _showSnack('Randevu oluşturuldu.', success: true);
+        _showSnack(loc.appointmentsCreateSuccess, success: true);
         await _fetchAppointments();
         _resetQuickForm();
       } else {
         String message =
-            'Randevu oluşturulamadı (HTTP ${response.statusCode}).';
+            loc.appointmentsCreateFailedStatus(response.statusCode.toString());
         try {
           final decoded = jsonDecode(response.body);
           message = decoded['message']?.toString() ?? message;
@@ -883,7 +918,7 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
         _showSnack(message);
       }
     } catch (e) {
-      _showSnack('Randevu oluşturulamadı: $e');
+      _showSnack(loc.appointmentsCreateFailed(e.toString()));
     } finally {
       if (mounted) {
         setState(() {
@@ -946,75 +981,15 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
   }
 
   String _normalizeSlotDate(String rawDate) {
-    final trimmed = rawDate.trim();
-    // If already in dd-MM-yyyy return as-is.
-    final parts = trimmed.split('-');
-    if (parts.length == 3 && parts[0].length == 2 && parts[1].length == 2) {
-      return trimmed;
-    }
-    try {
-      final parsed = DateTime.parse(trimmed);
-      final day = parsed.day.toString().padLeft(2, '0');
-      final month = parsed.month.toString().padLeft(2, '0');
-      final year = parsed.year.toString();
-      return '$day-$month-$year';
-    } catch (_) {
-      return trimmed;
-    }
+    return AppointmentDateUtils.normalizeSlotDate(rawDate);
   }
 
   DateTime _parseInputDateOrNow(String value) {
-    final trimmed = value.trim();
-    if (trimmed.isEmpty) return DateTime.now();
-    final parts = trimmed.split('-');
-    if (parts.length == 3) {
-      // Try dd-MM-yyyy
-      try {
-        final day = int.parse(parts[0]);
-        final month = int.parse(parts[1]);
-        final year = int.parse(parts[2]);
-        return DateTime(year, month, day);
-      } catch (_) {}
-      // Try yyyy-MM-dd
-      try {
-        final year = int.parse(parts[0]);
-        final month = int.parse(parts[1]);
-        final day = int.parse(parts[2]);
-        return DateTime(year, month, day);
-      } catch (_) {}
-    }
-    try {
-      return DateTime.parse(trimmed);
-    } catch (_) {
-      return DateTime.now();
-    }
+    return AppointmentDateUtils.parseInputDateOrNow(value);
   }
 
   String? _normalizeDateToApi(String input) {
-    final trimmed = input.trim();
-    if (trimmed.isEmpty) return null;
-    final parts = trimmed.split('-');
-    try {
-      if (parts.length == 3) {
-        if (parts[0].length == 2) {
-          final day = int.parse(parts[0]);
-          final month = int.parse(parts[1]);
-          final year = int.parse(parts[2]);
-          final dt = DateTime(year, month, day);
-          return '${dt.year.toString().padLeft(4, '0')}-${dt.month.toString().padLeft(2, '0')}-${dt.day.toString().padLeft(2, '0')}';
-        } else if (parts[0].length == 4) {
-          final year = int.parse(parts[0]);
-          final month = int.parse(parts[1]);
-          final day = int.parse(parts[2]);
-          final dt = DateTime(year, month, day);
-          return '${dt.year.toString().padLeft(4, '0')}-${dt.month.toString().padLeft(2, '0')}-${dt.day.toString().padLeft(2, '0')}';
-        }
-      }
-      final parsed = DateTime.parse(trimmed);
-      return '${parsed.year.toString().padLeft(4, '0')}-${parsed.month.toString().padLeft(2, '0')}-${parsed.day.toString().padLeft(2, '0')}';
-    } catch (_) {
-      return null;
-    }
+    return AppointmentDateUtils.normalizeDateToApi(input);
   }
 
   bool _isValidTime(String input) {
@@ -1031,10 +1006,7 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
   }
 
   String _formatDateDisplay(DateTime date) {
-    final day = date.day.toString().padLeft(2, '0');
-    final month = date.month.toString().padLeft(2, '0');
-    final year = date.year.toString();
-    return '$day-$month-$year';
+    return AppointmentDateUtils.formatDateDisplay(date);
   }
 
   Future<void> _pickQuickDate() async {
@@ -1066,14 +1038,14 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
   Future<void> _fetchTimeSlots() async {
     final dateInput = _quickDateController.text.trim();
     if (dateInput.isEmpty) {
-      _showSnack('Önce tarih girin.');
+      _showSnack(loc.appointmentsEnterDateFirst);
       return;
     }
     final formattedDate = _normalizeSlotDate(dateInput);
 
     final token = await _getToken();
     if (token == null || token.isEmpty) {
-      _showSnack('Oturum bulunamadı. Lütfen tekrar giriş yapın.');
+      _showSnack(loc.appointmentsSessionMissingLogin);
       return;
     }
 
@@ -1109,13 +1081,14 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
         });
       } else {
         setState(() {
-          _slotsError = 'Saatler alınamadı (HTTP ${response.statusCode}).';
+          _slotsError = loc.appointmentsSlotsFetchFailedStatus(
+              response.statusCode.toString());
           _loadingSlots = false;
         });
       }
     } catch (e) {
       setState(() {
-        _slotsError = 'Saatler alınamadı: $e';
+        _slotsError = loc.appointmentsSlotsFetchFailed(e.toString());
         _loadingSlots = false;
       });
     }
@@ -1185,13 +1158,13 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
     if (_savingAppointment) return;
 
     if (date.isEmpty || time.isEmpty) {
-      _showSnack('Tarih ve saat zorunludur.');
+      _showSnack(loc.appointmentsDateTimeRequired);
       return;
     }
 
     final token = await _getToken();
     if (token == null || token.isEmpty) {
-      _showSnack('Oturum bulunamadı. Lütfen tekrar giriş yapın.');
+      _showSnack(loc.appointmentsSessionMissingLogin);
       return;
     }
 
@@ -1219,11 +1192,11 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
       );
 
       if (response.statusCode == 200 || response.statusCode == 201) {
-        _showSnack('Randevu güncellendi.', success: true);
+        _showSnack(loc.appointmentsUpdateSuccess, success: true);
         await _fetchAppointments();
       } else {
         String message =
-            'Randevu güncellenemedi (HTTP ${response.statusCode}).';
+            loc.appointmentsUpdateFailedStatus(response.statusCode.toString());
         try {
           final decoded = jsonDecode(response.body);
           message = decoded['message']?.toString() ?? message;
@@ -1231,7 +1204,7 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
         _showSnack(message);
       }
     } catch (e) {
-      _showSnack('Randevu güncellenemedi: $e');
+      _showSnack(loc.appointmentsUpdateFailed(e.toString()));
     } finally {
       if (mounted) {
         setState(() {
@@ -1254,26 +1227,26 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
     if (!_hasUserPack) {
       _showSnack(
         _isIosPaymentRestricted
-            ? _iosPurchaseRestrictionMessage
-            : 'Randevu işlemleri için paket alınız.',
+            ? loc.iosSmsPurchaseRestrictionMessage
+            : loc.appointmentsPackageRequired,
       );
       return;
     }
 
     if (date.isEmpty || time.isEmpty) {
-      _showSnack('Tarih ve saat zorunludur.');
+      _showSnack(loc.appointmentsDateTimeRequired);
       return;
     }
 
     final statusId = appointmentStatusId ?? _defaultStatusId();
     if (statusId == null) {
-      _showSnack('Randevu durumu bulunamadı.');
+      _showSnack(loc.appointmentsStatusMissing);
       return;
     }
 
     final token = await _getToken();
     if (token == null || token.isEmpty) {
-      _showSnack('Oturum bulunamadı. Lütfen tekrar giriş yapın.');
+      _showSnack(loc.appointmentsSessionMissingLogin);
       return;
     }
 
@@ -1301,11 +1274,11 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
       );
 
       if (response.statusCode == 200 || response.statusCode == 201) {
-        _showSnack('Yeni randevu oluşturuldu.', success: true);
+        _showSnack(loc.appointmentsRebookSuccess, success: true);
         await _fetchAppointments();
       } else {
         String message =
-            'Randevu oluşturulamadı (HTTP ${response.statusCode}).';
+            loc.appointmentsCreateFailedStatus(response.statusCode.toString());
         try {
           final decoded = jsonDecode(response.body);
           message = decoded['message']?.toString() ?? message;
@@ -1313,7 +1286,7 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
         _showSnack(message);
       }
     } catch (e) {
-      _showSnack('Randevu oluşturulamadı: $e');
+      _showSnack(loc.appointmentsCreateFailed(e.toString()));
     } finally {
       if (mounted) {
         setState(() {
@@ -1356,10 +1329,11 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
         TextEditingController(text: _formatTime(appt['time']));
     final TextEditingController notesCtrl =
         TextEditingController(text: appt['notes']?.toString() ?? '');
-    final String customerName =
-        (appt['customer']?['name'] ?? '').toString().isNotEmpty
-            ? appt['customer']['name'].toString()
-            : 'Müşteri #${appt["customer_id"] ?? ""}';
+    final String customerName = (appt['customer']?['name'] ?? '')
+            .toString()
+            .isNotEmpty
+        ? appt['customer']['name'].toString()
+        : loc.dashboardCustomerFallback(appt["customer_id"]?.toString() ?? '');
 
     bool localNoSms = _asBool(appt['no_sms']);
     bool localNoReminder = _asBool(appt['no_reminder']);
@@ -1386,13 +1360,13 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
             Future<void> loadSlots() async {
               final dateInput = dateCtrl.text.trim();
               if (dateInput.isEmpty) {
-                _showSnack('Önce tarih girin.');
+                _showSnack(loc.appointmentsEnterDateFirst);
                 return;
               }
 
               final token = await _getToken();
               if (token == null || token.isEmpty) {
-                _showSnack('Oturum bulunamadı. Lütfen tekrar giriş yapın.');
+                _showSnack(loc.appointmentsSessionMissingLogin);
                 return;
               }
 
@@ -1429,14 +1403,15 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
                   });
                 } else {
                   setModalState(() {
-                    localSlotsError =
-                        'Saatler alınamadı (HTTP ${response.statusCode}).';
+                    localSlotsError = loc.appointmentsSlotsFetchFailedStatus(
+                        response.statusCode.toString());
                     localLoadingSlots = false;
                   });
                 }
               } catch (e) {
                 setModalState(() {
-                  localSlotsError = 'Saatler alınamadı: $e';
+                  localSlotsError =
+                      loc.appointmentsSlotsFetchFailed(e.toString());
                   localLoadingSlots = false;
                 });
               }
@@ -1488,9 +1463,9 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
                           Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const Text(
-                                'Randevu Düzenle',
-                                style: TextStyle(
+                              Text(
+                                loc.editAppointment,
+                                style: const TextStyle(
                                     fontSize: 16, fontWeight: FontWeight.bold),
                               ),
                               const SizedBox(height: 4),
@@ -1518,7 +1493,7 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
                               readOnly: true,
                               decoration: InputDecoration(
                                 labelText: loc.date,
-                                hintText: 'Takvimden seçin',
+                                hintText: loc.calendarDateHint,
                               ),
                               onTap: pickDate,
                             ),
@@ -1530,7 +1505,7 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
                               readOnly: true,
                               decoration: InputDecoration(
                                 labelText: loc.timeSelect,
-                                hintText: 'Slot seçin',
+                                hintText: loc.calendarTimeSlotHint,
                               ),
                             ),
                           ),
@@ -1552,7 +1527,7 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
                                     ),
                                   )
                                 : const Icon(Icons.schedule),
-                            label: const Text('Saatleri Getir'),
+                            label: Text(loc.getAvailableTimes),
                           ),
                           const SizedBox(width: 12),
                           if (localSlotsError != null)
@@ -1568,13 +1543,13 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
                       if (localLoadingSlots)
                         const LinearProgressIndicator(minHeight: 2),
                       DropdownButtonFormField<int>(
-                        value: effectiveStatusId,
+                        initialValue: effectiveStatusId,
                         isExpanded: true,
                         decoration: InputDecoration(
-                          labelText: 'Durum',
+                          labelText: loc.status,
                           hintText: _loadingStatuses
-                              ? 'Yükleniyor...'
-                              : 'Durum seçin',
+                              ? loc.calendarLoading
+                              : loc.appointmentsStatusSelectHint,
                           errorText: _statusesError,
                         ),
                         items: _appointmentStatuses
@@ -1637,7 +1612,7 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
                       ),
                       const SizedBox(height: 8),
                       SwitchListTile(
-                        title: const Text('SMS Gönderilmesin'),
+                        title: Text(loc.doNotSendSms),
                         value: localNoSms,
                         onChanged: (val) {
                           setModalState(() {
@@ -1670,7 +1645,7 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
                                   await _updateAppointment(
                                     appointmentId: appointmentId,
                                     customerId: customerId,
-                                    statusId: effectiveStatusId!,
+                                    statusId: effectiveStatusId,
                                     date: dateCtrl.text.trim(),
                                     time: (localSelectedTime ?? timeCtrl.text)
                                         .trim(),
@@ -1690,7 +1665,7 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
                                   ),
                                 )
                               : const Icon(Icons.save),
-                          label: const Text('Kaydet'),
+                          label: Text(loc.save),
                         ),
                       ),
                       const SizedBox(height: 12),
@@ -1710,7 +1685,7 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
         ? appt['id'] as int
         : int.tryParse(appt['id']?.toString() ?? '');
     if (appointmentId == null) {
-      _showSnack('Randevu bilgisi bulunamadı.');
+      _showSnack(loc.appointmentsInfoMissing);
       return;
     }
 
@@ -1721,7 +1696,7 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
       final token = await _getToken();
       if (token == null || token.isEmpty) {
         setModalState(() {
-          loadError = 'Oturum bulunamadı.';
+          loadError = loc.calendarSessionMissing;
         });
         return;
       }
@@ -1750,7 +1725,8 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
             _loadingCustomerInfo = false;
           });
         } else {
-          String message = 'Bilgiler alınamadı (HTTP ${response.statusCode}).';
+          String message = loc.appointmentsInfoFetchFailedStatus(
+              response.statusCode.toString());
           try {
             final decoded = jsonDecode(response.body);
             message = decoded['message']?.toString() ?? message;
@@ -1762,7 +1738,7 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
         }
       } catch (e) {
         setModalState(() {
-          loadError = 'Bilgiler alınamadı: $e';
+          loadError = loc.appointmentsInfoFetchFailed(e.toString());
           _loadingCustomerInfo = false;
         });
       }
@@ -1908,7 +1884,7 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
                         ),
                         const SizedBox(height: 8),
                         if (recent.isEmpty)
-                          const Text('Kayıt bulunamadı.')
+                          Text(loc.appointmentsNoRecords)
                         else
                           ...recent.map((r) {
                             final date = _formatDate(r['date']?.toString());
@@ -1989,7 +1965,7 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
     final customer = appt['customer'] is Map ? appt['customer'] : null;
     final String customerName = (customer?['name'] ?? '').toString().isNotEmpty
         ? customer['name'].toString()
-        : 'Müşteri #${appt["customer_id"] ?? ""}';
+        : loc.dashboardCustomerFallback(appt["customer_id"]?.toString() ?? '');
 
     final TextEditingController dateCtrl = TextEditingController();
     final TextEditingController timeCtrl = TextEditingController();
@@ -2015,13 +1991,13 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
             Future<void> loadSlots() async {
               final dateInput = dateCtrl.text.trim();
               if (dateInput.isEmpty) {
-                _showSnack('Önce tarih girin.');
+                _showSnack(loc.appointmentsEnterDateFirst);
                 return;
               }
 
               final token = await _getToken();
               if (token == null || token.isEmpty) {
-                _showSnack('Oturum bulunamadı. Lütfen tekrar giriş yapın.');
+                _showSnack(loc.appointmentsSessionMissingLogin);
                 return;
               }
 
@@ -2058,14 +2034,15 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
                   });
                 } else {
                   setModalState(() {
-                    localSlotsError =
-                        'Saatler alınamadı (HTTP ${response.statusCode}).';
+                    localSlotsError = loc.appointmentsSlotsFetchFailedStatus(
+                        response.statusCode.toString());
                     localLoadingSlots = false;
                   });
                 }
               } catch (e) {
                 setModalState(() {
-                  localSlotsError = 'Saatler alınamadı: $e';
+                  localSlotsError =
+                      loc.appointmentsSlotsFetchFailed(e.toString());
                   localLoadingSlots = false;
                 });
               }
@@ -2146,7 +2123,7 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
                             readOnly: true,
                             decoration: InputDecoration(
                               labelText: loc.date,
-                              hintText: 'Takvimden seçin',
+                              hintText: loc.calendarDateHint,
                             ),
                             onTap: pickDate,
                           ),
@@ -2158,7 +2135,7 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
                             readOnly: true,
                             decoration: InputDecoration(
                               labelText: loc.timeSelect,
-                              hintText: 'Slot seçin',
+                              hintText: loc.calendarTimeSlotHint,
                             ),
                           ),
                         ),
@@ -2180,7 +2157,7 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
                                   ),
                                 )
                               : const Icon(Icons.schedule),
-                          label: const Text('Saatleri Getir'),
+                          label: Text(loc.getAvailableTimes),
                         ),
                         const SizedBox(width: 12),
                         if (localSlotsError != null)
@@ -2196,12 +2173,13 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
                     if (localLoadingSlots)
                       const LinearProgressIndicator(minHeight: 2),
                     DropdownButtonFormField<int>(
-                      value: localSelectedStatusId,
+                      initialValue: localSelectedStatusId,
                       isExpanded: true,
                       decoration: InputDecoration(
-                        labelText: 'Durum',
-                        hintText:
-                            _loadingStatuses ? 'Yükleniyor...' : 'Durum seçin',
+                        labelText: loc.status,
+                        hintText: _loadingStatuses
+                            ? loc.calendarLoading
+                            : loc.appointmentsStatusSelectHint,
                         errorText: _statusesError,
                       ),
                       items: _appointmentStatuses
@@ -2313,7 +2291,7 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
                                 ),
                               )
                             : const Icon(Icons.flash_on),
-                        label: const Text('Yeni Randevu Oluştur'),
+                        label: Text(loc.rescheduleAppointment),
                       ),
                     ),
                     const SizedBox(height: 8),
@@ -2334,7 +2312,7 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
     final rawCustomerName = customer?['name']?.toString() ?? '';
     final customerName = rawCustomerName.isNotEmpty
         ? rawCustomerName
-        : 'Müşteri #${appt["customer_id"] ?? ""}';
+        : loc.dashboardCustomerFallback(appt["customer_id"]?.toString() ?? '');
     final statusName = status == null
         ? ''
         : _localizedStatusLabel(Map<String, dynamic>.from(status));
@@ -2342,20 +2320,42 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
     final phone =
         (customer?['phone'] ?? customer?['formatted_phone'] ?? appt['phone'])
             ?.toString();
+    Widget actionBtn({
+      required IconData icon,
+      required Color color,
+      required String tooltip,
+      required VoidCallback onPressed,
+    }) {
+      return Tooltip(
+        message: tooltip,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(10),
+          onTap: onPressed,
+          child: Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(icon, size: 18, color: color),
+          ),
+        ),
+      );
+    }
 
     return AnimatedContainer(
       duration: const Duration(milliseconds: 250),
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [primaryColor.withOpacity(0.08), Colors.white],
+          colors: [primaryColor.withValues(alpha: 0.08), Colors.white],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -2375,7 +2375,7 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
                 Row(
                   children: [
                     CircleAvatar(
-                      backgroundColor: statusColor.withOpacity(0.15),
+                      backgroundColor: statusColor.withValues(alpha: 0.15),
                       child: Icon(Icons.event, color: statusColor),
                     ),
                     const SizedBox(width: 8),
@@ -2387,13 +2387,13 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
                           gradient: LinearGradient(
                             colors: [
                               accentColor,
-                              accentColor.withOpacity(0.7),
+                              accentColor.withValues(alpha: 0.7),
                             ],
                           ),
                           borderRadius: BorderRadius.circular(20),
                           boxShadow: [
                             BoxShadow(
-                              color: accentColor.withOpacity(0.2),
+                              color: accentColor.withValues(alpha: 0.2),
                               blurRadius: 8,
                               offset: const Offset(0, 2),
                             ),
@@ -2409,22 +2409,24 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
                         ),
                       ),
                     const Spacer(),
-                    IconButton(
-                      icon: const Icon(Icons.visibility),
+                    actionBtn(
+                      icon: Icons.visibility,
                       color: primaryColor,
-                      tooltip: 'Müşteri önizleme',
+                      tooltip: loc.appointmentsCustomerPreviewTooltip,
                       onPressed: () => _showCustomerInfo(appt),
                     ),
-                    IconButton(
-                      icon: const Icon(Icons.add_task),
+                    const SizedBox(width: 6),
+                    actionBtn(
+                      icon: Icons.add_task,
                       color: secondaryColor,
-                      tooltip: 'Yeniden randevu ver',
+                      tooltip: loc.appointmentsRebookTooltip,
                       onPressed: () => _showRebookSheet(appt),
                     ),
-                    IconButton(
-                      icon: const Icon(Icons.edit),
+                    const SizedBox(width: 6),
+                    actionBtn(
+                      icon: Icons.edit,
                       color: Colors.black87,
-                      tooltip: 'Düzenle',
+                      tooltip: loc.appointmentsEditTooltip,
                       onPressed: () => _showEditSheet(appt),
                     ),
                   ],
@@ -2485,44 +2487,52 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
     }
 
     if (_error != null) {
-      return Padding(
-        padding: const EdgeInsets.symmetric(vertical: 16),
-        child: Text(
-          _error!,
-          style: const TextStyle(color: Colors.red),
+      return _sectionCard(
+        leadingIcon: Icons.error_outline,
+        title: loc.appointmentsTitle,
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: Colors.red.withValues(alpha: 0.08),
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Text(
+            _error!,
+            style: const TextStyle(color: Colors.red),
+          ),
         ),
       );
     }
 
     if (_appointments.isEmpty) {
-      return Padding(
-        padding: const EdgeInsets.symmetric(vertical: 16),
-        child: Text(loc.appointmentsEmpty),
+      return _sectionCard(
+        leadingIcon: Icons.event_busy_outlined,
+        title: loc.appointmentsTitle,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          child: Text(loc.appointmentsEmpty),
+        ),
       );
     }
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          loc.appointmentsTitle,
-          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-        ),
-        const SizedBox(height: 8),
-        ..._appointments.map(_buildAppointmentCard).toList(),
-      ],
+    return _sectionCard(
+      leadingIcon: Icons.event_note_outlined,
+      title: loc.appointmentsTitle,
+      subtitle: loc.appointmentsCountLabel(_appointments.length.toString()),
+      child: Column(
+        children: _appointments.map(_buildAppointmentCard).toList(),
+      ),
     );
   }
 
-  Widget _buildEditForm() {
-    return const SizedBox.shrink();
-  }
-
   Widget _buildFilterForm() {
-    final activeCount = _activeFilters.length;
     if (!_showFilters) return const SizedBox.shrink();
 
     return _sectionCard(
+      leadingIcon: Icons.filter_alt_outlined,
+      title: loc.showFilter,
+      subtitle: loc.appointmentsFilterSubtitle,
       padding: const EdgeInsets.all(16),
       child: Column(
         children: [
@@ -2531,9 +2541,9 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
               Expanded(
                 child: TextField(
                   controller: _filterNameController,
-                  decoration: const InputDecoration(
-                    labelText: 'Ad',
-                    hintText: 'Müşteri adı',
+                  decoration: InputDecoration(
+                    labelText: loc.appointmentsFieldName,
+                    hintText: loc.appointmentsFieldNameFilterHint,
                   ),
                 ),
               ),
@@ -2541,9 +2551,9 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
               Expanded(
                 child: TextField(
                   controller: _filterLastNameController,
-                  decoration: const InputDecoration(
-                    labelText: 'Soyad',
-                    hintText: 'Müşteri soyadı',
+                  decoration: InputDecoration(
+                    labelText: loc.appointmentsFieldLastName,
+                    hintText: loc.appointmentsFieldLastNameFilterHint,
                   ),
                 ),
               ),
@@ -2552,9 +2562,9 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
           const SizedBox(height: 8),
           TextField(
             controller: _filterPhoneController,
-            decoration: const InputDecoration(
-              labelText: 'Telefon',
-              hintText: 'Telefon',
+            decoration: InputDecoration(
+              labelText: loc.appointmentsFieldPhone,
+              hintText: loc.appointmentsFieldPhone,
             ),
           ),
           const SizedBox(height: 8),
@@ -2564,9 +2574,9 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
                 child: TextField(
                   controller: _filterDateFromController,
                   readOnly: true,
-                  decoration: const InputDecoration(
-                    labelText: 'Başlangıç Tarihi',
-                    hintText: 'Takvimden seçin',
+                  decoration: InputDecoration(
+                    labelText: loc.appointmentsStartDate,
+                    hintText: loc.calendarDateHint,
                   ),
                   onTap: () async {
                     final today = DateTime.now();
@@ -2596,9 +2606,9 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
                 child: TextField(
                   controller: _filterDateToController,
                   readOnly: true,
-                  decoration: const InputDecoration(
-                    labelText: 'Bitiş Tarihi',
-                    hintText: 'Takvimden seçin',
+                  decoration: InputDecoration(
+                    labelText: loc.appointmentsEndDate,
+                    hintText: loc.calendarDateHint,
                   ),
                   onTap: () async {
                     final today = DateTime.now();
@@ -2630,11 +2640,11 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
             children: [
               Expanded(
                 child: DropdownButtonFormField<String>(
-                  value: _filterTimeFromController.text.isNotEmpty
+                  initialValue: _filterTimeFromController.text.isNotEmpty
                       ? _filterTimeFromController.text
                       : null,
-                  decoration: const InputDecoration(
-                    labelText: 'Başlangıç Saati',
+                  decoration: InputDecoration(
+                    labelText: loc.appointmentsStartTime,
                     hintText: 'HH:MM',
                   ),
                   items: _timeOptions
@@ -2655,11 +2665,11 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
               const SizedBox(width: 12),
               Expanded(
                 child: DropdownButtonFormField<String>(
-                  value: _filterTimeToController.text.isNotEmpty
+                  initialValue: _filterTimeToController.text.isNotEmpty
                       ? _filterTimeToController.text
                       : null,
-                  decoration: const InputDecoration(
-                    labelText: 'Bitiş Saati',
+                  decoration: InputDecoration(
+                    labelText: loc.appointmentsEndTime,
                     hintText: 'HH:MM',
                   ),
                   items: _timeOptions
@@ -2697,7 +2707,7 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
                   backgroundColor: Colors.grey.shade200,
                   foregroundColor: Colors.black87,
                 ),
-                child: const Text('Temizle'),
+                child: Text(loc.appointmentsClear),
               ),
             ],
           ),
@@ -2719,14 +2729,14 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
                   MaterialPageRoute(builder: (_) => const SmsPacksPage()),
                 );
               },
-              child: const Text('Paket Al'),
+              child: Text(loc.appointmentsBuyPackage),
             ),
         ],
         child: Text(
           _isIosPaymentRestricted
-              ? _iosPurchaseRestrictionMessage
-              : 'Randevu işlemleri için paket alınız.',
-          style: TextStyle(fontWeight: FontWeight.w600),
+              ? loc.iosSmsPurchaseRestrictionMessage
+              : loc.appointmentsPackageRequired,
+          style: const TextStyle(fontWeight: FontWeight.w600),
         ),
       );
     }
@@ -2734,32 +2744,28 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
     if (!_showQuickForm) return const SizedBox.shrink();
 
     return _sectionCard(
+      leadingIcon: Icons.add_circle_outline,
+      title: loc.quickAppointmentTitle,
+      subtitle: loc.quickAppointmentSubtitle,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                loc.quickAppointmentTitle,
-                style:
-                    const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
-              ),
-              IconButton(
-                tooltip: 'Kapat',
-                icon: const Icon(Icons.close),
-                onPressed: () {
-                  setState(() {
-                    _showQuickForm = false;
-                  });
-                },
-              ),
-            ],
+          Align(
+            alignment: Alignment.centerRight,
+            child: IconButton(
+              tooltip: loc.appointmentsClose,
+              icon: const Icon(Icons.close),
+              onPressed: () {
+                setState(() {
+                  _showQuickForm = false;
+                });
+              },
+            ),
           ),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
             decoration: BoxDecoration(
-              color: Colors.blueGrey.withOpacity(0.04),
+              color: Colors.blueGrey.withValues(alpha: 0.04),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Row(
@@ -2795,9 +2801,9 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
                     Expanded(
                       child: TextField(
                         controller: _quickNameController,
-                        decoration: const InputDecoration(
-                          labelText: 'Ad',
-                          hintText: 'Örn: Ali',
+                        decoration: InputDecoration(
+                          labelText: loc.appointmentsFieldName,
+                          hintText: loc.appointmentsFieldNameHint,
                         ),
                       ),
                     ),
@@ -2805,9 +2811,9 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
                     Expanded(
                       child: TextField(
                         controller: _quickLastNameController,
-                        decoration: const InputDecoration(
-                          labelText: 'Soyad',
-                          hintText: 'Örn: Kara',
+                        decoration: InputDecoration(
+                          labelText: loc.appointmentsFieldLastName,
+                          hintText: loc.appointmentsFieldLastNameHint,
                         ),
                       ),
                     ),
@@ -2815,12 +2821,13 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
                 ),
                 const SizedBox(height: 10),
                 DropdownButtonFormField<int>(
-                  value: _selectedCountryId,
+                  initialValue: _selectedCountryId,
                   isExpanded: true,
                   decoration: InputDecoration(
-                    labelText: 'Ülke',
-                    hintText:
-                        _loadingCountries ? 'Yükleniyor...' : 'Ülke seçin',
+                    labelText: loc.appointmentsCountry,
+                    hintText: _loadingCountries
+                        ? loc.calendarLoading
+                        : loc.appointmentsSelectCountry,
                     errorText: _countriesError,
                   ),
                   items: _countries
@@ -2857,9 +2864,9 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
                           ),
                           _phoneMaskFormatter,
                         ],
-                        decoration: const InputDecoration(
-                          labelText: 'Telefon',
-                          hintText: 'Örn: 5554443322',
+                        decoration: InputDecoration(
+                          labelText: loc.appointmentsFieldPhone,
+                          hintText: loc.appointmentsFieldPhoneHint,
                         ),
                       ),
                     ),
@@ -2868,9 +2875,9 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
                       child: TextField(
                         controller: _quickEmailController,
                         keyboardType: TextInputType.emailAddress,
-                        decoration: const InputDecoration(
-                          labelText: 'Email',
-                          hintText: 'Opsiyonel',
+                        decoration: InputDecoration(
+                          labelText: loc.emailLabel,
+                          hintText: loc.appointmentsFieldEmailHint,
                         ),
                       ),
                     ),
@@ -2900,9 +2907,9 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
                       child: TextField(
                         controller: _quickDateController,
                         readOnly: true,
-                        decoration: const InputDecoration(
-                          labelText: 'Tarih',
-                          hintText: 'Takvimden seçin',
+                        decoration: InputDecoration(
+                          labelText: loc.date,
+                          hintText: loc.calendarDateHint,
                         ),
                         onTap: _pickQuickDate,
                       ),
@@ -2912,9 +2919,9 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
                       child: TextField(
                         controller: _quickTimeController,
                         readOnly: true,
-                        decoration: const InputDecoration(
-                          labelText: 'Saat',
-                          hintText: 'Slot seçin',
+                        decoration: InputDecoration(
+                          labelText: loc.timeSelect,
+                          hintText: loc.calendarTimeSlotHint,
                         ),
                       ),
                     ),
@@ -2993,13 +3000,13 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
                   maxLines: 2,
                   decoration: InputDecoration(
                     labelText: loc.note,
-                    hintText: 'Opsiyonel',
+                    hintText: loc.appointmentsFieldEmailHint,
                   ),
                 ),
                 const SizedBox(height: 4),
                 SwitchListTile(
                   contentPadding: EdgeInsets.zero,
-                  title: const Text('İlk randevu mu?'),
+                  title: Text(loc.appointmentsFirstAppointment),
                   value: _quickIsFirstAppointment,
                   onChanged: (val) {
                     setState(() {
@@ -3010,7 +3017,7 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
                 SwitchListTile(
                   contentPadding: EdgeInsets.zero,
                   title: Text(loc.doNotSendSms),
-                  subtitle: const Text('Bu randevu için SMS gönderimi kapalı'),
+                  subtitle: Text(loc.smsOffForAppointment),
                   value: _quickNoSms,
                   onChanged: (val) {
                     setState(() {
@@ -3020,9 +3027,8 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
                 ),
                 SwitchListTile(
                   contentPadding: EdgeInsets.zero,
-                  title: const Text('Hatırlatma gönderme'),
-                  subtitle:
-                      const Text('Bu randevu için hatırlatma bildirimi kapalı'),
+                  title: Text(loc.appointmentsReminderDisableTitle),
+                  subtitle: Text(loc.reminderOffForAppointment),
                   value: _quickNoReminder,
                   onChanged: (val) {
                     setState(() {
@@ -3049,7 +3055,11 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
                       ),
                     )
                   : const Icon(Icons.event_available),
-              label: Text(_savingQuick ? 'Gönderiliyor...' : 'Randevu Oluştur'),
+              label: Text(
+                _savingQuick
+                    ? loc.appointmentsSubmitting
+                    : loc.quickAppointmentTitle,
+              ),
             ),
           ),
         ],
@@ -3071,10 +3081,10 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
             Container(
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
-                color: primaryColor.withOpacity(0.12),
+                color: primaryColor.withValues(alpha: 0.12),
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: Icon(Icons.calendar_today, color: primaryColor),
+              child: const Icon(Icons.calendar_today, color: primaryColor),
             ),
             const SizedBox(width: 10),
             Text(
@@ -3088,12 +3098,12 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
             IconButton(
               onPressed: _navigateToDashboard,
               icon: const Icon(Icons.home_outlined),
-              tooltip: 'Anasayfa',
+              tooltip: loc.appointmentsHomeTooltip,
             ),
           IconButton(
             onPressed: _fetchAppointments,
             icon: const Icon(Icons.refresh),
-            tooltip: 'Yenile',
+            tooltip: loc.refresh,
           ),
           const SizedBox(width: 6),
         ],

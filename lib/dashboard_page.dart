@@ -17,7 +17,8 @@ import 'config.dart';
 import 'login_page.dart';
 import 'auth.dart';
 import 'pages/themes.dart';
-import 'pages/myLinks.dart';
+import 'pages/my_links.dart';
+import 'pages/customers.dart';
 import 'pages/profile.dart';
 import 'pages/support.dart';
 import 'pages/working_preferences.dart';
@@ -26,7 +27,6 @@ import 'pages/sms_templates.dart';
 import 'pages/calendar.dart';
 import 'pages/sms_packs.dart';
 import 'pages/orders.dart';
-import 'pages/profile.dart';
 import 'widgets/main_nav.dart';
 
 class DashboardPage extends StatefulWidget {
@@ -45,8 +45,6 @@ class DashboardPage extends StatefulWidget {
 
 class _DashboardPageState extends State<DashboardPage> {
   bool get _isIosStorefront => !kIsWeb && Platform.isIOS;
-  static const String _iosPurchaseRestrictionMessage =
-      'iOS uygulamasında SMS paket satın alma işlemi, Apple App Store politikaları gereği desteklenmemektedir.\nSatın alma işlemleri web sitesi üzerinden gerçekleştirilebilir.';
   bool _loading = true;
   String? _error;
   Map<String, dynamic>? _dashboardData;
@@ -67,7 +65,7 @@ class _DashboardPageState extends State<DashboardPage> {
   }
 
   Future<void> _fetchDashboard({bool force = false}) async {
-    final loc = AppLocalizations.of(context)!;
+    final loc = AppLocalizations.of(context);
     if (_hasDashboardLoaded && !force) {
       setState(() {
         _loading = false;
@@ -176,14 +174,13 @@ class _DashboardPageState extends State<DashboardPage> {
   }
 
   Future<void> _downloadQr(BuildContext sourceContext, String link) async {
-    final loc = AppLocalizations.of(context)!;
+    final loc = AppLocalizations.of(context);
+    final origin = _shareOrigin(sourceContext);
     try {
       final painter = QrPainter(
         data: link,
         version: QrVersions.auto,
         gapless: true,
-        color: Colors.black,
-        emptyColor: Colors.white,
       );
       final imageData =
           await painter.toImageData(600, format: ui.ImageByteFormat.png);
@@ -194,7 +191,6 @@ class _DashboardPageState extends State<DashboardPage> {
       final file = File('${dir.path}/bagla_qr.png');
       await file.writeAsBytes(bytes);
 
-      final origin = _shareOrigin(sourceContext);
       await Share.shareXFiles(
         [XFile(file.path)],
         text: loc.dashboardShareBio,
@@ -206,7 +202,7 @@ class _DashboardPageState extends State<DashboardPage> {
   }
 
   Future<void> _openWhatsAppSupport() async {
-    final loc = AppLocalizations.of(context)!;
+    final loc = AppLocalizations.of(context);
     const phone = '902589110241';
     final uri = Uri.parse('https://wa.me/$phone');
     try {
@@ -221,7 +217,7 @@ class _DashboardPageState extends State<DashboardPage> {
   }
 
   Future<void> _openBioLink(String link) async {
-    final loc = AppLocalizations.of(context)!;
+    final loc = AppLocalizations.of(context);
     final trimmed = link.trim();
     if (trimmed.isEmpty) return;
     Uri? uri = Uri.tryParse(trimmed);
@@ -260,7 +256,7 @@ class _DashboardPageState extends State<DashboardPage> {
   }
 
   Future<void> _shareBioSystem(BuildContext sourceContext, String link) async {
-    final loc = AppLocalizations.of(context)!;
+    final loc = AppLocalizations.of(context);
     try {
       final origin = _shareOrigin(sourceContext);
       await Share.share(
@@ -274,7 +270,7 @@ class _DashboardPageState extends State<DashboardPage> {
   }
 
   void _showQrModal(String link) {
-    final loc = AppLocalizations.of(context)!;
+    final loc = AppLocalizations.of(context);
     showModalBottomSheet(
       context: context,
       shape: const RoundedRectangleBorder(
@@ -319,9 +315,10 @@ class _DashboardPageState extends State<DashboardPage> {
                   Expanded(
                     child: OutlinedButton.icon(
                       onPressed: () async {
+                        final navigator = Navigator.of(ctx);
                         await _shareBioSystem(ctx, link);
-                        if (Navigator.of(ctx).canPop()) {
-                          Navigator.of(ctx).pop();
+                        if (navigator.canPop()) {
+                          navigator.pop();
                         }
                       },
                       icon: const Icon(Icons.share),
@@ -332,9 +329,10 @@ class _DashboardPageState extends State<DashboardPage> {
                   Expanded(
                     child: OutlinedButton.icon(
                       onPressed: () async {
+                        final navigator = Navigator.of(ctx);
                         await _downloadQr(ctx, link);
-                        if (Navigator.of(ctx).canPop()) {
-                          Navigator.of(ctx).pop();
+                        if (navigator.canPop()) {
+                          navigator.pop();
                         }
                       },
                       icon: const Icon(Icons.download),
@@ -350,65 +348,19 @@ class _DashboardPageState extends State<DashboardPage> {
     );
   }
 
-  Widget _buildStatCard(String title, String value, IconData icon,
-      {Color? color}) {
-    return Expanded(
-      child: Container(
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: Colors.grey.shade200),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.03),
-              blurRadius: 10,
-              offset: const Offset(0, 6),
-            )
-          ],
-        ),
-        padding: const EdgeInsets.all(16),
-        child: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                color: (color ?? Colors.blueAccent).withOpacity(0.1),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Icon(icon, color: color ?? Colors.blueAccent),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: const TextStyle(
-                      fontSize: 13,
-                      color: Colors.black54,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    value,
-                    style: const TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
-                ],
-              ),
-            )
-          ],
-        ),
-      ),
+  void _openTabOrPush(int tabIndex, Widget page) {
+    if (widget.onTabSelected != null) {
+      widget.onTabSelected!(tabIndex);
+      return;
+    }
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => page),
     );
   }
 
   Widget _heroSection(Map<String, dynamic>? packInfo, String totalClicks) {
-    final loc = AppLocalizations.of(context)!;
+    final loc = AppLocalizations.of(context);
     final remainingSms =
         packInfo != null ? (packInfo['remaining_sms'] ?? 0).toString() : '0';
     return Container(
@@ -423,7 +375,7 @@ class _DashboardPageState extends State<DashboardPage> {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.indigo.withOpacity(0.25),
+            color: Colors.indigo.withValues(alpha: 0.25),
             blurRadius: 18,
             offset: const Offset(0, 8),
           ),
@@ -453,6 +405,42 @@ class _DashboardPageState extends State<DashboardPage> {
               _miniPill(loc.dashboardRemainingSms, remainingSms, Icons.sms),
             ],
           ),
+          const SizedBox(height: 14),
+          Row(
+            children: [
+              Expanded(
+                child: ElevatedButton.icon(
+                  onPressed: () => _openTabOrPush(1, const AppointmentsPage()),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.white,
+                    foregroundColor: Colors.indigo.shade900,
+                    padding: const EdgeInsets.symmetric(vertical: 11),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  icon: const Icon(Icons.add_circle_outline, size: 18),
+                  label: Text(loc.dashboardAppointments),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: () => _openTabOrPush(2, const CalendarPage()),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: Colors.white,
+                    side: BorderSide(color: Colors.white.withValues(alpha: 0.7)),
+                    padding: const EdgeInsets.symmetric(vertical: 11),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  icon: const Icon(Icons.calendar_month, size: 18),
+                  label: Text(loc.dashboardCalendar),
+                ),
+              ),
+            ],
+          ),
         ],
       ),
     );
@@ -463,7 +451,7 @@ class _DashboardPageState extends State<DashboardPage> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
         decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.14),
+          color: Colors.white.withValues(alpha: 0.14),
           borderRadius: BorderRadius.circular(12),
         ),
         child: Row(
@@ -497,7 +485,7 @@ class _DashboardPageState extends State<DashboardPage> {
   }
 
   Widget _buildBioCard(String? link) {
-    final loc = AppLocalizations.of(context)!;
+    final loc = AppLocalizations.of(context);
     if (link == null || link.isEmpty) {
       return const SizedBox.shrink();
     }
@@ -508,7 +496,7 @@ class _DashboardPageState extends State<DashboardPage> {
         border: Border.all(color: Colors.grey.shade200),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.03),
+            color: Colors.black.withValues(alpha: 0.03),
             blurRadius: 8,
             offset: const Offset(0, 4),
           )
@@ -572,7 +560,7 @@ class _DashboardPageState extends State<DashboardPage> {
   }
 
   Widget _buildPackInfo(Map<String, dynamic>? packInfo) {
-    final loc = AppLocalizations.of(context)!;
+    final loc = AppLocalizations.of(context);
     if (packInfo == null) {
       return Container(
         decoration: BoxDecoration(
@@ -581,7 +569,7 @@ class _DashboardPageState extends State<DashboardPage> {
           border: Border.all(color: Colors.grey.shade200),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.04),
+              color: Colors.black.withValues(alpha: 0.04),
               blurRadius: 10,
               offset: const Offset(0, 6),
             )
@@ -596,7 +584,7 @@ class _DashboardPageState extends State<DashboardPage> {
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: Colors.blueGrey.withOpacity(0.12),
+                    color: Colors.blueGrey.withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child:
@@ -615,7 +603,7 @@ class _DashboardPageState extends State<DashboardPage> {
             const SizedBox(height: 10),
             Text(
               _isIosStorefront
-                  ? _iosPurchaseRestrictionMessage
+                  ? loc.iosSmsPurchaseRestrictionMessage
                   : 'Aktif paketiniz bulunmuyor. SMS işlemleri için paket alın.',
               style: const TextStyle(color: Colors.black87),
             ),
@@ -648,10 +636,10 @@ class _DashboardPageState extends State<DashboardPage> {
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white.withOpacity(0.08)),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.25),
+            color: Colors.black.withValues(alpha: 0.25),
             blurRadius: 18,
             offset: const Offset(0, 10),
           )
@@ -666,7 +654,7 @@ class _DashboardPageState extends State<DashboardPage> {
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.12),
+                  color: Colors.white.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: const Icon(Icons.local_offer,
@@ -763,7 +751,7 @@ class _DashboardPageState extends State<DashboardPage> {
   }
 
   Widget _buildDailyClicks(Map<String, dynamic>? dailyClicks) {
-    final loc = AppLocalizations.of(context)!;
+    final loc = AppLocalizations.of(context);
     final labels =
         (dailyClicks?['labels'] as List?)?.map((e) => e.toString()).toList() ??
             [];
@@ -778,35 +766,143 @@ class _DashboardPageState extends State<DashboardPage> {
       return Text(loc.dashboardNoClicks);
     }
 
-    final limitedLabels = labels.take(5).toList();
+    final limitedLabels = labels.take(6).toList();
+    final limitedValues = List<double>.generate(
+      limitedLabels.length,
+      (index) {
+        final raw = index < values.length ? values[index] : 0;
+        if (raw is num) return raw.toDouble();
+        return double.tryParse(raw.toString()) ?? 0;
+      },
+    );
+    final maxValue = limitedValues.isEmpty
+        ? 1.0
+        : limitedValues.reduce((a, b) => a > b ? a : b).clamp(1.0, double.infinity);
+
     return Column(
       children: List.generate(limitedLabels.length, (index) {
         final label = limitedLabels[index];
-        final value = index < values.length ? values[index] : '-';
-        return ListTile(
-          dense: true,
-          leading: const Icon(Icons.bar_chart),
-          title: Text(label),
-          trailing: Text(value.toString()),
+        final value = limitedValues[index];
+        final ratio = (value / maxValue).clamp(0.0, 1.0);
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 10),
+          child: Column(
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      label,
+                      style: const TextStyle(
+                        fontSize: 13,
+                        color: Color(0xFF374151),
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                  Text(
+                    value.toInt().toString(),
+                    style: const TextStyle(
+                      fontSize: 13,
+                      color: Color(0xFF111827),
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 6),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(999),
+                child: LinearProgressIndicator(
+                  minHeight: 8,
+                  value: ratio,
+                  backgroundColor: const Color(0xFFE5E7EB),
+                  valueColor:
+                      const AlwaysStoppedAnimation<Color>(Color(0xFF4F46E5)),
+                ),
+              ),
+            ],
+          ),
         );
       }),
     );
   }
 
   Widget _buildTopLinks(List<dynamic>? topLinks) {
-    final loc = AppLocalizations.of(context)!;
+    final loc = AppLocalizations.of(context);
     if (topLinks == null || topLinks.isEmpty) {
       return Text(loc.dashboardNoLinkClicks);
     }
+    final maps = topLinks
+        .whereType<Map>()
+        .map((e) => Map<String, dynamic>.from(e))
+        .toList();
+    final clicks = maps.map((m) {
+      final raw = m['clicks'];
+      if (raw is num) return raw.toDouble();
+      return double.tryParse(raw?.toString() ?? '') ?? 0;
+    }).toList();
+    final maxClicks = clicks.isEmpty
+        ? 1.0
+        : clicks.reduce((a, b) => a > b ? a : b).clamp(1.0, double.infinity);
+
     return Column(
-      children: topLinks.map((link) {
-        final map = link as Map<String, dynamic>;
-        return ListTile(
-          leading: const Icon(Icons.link),
-          title: Text(map['title']?.toString() ?? '-'),
-          trailing: Text('${map['clicks'] ?? 0}'),
+      children: List.generate(maps.length, (index) {
+        final map = maps[index];
+        final title = map['title']?.toString().trim();
+        final value = clicks[index];
+        final ratio = (value / maxClicks).clamp(0.0, 1.0);
+        return Container(
+          margin: const EdgeInsets.only(bottom: 10),
+          padding: const EdgeInsets.all(10),
+          decoration: BoxDecoration(
+            color: const Color(0xFFF8FAFC),
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(color: const Color(0xFFE5E7EB)),
+          ),
+          child: Column(
+            children: [
+              Row(
+                children: [
+                  const Icon(Icons.link, size: 16, color: Color(0xFF0EA5E9)),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: Text(
+                      (title?.isNotEmpty == true) ? title! : '-',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontSize: 13,
+                        color: Color(0xFF111827),
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                  Text(
+                    value.toInt().toString(),
+                    style: const TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w800,
+                      color: Color(0xFF0F172A),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 6),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(999),
+                child: LinearProgressIndicator(
+                  minHeight: 7,
+                  value: ratio,
+                  backgroundColor: const Color(0xFFE2E8F0),
+                  valueColor:
+                      const AlwaysStoppedAnimation<Color>(Color(0xFF0EA5E9)),
+                ),
+              ),
+            ],
+          ),
         );
-      }).toList(),
+      }),
     );
   }
 
@@ -831,7 +927,7 @@ class _DashboardPageState extends State<DashboardPage> {
 
   Widget _buildTodayAppointments(
       BuildContext context, Map<String, dynamic>? apptInfo) {
-    final loc = AppLocalizations.of(context)!;
+    final loc = AppLocalizations.of(context);
     if (apptInfo == null) {
       return Text(loc.dashboardNoAppointmentsData);
     }
@@ -847,28 +943,22 @@ class _DashboardPageState extends State<DashboardPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              loc.dashboardTodayAppointments,
-              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+        Align(
+          alignment: Alignment.centerRight,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+            decoration: BoxDecoration(
+              color: Colors.green.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(12),
             ),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-              decoration: BoxDecoration(
-                color: Colors.green.withOpacity(0.12),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Text(
-                loc.dashboardTodayCount(todayCount.toString()),
-                style: const TextStyle(
-                  color: Colors.green,
-                  fontWeight: FontWeight.w700,
-                ),
+            child: Text(
+              loc.dashboardTodayCount(todayCount.toString()),
+              style: const TextStyle(
+                color: Colors.green,
+                fontWeight: FontWeight.w700,
               ),
             ),
-          ],
+          ),
         ),
         const SizedBox(height: 8),
         if (list.isEmpty)
@@ -889,18 +979,30 @@ class _DashboardPageState extends State<DashboardPage> {
               final phone = customer?['phone']?.toString() ?? '';
               return Container(
                 margin: const EdgeInsets.only(bottom: 8),
-                padding: const EdgeInsets.all(8),
+                padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
                   border: Border.all(color: Colors.grey.shade200),
-                  borderRadius: BorderRadius.circular(10),
+                  borderRadius: BorderRadius.circular(12),
                 ),
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Padding(
-                      padding: EdgeInsets.only(top: 4),
-                      child: Icon(Icons.event_available,
-                          color: Colors.blueAccent, size: 24),
+                    Container(
+                      width: 64,
+                      padding: const EdgeInsets.symmetric(vertical: 8),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFEFF6FF),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Text(
+                        _fmtTime(appt['time']?.toString()),
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w800,
+                          color: Color(0xFF1D4ED8),
+                          fontSize: 14,
+                        ),
+                      ),
                     ),
                     const SizedBox(width: 10),
                     Expanded(
@@ -918,15 +1020,27 @@ class _DashboardPageState extends State<DashboardPage> {
                           ),
                           const SizedBox(height: 2),
                           Text(
-                            '${_fmtDate(appt['date']?.toString())} • ${_fmtTime(appt['time']?.toString())}',
-                            style: const TextStyle(color: Colors.black54),
+                            _fmtDate(appt['date']?.toString()),
+                            style: const TextStyle(color: Colors.black54, fontSize: 12),
                           ),
                           if (phone.isNotEmpty)
-                            Text(
-                              phone,
-                              style: const TextStyle(
-                                  color: Colors.black87, fontSize: 12),
-                              overflow: TextOverflow.ellipsis,
+                            Row(
+                              children: [
+                                const Icon(
+                                  Icons.phone_outlined,
+                                  size: 13,
+                                  color: Color(0xFF6B7280),
+                                ),
+                                const SizedBox(width: 4),
+                                Expanded(
+                                  child: Text(
+                                    phone,
+                                    style: const TextStyle(
+                                        color: Colors.black87, fontSize: 12),
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                              ],
                             ),
                         ],
                       ),
@@ -955,12 +1069,7 @@ class _DashboardPageState extends State<DashboardPage> {
           children: [
             OutlinedButton.icon(
               onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => const CalendarPage(),
-                  ),
-                );
+                _openTabOrPush(2, const CalendarPage());
               },
               icon: const Icon(Icons.calendar_month),
               label: Text(loc.dashboardCalendar),
@@ -968,12 +1077,7 @@ class _DashboardPageState extends State<DashboardPage> {
             const SizedBox(width: 8),
             ElevatedButton.icon(
               onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => const AppointmentsPage(),
-                  ),
-                );
+                _openTabOrPush(1, const AppointmentsPage());
               },
               icon: const Icon(Icons.open_in_new),
               label: Text(loc.dashboardAppointments),
@@ -984,15 +1088,165 @@ class _DashboardPageState extends State<DashboardPage> {
     );
   }
 
+  Widget _buildSectionCard({
+    required IconData icon,
+    required String title,
+    required Widget child,
+  }) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.grey.shade200),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 12,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.indigo.withValues(alpha: 0.08),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(icon, size: 18, color: Colors.indigo.shade700),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          child,
+        ],
+      ),
+    );
+  }
+
+  Widget _quickActionTile({
+    required IconData icon,
+    required String label,
+    required VoidCallback onTap,
+    required Color color,
+  }) {
+    return InkWell(
+      borderRadius: BorderRadius.circular(12),
+      onTap: onTap,
+      child: Container(
+        width: 104,
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.grey.shade200),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: color.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Icon(icon, size: 18, color: color),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              label,
+              textAlign: TextAlign.center,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildQuickActions() {
+    final loc = AppLocalizations.of(context);
+    return _buildSectionCard(
+      icon: Icons.bolt_rounded,
+      title: loc.dashboardQuickActions,
+      child: Wrap(
+        spacing: 8,
+        runSpacing: 8,
+        children: [
+          _quickActionTile(
+            icon: Icons.palette_outlined,
+            label: loc.themes,
+            onTap: () => _navigateToPage(const ThemesPage(), 'themes'),
+            color: const Color(0xFF0284C7),
+          ),
+          _quickActionTile(
+            icon: Icons.link_outlined,
+            label: loc.myLinks,
+            onTap: () => _navigateToPage(const MyLinksPage(), 'my_links'),
+            color: const Color(0xFF16A34A),
+          ),
+          _quickActionTile(
+            icon: Icons.receipt_long_outlined,
+            label: loc.dashboardOrders,
+            onTap: () => _navigateToPage(const OrdersPage(), 'orders'),
+            color: const Color(0xFFF59E0B),
+          ),
+          _quickActionTile(
+            icon: Icons.schedule_outlined,
+            label: loc.dashboardWorkingHours,
+            onTap: () => _navigateToPage(
+              const WorkingPreferencesPage(),
+              'working_preferences',
+            ),
+            color: const Color(0xFF7C3AED),
+          ),
+          _quickActionTile(
+            icon: Icons.sms_outlined,
+            label: loc.dashboardSmsTemplates,
+            onTap: () => _navigateToPage(
+              const SmsTemplatesPage(),
+              'sms_templates',
+            ),
+            color: const Color(0xFFDB2777),
+          ),
+          _quickActionTile(
+            icon: Icons.support_agent_outlined,
+            label: loc.support,
+            onTap: () => _navigateToPage(const SupportPage(), 'support'),
+            color: const Color(0xFFDC2626),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildDashboardBody() {
-    final loc = AppLocalizations.of(context)!;
+    final loc = AppLocalizations.of(context);
     final data = _dashboardData ?? {};
     final packInfo = data['pack_info'] is Map<String, dynamic>
         ? data['pack_info'] as Map<String, dynamic>
         : null;
     final totalClicks = data['total_clicks']?.toString() ?? '0';
-    final remainingSms =
-        packInfo != null ? (packInfo['remaining_sms'] ?? 0).toString() : '0';
     final appointmentInfo = data['appointment_info'] is Map<String, dynamic>
         ? data['appointment_info'] as Map<String, dynamic>
         : null;
@@ -1006,72 +1260,28 @@ class _DashboardPageState extends State<DashboardPage> {
           _heroSection(packInfo, totalClicks),
           _buildBioCard(data['bio_page']?.toString()),
           const SizedBox(height: 12),
-          Row(
-            children: [
-              _buildStatCard(
-                  loc.dashboardTopClicks, totalClicks, Icons.visibility),
-              const SizedBox(width: 12),
-              _buildStatCard(
-                  loc.dashboardRemainingSms, remainingSms, Icons.sms),
-            ],
-          ),
+          _buildQuickActions(),
           const SizedBox(height: 16),
           _buildPackInfo(packInfo),
           const SizedBox(height: 16),
-          Card(
-            shape:
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            elevation: 1,
-            color: Colors.white,
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: _buildTodayAppointments(context, appointmentInfo),
-            ),
+          _buildSectionCard(
+            icon: Icons.event_available_outlined,
+            title: loc.dashboardTodayAppointments,
+            child: _buildTodayAppointments(context, appointmentInfo),
           ),
           const SizedBox(height: 16),
-          Card(
-            shape:
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            elevation: 1,
-            color: Colors.white,
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    loc.dashboardDailyClicks,
-                    style: const TextStyle(
-                        fontSize: 16, fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 8),
-                  _buildDailyClicks(data['daily_clicks']),
-                ],
-              ),
-            ),
+          _buildSectionCard(
+            icon: Icons.bar_chart_rounded,
+            title: loc.dashboardDailyClicks,
+            child: _buildDailyClicks(data['daily_clicks']),
           ),
           const SizedBox(height: 16),
-          Card(
-            shape:
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            elevation: 1,
-            color: Colors.white,
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    loc.dashboardTopLinks,
-                    style: const TextStyle(
-                        fontSize: 16, fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 8),
-                  _buildTopLinks(data['top_links'] as List<dynamic>?),
-                ],
-              ),
-            ),
+          _buildSectionCard(
+            icon: Icons.link_rounded,
+            title: loc.dashboardTopLinks,
+            child: _buildTopLinks(data['top_links'] as List<dynamic>?),
           ),
+          const SizedBox(height: 8),
         ],
       ),
     );
@@ -1079,7 +1289,7 @@ class _DashboardPageState extends State<DashboardPage> {
 
   @override
   Widget build(BuildContext context) {
-    final loc = AppLocalizations.of(context)!;
+    final loc = AppLocalizations.of(context);
     return Scaffold(
       backgroundColor: const Color(0xFFF7F9FC),
       appBar: AppBar(
@@ -1116,7 +1326,7 @@ class _DashboardPageState extends State<DashboardPage> {
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.2),
+                    color: Colors.black.withValues(alpha: 0.2),
                     blurRadius: 12,
                     offset: const Offset(0, 6),
                   ),
@@ -1138,7 +1348,7 @@ class _DashboardPageState extends State<DashboardPage> {
                   Text(
                     loc.dashboardTitle,
                     style: TextStyle(
-                      color: Colors.white.withOpacity(0.9),
+                      color: Colors.white.withValues(alpha: 0.9),
                       fontSize: 22,
                       fontWeight: FontWeight.bold,
                     ),
@@ -1147,7 +1357,7 @@ class _DashboardPageState extends State<DashboardPage> {
                   Text(
                     loc.dashboardDrawerSubtitle,
                     style: TextStyle(
-                      color: Colors.white.withOpacity(0.7),
+                      color: Colors.white.withValues(alpha: 0.7),
                       fontSize: 12,
                     ),
                   ),
@@ -1166,6 +1376,17 @@ class _DashboardPageState extends State<DashboardPage> {
                 );
               },
             ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+              child: Text(
+                loc.dashboardMenuMain,
+                style: const TextStyle(
+                  fontSize: 12,
+                  color: Color(0xFF6B7280),
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
             ListTile(
               leading: const Icon(Icons.person),
               title: Text(loc.profile),
@@ -1178,6 +1399,24 @@ class _DashboardPageState extends State<DashboardPage> {
                   ),
                 );
               },
+            ),
+            ListTile(
+              leading: const Icon(Icons.groups_outlined),
+              title: Text(loc.customersTitle),
+              onTap: () {
+                _navigateToPage(const CustomersPage(), 'customers');
+              },
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+              child: Text(
+                loc.dashboardMenuManagement,
+                style: const TextStyle(
+                  fontSize: 12,
+                  color: Color(0xFF6B7280),
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
             ),
             ListTile(
               leading: const Icon(Icons.link),
@@ -1198,20 +1437,6 @@ class _DashboardPageState extends State<DashboardPage> {
               onTap: () {
                 // Temalar sayfasına yönlendirme
                 _navigateToPage(const ThemesPage(), 'themes');
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.event),
-              title: Text(loc.dashboardAppointments),
-              onTap: () {
-                _navigateToPage(const AppointmentsPage(), 'appointments');
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.calendar_month),
-              title: Text(loc.dashboardWeeklyCalendar),
-              onTap: () {
-                _navigateToPage(const CalendarPage(), 'calendar');
               },
             ),
             if (!_isIosStorefront)
