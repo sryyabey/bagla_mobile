@@ -148,7 +148,7 @@ class _DashboardPageState extends State<DashboardPage> {
         widget.onTabSelected!(2);
         return;
       }
-      if (page is ProfilePage) {
+      if (page is CustomersPage) {
         widget.onTabSelected!(3);
         return;
       }
@@ -1194,10 +1194,10 @@ class _DashboardPageState extends State<DashboardPage> {
         runSpacing: 8,
         children: [
           _quickActionTile(
-            icon: Icons.palette_outlined,
-            label: loc.themes,
-            onTap: () => _navigateToPage(const ThemesPage(), 'themes'),
-            color: const Color(0xFF0284C7),
+            icon: Icons.person_outline,
+            label: loc.profileTitle,
+            onTap: () => _navigateToPage(const ProfilePage(), 'profile'),
+            color: const Color(0xFF4F46E5),
           ),
           _quickActionTile(
             icon: Icons.link_outlined,
@@ -1206,10 +1206,16 @@ class _DashboardPageState extends State<DashboardPage> {
             color: const Color(0xFF16A34A),
           ),
           _quickActionTile(
-            icon: Icons.receipt_long_outlined,
-            label: loc.dashboardOrders,
-            onTap: () => _navigateToPage(const OrdersPage(), 'orders'),
-            color: const Color(0xFFF59E0B),
+            icon: Icons.palette_outlined,
+            label: loc.themes,
+            onTap: () => _navigateToPage(const ThemesPage(), 'themes'),
+            color: const Color(0xFF0284C7),
+          ),
+          _quickActionTile(
+            icon: Icons.support_agent_outlined,
+            label: loc.support,
+            onTap: () => _navigateToPage(const SupportPage(), 'support'),
+            color: const Color(0xFFDC2626),
           ),
           _quickActionTile(
             icon: Icons.schedule_outlined,
@@ -1228,12 +1234,6 @@ class _DashboardPageState extends State<DashboardPage> {
               'sms_templates',
             ),
             color: const Color(0xFFDB2777),
-          ),
-          _quickActionTile(
-            icon: Icons.support_agent_outlined,
-            label: loc.support,
-            onTap: () => _navigateToPage(const SupportPage(), 'support'),
-            color: const Color(0xFFDC2626),
           ),
         ],
       ),

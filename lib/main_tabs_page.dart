@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'dashboard_page.dart';
 import 'pages/appointments.dart';
 import 'pages/calendar.dart';
-import 'pages/profile.dart';
+import 'pages/customers.dart';
 import 'widgets/main_nav.dart';
 
 class MainTabsPage extends StatefulWidget {
@@ -55,7 +55,7 @@ class _MainTabsPageState extends State<MainTabsPage> {
         break;
       case 3:
       default:
-        page = const ProfilePage(showBottomNav: false);
+        page = const CustomersPage();
         break;
     }
 

@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import '../dashboard_page.dart';
 import '../pages/appointments.dart';
 import '../pages/calendar.dart';
-import '../pages/profile.dart';
+import '../pages/customers.dart';
 import 'package:bagla_mobile/l10n/app_localizations.dart';
 
 class MainNavBar extends StatelessWidget {
@@ -36,7 +36,7 @@ class MainNavBar extends StatelessWidget {
         break;
       case 3:
       default:
-        page = const ProfilePage();
+        page = const CustomersPage();
         break;
     }
     Navigator.pushReplacement(
@@ -66,8 +66,8 @@ class MainNavBar extends StatelessWidget {
           label: loc.dashboardCalendar,
         ),
         BottomNavigationBarItem(
-          icon: const Icon(Icons.person_outline),
-          label: loc.profileTitle,
+          icon: const Icon(Icons.groups_outlined),
+          label: loc.customersTitle,
         ),
       ],
     );

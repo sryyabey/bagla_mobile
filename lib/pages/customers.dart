@@ -5,6 +5,7 @@ import 'package:bagla_mobile/config.dart';
 import 'package:bagla_mobile/l10n/app_localizations.dart';
 import 'package:bagla_mobile/main_tabs_page.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -13,6 +14,68 @@ class CustomersPage extends StatefulWidget {
 
   @override
   State<CustomersPage> createState() => _CustomersPageState();
+}
+
+class _PhoneMaskFormatter extends TextInputFormatter {
+  static final RegExp _digitsOnly = RegExp(r'\D');
+
+  static String applyMask(String raw) {
+    final digits = raw.replaceAll(_digitsOnly, '');
+    final limited = digits.length > 10 ? digits.substring(0, 10) : digits;
+    final b = StringBuffer();
+
+    if (limited.isNotEmpty) {
+      b.write('(');
+      b.write(limited.substring(0, limited.length.clamp(0, 3)));
+      if (limited.length >= 3) b.write(')');
+    }
+    if (limited.length > 3) {
+      b.write(' ');
+      b.write(limited.substring(3, limited.length.clamp(3, 6)));
+    }
+    if (limited.length > 6) {
+      b.write(' ');
+      b.write(limited.substring(6, limited.length.clamp(6, 8)));
+    }
+    if (limited.length > 8) {
+      b.write(' ');
+      b.write(limited.substring(8, limited.length.clamp(8, 10)));
+    }
+    return b.toString();
+  }
+
+  int _digitCount(String text, int endOffset) {
+    final left = text.substring(0, endOffset.clamp(0, text.length));
+    return left.replaceAll(_digitsOnly, '').length;
+  }
+
+  int _offsetForDigits(String masked, int digits) {
+    if (digits <= 0) return 0;
+    int seen = 0;
+    for (int i = 0; i < masked.length; i++) {
+      final c = masked.codeUnitAt(i);
+      if (c >= 48 && c <= 57) {
+        seen++;
+        if (seen == digits) return i + 1;
+      }
+    }
+    return masked.length;
+  }
+
+  @override
+  TextEditingValue formatEditUpdate(
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
+    final masked = applyMask(newValue.text);
+    final digitsBefore = _digitCount(newValue.text, newValue.selection.end);
+    final target = _offsetForDigits(masked, digitsBefore);
+    return TextEditingValue(
+      text: masked,
+      selection: TextSelection.collapsed(offset: target),
+      composing: TextRange.empty,
+    );
+  }
 }
 
 class _CustomersPageState extends State<CustomersPage> {
@@ -298,7 +361,9 @@ class _CustomersPageState extends State<CustomersPage> {
     final nameController =
         TextEditingController(text: customer?['name']?.toString() ?? '');
     final phoneController =
-        TextEditingController(text: customer?['phone']?.toString() ?? '');
+        TextEditingController(
+      text: _PhoneMaskFormatter.applyMask(customer?['phone']?.toString() ?? ''),
+    );
     final emailController =
         TextEditingController(text: customer?['email']?.toString() ?? '');
     final addressController =
@@ -388,6 +453,10 @@ class _CustomersPageState extends State<CustomersPage> {
                     icon: Icons.phone_outlined,
                     keyboardType: TextInputType.phone,
                     required: true,
+                    inputFormatters: [
+                      FilteringTextInputFormatter.allow(RegExp(r'[0-9() ]')),
+                      _PhoneMaskFormatter(),
+                    ],
                   ),
                   const SizedBox(height: 16),
                   
@@ -481,6 +550,7 @@ class _CustomersPageState extends State<CustomersPage> {
     required String label,
     required IconData icon,
     TextInputType? keyboardType,
+    List<TextInputFormatter>? inputFormatters,
     int minLines = 1,
     int maxLines = 1,
     bool required = false,
@@ -515,6 +585,7 @@ class _CustomersPageState extends State<CustomersPage> {
           child: TextField(
             controller: controller,
             keyboardType: keyboardType,
+            inputFormatters: inputFormatters,
             minLines: minLines,
             maxLines: maxLines,
             decoration: InputDecoration(
