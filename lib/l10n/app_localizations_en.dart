@@ -1516,6 +1516,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get smsPacksSubmitting => 'Submitting...';
 
   @override
+  String get smsPacksAndroidOnlyTitle => 'Purchases in Android App';
+
+  @override
+  String get smsPacksAndroidOnlyMessage =>
+      'SMS package purchase steps are available only in the Android app. You can view packages on this device.';
+
+  @override
   String get ordersTitle => 'Orders';
 
   @override

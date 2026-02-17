@@ -522,6 +522,8 @@
   "smsPacksPriceLabel": "Fiyat",
   "smsPacksVatIncluded": "KDV Dahil",
   "smsPacksSubmitting": "Gönderiliyor...",
+  "smsPacksAndroidOnlyTitle": "Satın Alma Android Uygulamasında",
+  "smsPacksAndroidOnlyMessage": "SMS paket satın alma adımları yalnızca Android uygulamasında kullanılabilir. Bu cihazda paketleri görüntüleyebilirsiniz.",
   "ordersTitle": "Siparişler",
   "ordersSessionExpired": "Oturum süresi doldu, lütfen tekrar giriş yapın.",
   "ordersSessionMissing": "Oturum bulunamadı. Lütfen tekrar giriş yapın.",

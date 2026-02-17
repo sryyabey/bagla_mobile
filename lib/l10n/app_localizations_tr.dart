@@ -1518,6 +1518,13 @@ class AppLocalizationsTr extends AppLocalizations {
   String get smsPacksSubmitting => 'Gönderiliyor...';
 
   @override
+  String get smsPacksAndroidOnlyTitle => 'Satın Alma Android Uygulamasında';
+
+  @override
+  String get smsPacksAndroidOnlyMessage =>
+      'SMS paket satın alma adımları yalnızca Android uygulamasında kullanılabilir. Bu cihazda paketleri görüntüleyebilirsiniz.';
+
+  @override
   String get ordersTitle => 'Siparişler';
 
   @override

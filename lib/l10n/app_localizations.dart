@@ -2804,6 +2804,18 @@ abstract class AppLocalizations {
   /// **'Submitting...'**
   String get smsPacksSubmitting;
 
+  /// No description provided for @smsPacksAndroidOnlyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Purchases in Android App'**
+  String get smsPacksAndroidOnlyTitle;
+
+  /// No description provided for @smsPacksAndroidOnlyMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'SMS package purchase steps are available only in the Android app. You can view packages on this device.'**
+  String get smsPacksAndroidOnlyMessage;
+
   /// No description provided for @ordersTitle.
   ///
   /// In en, this message translates to:

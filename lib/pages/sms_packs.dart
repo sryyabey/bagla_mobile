@@ -23,8 +23,9 @@ class SmsPacksPage extends StatefulWidget {
 
 class _SmsPacksPageState extends State<SmsPacksPage> {
   AppLocalizations get loc => AppLocalizations.of(context);
-  bool get _isIosPaymentRestricted =>
-      !kIsWeb && defaultTargetPlatform == TargetPlatform.iOS;
+  bool get _isAndroidPurchaseSupported =>
+      !kIsWeb && defaultTargetPlatform == TargetPlatform.android;
+  bool get _isPurchaseRestricted => !_isAndroidPurchaseSupported;
   bool _loading = true;
   bool _purchasing = false;
   String? _error;
@@ -71,7 +72,7 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
   bool _pendingNotified = false;
 
   final List<Map<String, String>> _paymentOptions = const [
-    {'value': 'credit_card', 'label': 'Kredi Kartı'},
+    {'value': 'credit_card', 'label': 'credit_card'},
   ];
   String? _authToken;
   bool _loggingOut = false;
@@ -895,8 +896,8 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
   }
 
   Future<void> _purchasePack() async {
-    if (_isIosPaymentRestricted) {
-      _showSnack(loc.iosSmsPurchaseRestrictionMessage);
+    if (_isPurchaseRestricted) {
+      _showSnack(loc.smsPacksAndroidOnlyMessage);
       return;
     }
     if (_selectedPack == null) {
@@ -1219,9 +1220,9 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
 
     return LayoutBuilder(
       builder: (context, constraints) {
-        final bool twoColumns = constraints.maxWidth > 820;
-        final crossAxisCount = twoColumns ? 2 : 1;
-        final aspectRatio = twoColumns ? 0.9 : 1.05;
+        final bool canUseTwoColumns = constraints.maxWidth >= 340;
+        final crossAxisCount = canUseTwoColumns ? 2 : 1;
+        final aspectRatio = canUseTwoColumns ? 0.68 : 1.05;
 
         Widget buildCard(Map<String, dynamic> pack) {
           final dynamic packId = pack['id'];
@@ -1259,122 +1260,73 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
                 padding: const EdgeInsets.all(14),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
+                  mainAxisSize: MainAxisSize.max,
                   children: [
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        if (imageUrl != null && imageUrl.isNotEmpty)
-                          ClipRRect(
-                            borderRadius: BorderRadius.circular(12),
-                            child: Container(
-                              height: 72,
-                              width: 72,
-                              color: packColor.withValues(alpha: 0.12),
-                              child: Image.network(
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(12),
+                      child: Container(
+                        height: 120,
+                        width: double.infinity,
+                        color: packColor.withValues(alpha: 0.12),
+                        child: imageUrl != null && imageUrl.isNotEmpty
+                            ? Image.network(
                                 imageUrl,
                                 fit: BoxFit.cover,
                                 errorBuilder: (_, __, ___) => Icon(
                                   Icons.image_not_supported_outlined,
                                   color: Colors.grey.shade500,
+                                  size: 28,
                                 ),
-                              ),
-                            ),
-                          )
-                        else
-                          Container(
-                            height: 72,
-                            width: 72,
-                            decoration: BoxDecoration(
-                              color: packColor.withValues(alpha: 0.15),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: const Icon(Icons.auto_awesome),
-                          ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                pack['name']?.toString() ?? '-',
-                                style: const TextStyle(
-                                  fontSize: 17,
-                                  fontWeight: FontWeight.w700,
-                                ),
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                              const SizedBox(height: 6),
-                              Text(
-                                loc.smsPacksSmsCount(smsCount),
-                                style: const TextStyle(
-                                  color: Colors.black87,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                              const SizedBox(height: 10),
-                              Row(
-                                crossAxisAlignment: CrossAxisAlignment.center,
-                                children: [
-                                  Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        '₺$price',
-                                        style: TextStyle(
-                                          color: packColor,
-                                          fontWeight: FontWeight.w800,
-                                          fontSize: 22,
-                                        ),
-                                      ),
-                                      const SizedBox(height: 2),
-                                      Text(
-                                        priceWithTax.isNotEmpty
-                                            ? loc.smsPacksPriceWithTax(
-                                                priceWithTax)
-                                            : '',
-                                        style: const TextStyle(
-                                          color: Colors.black54,
-                                          fontSize: 12,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-                        ),
-                        Icon(
-                          selected
-                              ? Icons.radio_button_checked
-                              : Icons.radio_button_off,
-                          color: selected ? packColor : Colors.grey,
-                        ),
-                      ],
+                              )
+                            : const Icon(Icons.auto_awesome, size: 34),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Text(
+                      loc.smsPacksSmsCount(smsCount),
+                      style: const TextStyle(
+                        color: Colors.black87,
+                        fontWeight: FontWeight.w700,
+                        fontSize: 18,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      '₺$price',
+                      style: TextStyle(
+                        color: packColor,
+                        fontWeight: FontWeight.w800,
+                        fontSize: 24,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      priceWithTax.isNotEmpty
+                          ? loc.smsPacksPriceWithTax(priceWithTax)
+                          : '',
+                      style: const TextStyle(
+                        color: Colors.black54,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                      ),
                     ),
                     if (details.isNotEmpty) ...[
-                      const SizedBox(height: 12),
-                      Align(
-                        alignment: Alignment.centerLeft,
-                        child: TextButton.icon(
-                          onPressed: () =>
-                              _showDetailsModal(details, packColor),
-                          icon: Icon(Icons.list_alt, color: packColor),
-                          label: Text(
-                            loc.smsPacksDetails,
-                            style: TextStyle(color: packColor),
-                          ),
-                          style: TextButton.styleFrom(
-                            padding: EdgeInsets.zero,
-                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                          ),
+                      const SizedBox(height: 8),
+                      TextButton.icon(
+                        onPressed: () => _showDetailsModal(details, packColor),
+                        icon: Icon(Icons.list_alt, color: packColor),
+                        label: Text(
+                          loc.smsPacksDetails,
+                          style: TextStyle(color: packColor),
+                        ),
+                        style: TextButton.styleFrom(
+                          padding: EdgeInsets.zero,
+                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                          alignment: Alignment.centerLeft,
                         ),
                       ),
                     ],
-                    const SizedBox(height: 12),
+                    const Spacer(),
                     SizedBox(
                       width: double.infinity,
                       child: OutlinedButton(
@@ -1403,17 +1355,6 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
           );
         }
 
-        if (!twoColumns) {
-          return Column(
-            children: [
-              for (final pack in packs) ...[
-                buildCard(pack),
-                const SizedBox(height: 12),
-              ],
-            ],
-          );
-        }
-
         return GridView.builder(
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
@@ -1423,6 +1364,7 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
             mainAxisSpacing: 12,
             crossAxisSpacing: 12,
             childAspectRatio: aspectRatio,
+            mainAxisExtent: canUseTwoColumns ? 370 : null,
           ),
           itemBuilder: (context, index) => buildCard(packs[index]),
         );
@@ -1706,11 +1648,11 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
           ),
         ),
         const SizedBox(height: 12),
-        if (!_isIosPaymentRestricted) ...[
+        if (!_isPurchaseRestricted) ...[
           DropdownButtonFormField<String>(
-            decoration: const InputDecoration(
-              labelText: 'Ödeme Yöntemi',
-              border: OutlineInputBorder(),
+            decoration: InputDecoration(
+              labelText: loc.smsPacksPaymentMethod,
+              border: const OutlineInputBorder(),
             ),
             initialValue: _selectedPayment,
             onChanged: (val) {
@@ -1723,7 +1665,11 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
                 .map(
                   (opt) => DropdownMenuItem(
                     value: opt['value'],
-                    child: Text(opt['label'] ?? ''),
+                    child: Text(
+                      opt['value'] == 'credit_card'
+                          ? loc.smsPacksPaymentMethod
+                          : (opt['label'] ?? ''),
+                    ),
                   ),
                 )
                 .toList(),
@@ -1775,13 +1721,19 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
     final smsCount = pack['sms_count']?.toString() ?? '-';
     final price = pack['price']?.toString() ?? '-';
     final priceWithTax = pack['price_with_tax']?.toString() ?? '';
-    final paymentLabel = _isIosPaymentRestricted
+    final paymentLabel = _isPurchaseRestricted
         ? '-'
         : (_paymentOptions.firstWhere(
               (e) => e['value'] == _selectedPayment,
               orElse: () => _paymentOptions.first,
-            )['label'] ??
-            '');
+            )['value'] ==
+                'credit_card'
+            ? loc.smsPacksPaymentMethod
+            : (_paymentOptions.firstWhere(
+                  (e) => e['value'] == _selectedPayment,
+                  orElse: () => _paymentOptions.first,
+                )['label'] ??
+                ''));
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1869,10 +1821,10 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
             '${loc.smsPacksPhoneLabel}: ${_selectedPhoneCode != null && _selectedPhoneCode!.isNotEmpty ? '+$_selectedPhoneCode ' : ''}${_phoneController.text}',
           ),
         Text('${loc.smsPacksPaymentLabel}: $paymentLabel'),
-        if (_isIosPaymentRestricted) ...[
+        if (_isPurchaseRestricted) ...[
           const SizedBox(height: 8),
           Text(
-            loc.iosSmsPurchaseRestrictionMessage,
+            loc.smsPacksAndroidOnlyMessage,
             style: const TextStyle(
               color: Colors.orange,
               fontWeight: FontWeight.w600,
@@ -1897,7 +1849,7 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
         SizedBox(
           width: double.infinity,
           child: ElevatedButton.icon(
-            onPressed: _isIosPaymentRestricted
+            onPressed: _isPurchaseRestricted
                 ? null
                 : (_purchasing ? null : _purchasePack),
             icon: _purchasing
@@ -1915,10 +1867,127 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
     );
   }
 
+  Widget _buildRestrictedBody() {
+    return RefreshIndicator(
+      onRefresh: _loadPacks,
+      child: ListView(
+        padding: const EdgeInsets.all(16),
+        children: [
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.amber.shade50,
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: Colors.amber.shade200),
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Icon(Icons.info_outline, color: Colors.orange),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        loc.smsPacksAndroidOnlyTitle,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w700,
+                          fontSize: 15,
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        loc.smsPacksAndroidOnlyMessage,
+                        style: const TextStyle(height: 1.35),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+          Text(
+            loc.smsPacksStepPack,
+            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+          ),
+          const SizedBox(height: 8),
+          _buildTypeSelector(),
+          const SizedBox(height: 12),
+          _buildPackCards(),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStepHeader() {
+    final labels = [
+      loc.smsPacksStepPack,
+      loc.smsPacksStepInfo,
+      loc.smsPacksStepSummary,
+    ];
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final useWrap = constraints.maxWidth < 370;
+        final children = List.generate(labels.length, (index) {
+          final isActive = _currentStep == index;
+          final isDone = _currentStep > index;
+          final bg = isActive
+              ? Colors.indigo.shade50
+              : (isDone ? Colors.green.shade50 : Colors.grey.shade100);
+          final border = isActive
+              ? Colors.indigo.shade300
+              : (isDone ? Colors.green.shade300 : Colors.grey.shade300);
+          final textColor = isActive
+              ? Colors.indigo.shade700
+              : (isDone ? Colors.green.shade700 : Colors.black87);
+
+          return Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+            decoration: BoxDecoration(
+              color: bg,
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: border),
+            ),
+            child: Text(
+              '${index + 1}. ${labels[index]}',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: textColor,
+              ),
+            ),
+          );
+        });
+
+        if (useWrap) {
+          return Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: children,
+          );
+        }
+
+        return Row(
+          children: [
+            for (int i = 0; i < children.length; i++) ...[
+              Expanded(child: children[i]),
+              if (i != children.length - 1) const SizedBox(width: 8),
+            ],
+          ],
+        );
+      },
+    );
+  }
+
   List<Step> _buildSteps() {
     return [
       Step(
-        title: Text(loc.smsPacksStepPack),
+        title: const SizedBox.shrink(),
         isActive: _currentStep >= 0,
         state: _currentStep > 0
             ? StepState.complete
@@ -1933,7 +2002,7 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
         ),
       ),
       Step(
-        title: Text(loc.smsPacksStepInfo),
+        title: const SizedBox.shrink(),
         isActive: _currentStep >= 1,
         state: _currentStep > 1
             ? StepState.complete
@@ -1941,7 +2010,7 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
         content: _buildBuyerForm(),
       ),
       Step(
-        title: Text(loc.smsPacksStepSummary),
+        title: const SizedBox.shrink(),
         isActive: _currentStep >= 2,
         state: _currentStep == 2 ? StepState.editing : StepState.indexed,
         content: _buildSummary(),
@@ -1960,12 +2029,12 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
       setState(() {
         _currentStep = 2;
       });
-      if (!_isIosPaymentRestricted) {
+      if (!_isPurchaseRestricted) {
         _purchasePack();
       }
     } else {
-      if (_isIosPaymentRestricted) {
-        _showSnack(loc.iosSmsPurchaseRestrictionMessage);
+      if (_isPurchaseRestricted) {
+        _showSnack(loc.smsPacksAndroidOnlyMessage);
         return;
       }
       _purchasePack();
@@ -2025,52 +2094,62 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
                       ),
                     ),
                   )
-                : LayoutBuilder(
+                : _isPurchaseRestricted
+                    ? _buildRestrictedBody()
+                    : LayoutBuilder(
                     builder: (context, constraints) {
-                      return SizedBox(
-                        height: constraints.maxHeight,
-                        child: Stepper(
-                          currentStep: _currentStep,
-                          onStepContinue: _onContinue,
-                          onStepCancel: _onCancel,
-                          onStepTapped: (index) {
-                            if (index < _currentStep) {
-                              setState(() {
-                                _currentStep = index;
-                              });
-                            }
-                          },
-                          controlsBuilder: (context, details) {
-                            final isLast =
-                                _currentStep == _buildSteps().length - 1;
-                            return Padding(
-                              padding: const EdgeInsets.only(top: 12),
-                              child: Wrap(
-                                spacing: 12,
-                                runSpacing: 8,
-                                children: [
-                                  ElevatedButton(
-                                    onPressed: _purchasing
-                                        ? null
-                                        : details.onStepContinue,
-                                    child: Text(
-                                      _purchasing
-                                          ? loc.smsPacksSubmitting
-                                          : (isLast
-                                              ? loc.smsPacksBuy
-                                              : loc.smsPacksNext),
-                                    ),
+                      return Column(
+                        children: [
+                          Padding(
+                            padding: const EdgeInsets.fromLTRB(16, 12, 16, 6),
+                            child: _buildStepHeader(),
+                          ),
+                          Expanded(
+                            child: Stepper(
+                              type: StepperType.horizontal,
+                              currentStep: _currentStep,
+                              onStepContinue: _onContinue,
+                              onStepCancel: _onCancel,
+                              onStepTapped: (index) {
+                                if (index < _currentStep) {
+                                  setState(() {
+                                    _currentStep = index;
+                                  });
+                                }
+                              },
+                              controlsBuilder: (context, details) {
+                                final isLast =
+                                    _currentStep == _buildSteps().length - 1;
+                                return Padding(
+                                  padding: const EdgeInsets.only(top: 12),
+                                  child: Wrap(
+                                    spacing: 12,
+                                    runSpacing: 8,
+                                    children: [
+                                      ElevatedButton(
+                                        onPressed: _purchasing
+                                            ? null
+                                            : details.onStepContinue,
+                                        child: Text(
+                                          _purchasing
+                                              ? loc.smsPacksSubmitting
+                                              : (isLast
+                                                  ? loc.smsPacksBuy
+                                                  : loc.smsPacksNext),
+                                        ),
+                                      ),
+                                      OutlinedButton(
+                                        onPressed: details.onStepCancel,
+                                        child: Text(loc.smsPacksBack),
+                                      ),
+                                    ],
                                   ),
-                                  OutlinedButton(
-                                    onPressed: details.onStepCancel,
-                                    child: Text(loc.smsPacksBack),
-                                  ),
-                                ],
-                              ),
-                            );
-                          },
-                          steps: _buildSteps(),
-                        ),
+                                );
+                              },
+                              steps: _buildSteps(),
+                            ),
+                          ),
+                        ],
                       );
                     },
                   ),

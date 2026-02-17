@@ -522,6 +522,8 @@
   "smsPacksPriceLabel": "Price",
   "smsPacksVatIncluded": "VAT Included",
   "smsPacksSubmitting": "Submitting...",
+  "smsPacksAndroidOnlyTitle": "Purchases in Android App",
+  "smsPacksAndroidOnlyMessage": "SMS package purchase steps are available only in the Android app. You can view packages on this device.",
   "ordersTitle": "Orders",
   "ordersSessionExpired": "Session expired, please log in again.",
   "ordersSessionMissing": "Session not found. Please log in again.",
