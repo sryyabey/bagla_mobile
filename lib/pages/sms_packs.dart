@@ -3,6 +3,7 @@ import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:webview_flutter/webview_flutter.dart';
@@ -64,18 +65,19 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
   final TextEditingController _identityController = TextEditingController();
   final TextEditingController _addressController = TextEditingController();
   final TextEditingController _addressTitleController = TextEditingController();
-  String _selectedPayment = 'credit_card';
+  final String _selectedPayment = 'credit_card';
   bool _agreementChecked = false;
+  bool _showInvoiceFields = false;
   Timer? _paymentTimer;
   String? _contractTitle;
   String? _contractDescriptionHtml;
-  bool _pendingNotified = false;
 
   final List<Map<String, String>> _paymentOptions = const [
     {'value': 'credit_card', 'label': 'credit_card'},
   ];
   String? _authToken;
   bool _loggingOut = false;
+  static const int _phoneDigitsMax = 10;
 
   @override
   void initState() {
@@ -647,6 +649,22 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
     return trimmed.startsWith('+') ? trimmed.substring(1) : trimmed;
   }
 
+  String _extractPhoneDigits(String value) {
+    final digits = value.replaceAll(RegExp(r'\D'), '');
+    if (digits.length <= _phoneDigitsMax) return digits;
+    return digits.substring(0, _phoneDigitsMax);
+  }
+
+  String _formatPhone(String value) {
+    final digits = _extractPhoneDigits(value);
+    if (digits.isEmpty) return '';
+    if (digits.length <= 3) return '($digits';
+    if (digits.length <= 6) {
+      return '(${digits.substring(0, 3)}) ${digits.substring(3)}';
+    }
+    return '(${digits.substring(0, 3)}) ${digits.substring(3, 6)} ${digits.substring(6)}';
+  }
+
   void _onCountryChanged(int val) {
     final selected = _countries.firstWhere(
       (c) => c['id'] == val,
@@ -783,6 +801,7 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
     _taxOfficeController.clear();
     _addressController.clear();
     _noteController.clear();
+    _showInvoiceFields = false;
     if (_selectedCountryId != null) {
       _loadCities(countryId: _selectedCountryId);
     }
@@ -823,16 +842,18 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
         final cleaned = phone.replaceFirst('+', '');
         final digits = cleaned.replaceAll(RegExp(r'\D'), '');
         // heuristic: first 2-3 digits as code if available
-        if (digits.length > 9) {
-          _selectedPhoneCode = digits.substring(0, digits.length - 9);
-          _phoneController.text = digits.substring(digits.length - 9);
+        if (digits.length > _phoneDigitsMax) {
+          _selectedPhoneCode =
+              digits.substring(0, digits.length - _phoneDigitsMax);
+          _phoneController.text =
+              _formatPhone(digits.substring(digits.length - _phoneDigitsMax));
         } else {
           _selectedPhoneCode = fallbackPhoneCode;
-          _phoneController.text = cleaned;
+          _phoneController.text = _formatPhone(cleaned);
         }
       } else {
         _selectedPhoneCode = fallbackPhoneCode;
-        _phoneController.text = phone;
+        _phoneController.text = _formatPhone(phone);
       }
 
       _addressTitleController.text = address['title']?.toString() ?? '';
@@ -841,6 +862,11 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
       _taxOfficeController.text = address['tax_office']?.toString() ?? '';
       _addressController.text = address['address']?.toString() ?? '';
       _noteController.text = address['note']?.toString() ?? '';
+      _showInvoiceFields =
+          _companyController.text.trim().isNotEmpty ||
+          _identityController.text.trim().isNotEmpty ||
+          _taxNumberController.text.trim().isNotEmpty ||
+          _taxOfficeController.text.trim().isNotEmpty;
     });
 
     if (_selectedCountryId != null) {
@@ -933,7 +959,7 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
         'last_name': _lastNameController.text.trim(),
         'company_name': _companyController.text.trim(),
         'email': _emailController.text.trim(),
-        'phone': _phoneController.text.trim(),
+        'phone': _extractPhoneDigits(_phoneController.text.trim()),
         'country_number': countryNumber,
         'identity_number': _identityController.text.trim(),
         'tax_number': _taxNumberController.text.trim(),
@@ -1058,7 +1084,6 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
 
   void _startPaymentPolling(String transactionId) {
     _paymentTimer?.cancel();
-    _pendingNotified = false;
     _paymentTimer = Timer.periodic(const Duration(seconds: 3), (_) {
       _checkOrderStatus(transactionId);
     });
@@ -1099,10 +1124,7 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
           }
           _showPaymentResultDialog(status, order);
         } else if (normalized == 'pending') {
-          if (!_pendingNotified) {
-            _pendingNotified = true;
-            _showSnack(loc.smsPacksPaymentPending, success: true);
-          }
+          // Pending durumda kullanıcıyı ekstra snackbar ile rahatsız etmiyoruz.
         } else if (normalized == 'failed' || normalized == 'canceled') {
           _paymentTimer?.cancel();
           if (!mounted) return;
@@ -1373,340 +1395,438 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
   }
 
   Widget _buildBuyerForm() {
+    Widget section({
+      required String title,
+      required IconData icon,
+      required List<Widget> children,
+    }) {
+      return Container(
+        width: double.infinity,
+        margin: const EdgeInsets.only(bottom: 12),
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: Colors.grey.shade200),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.03),
+              blurRadius: 8,
+              offset: const Offset(0, 3),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(icon, size: 18, color: Colors.indigo.shade500),
+                const SizedBox(width: 8),
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w700,
+                    fontSize: 14,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+            ...children,
+          ],
+        ),
+      );
+    }
+
+    final pack = _selectedPack;
+    final packSms = pack?['sms_count']?.toString() ?? '-';
+    final packPrice = pack?['price']?.toString() ?? '-';
+    final packPriceWithTax = pack?['price_with_tax']?.toString() ?? '';
+
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        if (_loadingAddresses)
-          const LinearProgressIndicator(minHeight: 2)
-        else if (_addressesError != null)
-          Row(
+        if (pack != null)
+          section(
+            title: loc.smsPacksPackLabel,
+            icon: Icons.inventory_2_outlined,
             children: [
-              Expanded(
-                child: Text(
-                  _addressesError!,
-                  style: const TextStyle(color: Colors.red),
+              Text(
+                '${pack['name']?.toString() ?? '-'} - $packSms ${loc.smsPacksSmsLabel}',
+                style: const TextStyle(fontWeight: FontWeight.w700),
+              ),
+              const SizedBox(height: 6),
+              Text('₺$packPrice', style: const TextStyle(fontSize: 18)),
+              if (packPriceWithTax.isNotEmpty)
+                Text(
+                  '${loc.smsPacksVatIncluded} ₺$packPriceWithTax',
+                  style: const TextStyle(color: Colors.black54),
                 ),
-              ),
-              TextButton(
-                onPressed: _loadAddresses,
-                child: Text(loc.smsPacksRefresh),
-              ),
             ],
-          )
-        else if (_addresses.isNotEmpty)
-          DropdownButtonFormField<int>(
-            decoration: InputDecoration(
-              labelText: loc.smsPacksSavedAddressesLabel,
-              border: const OutlineInputBorder(),
+          ),
+        section(
+          title: loc.smsPacksAddressLabel,
+          icon: Icons.bookmark_outline,
+          children: [
+            if (_loadingAddresses)
+              const LinearProgressIndicator(minHeight: 2)
+            else if (_addressesError != null)
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      _addressesError!,
+                      style: const TextStyle(color: Colors.red),
+                    ),
+                  ),
+                  TextButton(
+                    onPressed: _loadAddresses,
+                    child: Text(loc.smsPacksRefresh),
+                  ),
+                ],
+              )
+            else if (_addresses.isNotEmpty)
+              DropdownButtonFormField<int>(
+                decoration: InputDecoration(
+                  labelText: loc.smsPacksSavedAddressesLabel,
+                  border: const OutlineInputBorder(),
+                ),
+                initialValue: _selectedAddressId,
+                isExpanded: true,
+                onChanged: (val) {
+                  if (val == null) return;
+                  if (val == -1) {
+                    setState(_clearAddressFields);
+                    return;
+                  }
+                  final addr = _addresses.firstWhere(
+                    (a) => a['id'] == val,
+                    orElse: () => {},
+                  );
+                  if (addr.isNotEmpty) {
+                    _applyAddress(addr);
+                  }
+                },
+                items: _addresses
+                    .map(
+                      (a) => DropdownMenuItem<int>(
+                        value: a['id'] as int?,
+                        child: Text(
+                          a['title']?.toString().isNotEmpty == true
+                              ? a['title'].toString()
+                              : (a['name']?.toString() ?? loc.smsPacksAddress),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    )
+                    .toList()
+                  ..insert(
+                    0,
+                    DropdownMenuItem<int>(
+                      value: -1,
+                      child: Text(loc.smsPacksNewAddress),
+                    ),
+                  ),
+              )
+            else
+              Text(
+                loc.smsPacksNewAddress,
+                style: const TextStyle(color: Colors.black54),
+              ),
+          ],
+        ),
+        section(
+          title: loc.smsPacksBuyerLabel,
+          icon: Icons.person_outline,
+          children: [
+            TextField(
+              controller: _nameController,
+              decoration: InputDecoration(
+                labelText: loc.smsPacksFirstName,
+                border: const OutlineInputBorder(),
+              ),
             ),
-            initialValue: _selectedAddressId,
-            isExpanded: true,
-            onChanged: (val) {
-              if (val == null) return;
-              if (val == -1) {
+            const SizedBox(height: 12),
+            TextField(
+              controller: _lastNameController,
+              decoration: InputDecoration(
+                labelText: loc.smsPacksLastName,
+                border: const OutlineInputBorder(),
+              ),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: _emailController,
+              keyboardType: TextInputType.emailAddress,
+              decoration: InputDecoration(
+                labelText: loc.smsPacksEmail,
+                border: const OutlineInputBorder(),
+              ),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: _phoneController,
+              keyboardType: TextInputType.phone,
+              inputFormatters: const [_LocalPhoneMaskFormatter()],
+              decoration: InputDecoration(
+                labelText: loc.smsPacksPhone,
+                border: const OutlineInputBorder(),
+                prefixText:
+                    _selectedPhoneCode != null && _selectedPhoneCode!.isNotEmpty
+                        ? '+$_selectedPhoneCode '
+                        : null,
+              ),
+            ),
+          ],
+        ),
+        section(
+          title: loc.smsPacksAddressLabel,
+          icon: Icons.location_on_outlined,
+          children: [
+            TextField(
+              controller: _addressTitleController,
+              decoration: InputDecoration(
+                labelText: loc.smsPacksAddressTitle,
+                border: const OutlineInputBorder(),
+              ),
+            ),
+            const SizedBox(height: 12),
+            if (_loadingCountries)
+              const LinearProgressIndicator(minHeight: 2)
+            else if (_countriesError != null)
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      _countriesError!,
+                      style: const TextStyle(color: Colors.red),
+                    ),
+                  ),
+                  TextButton(
+                    onPressed: _loadCountries,
+                    child: Text(loc.smsPacksRefresh),
+                  ),
+                ],
+              )
+            else
+              DropdownButtonFormField<int>(
+                decoration: InputDecoration(
+                  labelText: loc.smsPacksCountry,
+                  border: const OutlineInputBorder(),
+                ),
+                initialValue: _selectedCountryId,
+                onChanged: (val) {
+                  if (val == null) return;
+                  _onCountryChanged(val);
+                },
+                items: _countries
+                    .map(
+                      (c) => DropdownMenuItem<int>(
+                        value: c['id'] as int?,
+                        child: Text(
+                          '${c['name'] ?? ''} (+${_cleanPhoneCode(c['phone_code']?.toString()) ?? '-'})',
+                        ),
+                      ),
+                    )
+                    .toList(),
+              ),
+            const SizedBox(height: 12),
+            if (_loadingCities)
+              const LinearProgressIndicator(minHeight: 2)
+            else if (_citiesError != null)
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      _citiesError!,
+                      style: const TextStyle(color: Colors.red),
+                    ),
+                  ),
+                  TextButton(
+                    onPressed: () => _loadCities(
+                      countryId: _selectedCountryId,
+                      preselectCityId: _selectedCityId,
+                      preselectDistrictId: _selectedDistrictId,
+                    ),
+                    child: Text(loc.smsPacksRefresh),
+                  ),
+                ],
+              )
+            else
+              DropdownButtonFormField<int>(
+                decoration: InputDecoration(
+                  labelText: loc.smsPacksCity,
+                  border: const OutlineInputBorder(),
+                ),
+                initialValue: _selectedCityId,
+                onChanged: _cities.isEmpty ? null : _onCityChanged,
+                items: _cities
+                    .map(
+                      (c) => DropdownMenuItem<int>(
+                        value: c['id'] as int?,
+                        child: Text(c['name']?.toString() ?? ''),
+                      ),
+                    )
+                    .toList(),
+              ),
+            const SizedBox(height: 12),
+            if (_loadingDistricts)
+              const LinearProgressIndicator(minHeight: 2)
+            else if (_districtsError != null)
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      _districtsError!,
+                      style: const TextStyle(color: Colors.red),
+                    ),
+                  ),
+                  TextButton(
+                    onPressed: () => _loadDistricts(cityId: _selectedCityId),
+                    child: Text(loc.smsPacksRefresh),
+                  ),
+                ],
+              )
+            else
+              DropdownButtonFormField<int>(
+                decoration: InputDecoration(
+                  labelText: loc.smsPacksDistrict,
+                  border: const OutlineInputBorder(),
+                ),
+                initialValue: _selectedDistrictId,
+                onChanged: _districts.isEmpty
+                    ? null
+                    : (val) {
+                        setState(() {
+                          _selectedDistrictId = val;
+                        });
+                      },
+                items: _districts
+                    .map(
+                      (d) => DropdownMenuItem<int>(
+                        value: d['id'] as int?,
+                        child: Text(d['name']?.toString() ?? ''),
+                      ),
+                    )
+                    .toList(),
+              ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: _addressController,
+              minLines: 2,
+              maxLines: 4,
+              decoration: InputDecoration(
+                labelText: loc.smsPacksAddress,
+                border: const OutlineInputBorder(),
+              ),
+            ),
+          ],
+        ),
+        section(
+          title: loc.smsPacksInvoiceLabel,
+          icon: Icons.receipt_long_outlined,
+          children: [
+            SwitchListTile(
+              value: _showInvoiceFields,
+              contentPadding: EdgeInsets.zero,
+              title: Text(loc.smsPacksInvoiceLabel),
+              onChanged: (val) {
                 setState(() {
-                  _clearAddressFields();
+                  _showInvoiceFields = val;
                 });
-                return;
-              }
-              final addr = _addresses.firstWhere(
-                (a) => a['id'] == val,
-                orElse: () => {},
-              );
-              if (addr.isNotEmpty) {
-                _applyAddress(addr);
-              }
-            },
-            items: _addresses
-                .map(
-                  (a) => DropdownMenuItem<int>(
-                    value: a['id'] as int?,
-                    child: Text(
-                      a['title']?.toString().isNotEmpty == true
-                          ? a['title'].toString()
-                          : (a['name']?.toString() ?? loc.smsPacksAddress),
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                )
-                .toList()
-              ..insert(
-                0,
-                DropdownMenuItem<int>(
-                  value: -1,
-                  child: Text(loc.smsPacksNewAddress),
+              },
+            ),
+            if (_showInvoiceFields) ...[
+              const SizedBox(height: 8),
+              TextField(
+                controller: _companyController,
+                decoration: InputDecoration(
+                  labelText: loc.smsPacksCompany,
+                  border: const OutlineInputBorder(),
                 ),
               ),
-          ),
-        if (_addresses.isNotEmpty) const SizedBox(height: 12),
-        TextField(
-          controller: _addressTitleController,
-          decoration: InputDecoration(
-            labelText: loc.smsPacksAddressTitle,
-            border: const OutlineInputBorder(),
-          ),
-        ),
-        const SizedBox(height: 12),
-        TextField(
-          controller: _nameController,
-          decoration: InputDecoration(
-            labelText: loc.smsPacksFirstName,
-            border: const OutlineInputBorder(),
-          ),
-        ),
-        const SizedBox(height: 12),
-        TextField(
-          controller: _lastNameController,
-          decoration: InputDecoration(
-            labelText: loc.smsPacksLastName,
-            border: const OutlineInputBorder(),
-          ),
-        ),
-        const SizedBox(height: 12),
-        TextField(
-          controller: _companyController,
-          decoration: InputDecoration(
-            labelText: loc.smsPacksCompany,
-            border: const OutlineInputBorder(),
-          ),
-        ),
-        const SizedBox(height: 12),
-        TextField(
-          controller: _emailController,
-          keyboardType: TextInputType.emailAddress,
-          decoration: InputDecoration(
-            labelText: loc.smsPacksEmail,
-            border: const OutlineInputBorder(),
-          ),
-        ),
-        const SizedBox(height: 12),
-        if (_loadingCountries)
-          const LinearProgressIndicator(minHeight: 2)
-        else if (_countriesError != null)
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  _countriesError!,
-                  style: const TextStyle(color: Colors.red),
+              const SizedBox(height: 12),
+              TextField(
+                controller: _identityController,
+                keyboardType: TextInputType.number,
+                decoration: InputDecoration(
+                  labelText: loc.smsPacksIdentity,
+                  border: const OutlineInputBorder(),
                 ),
               ),
-              TextButton(
-                onPressed: _loadCountries,
-                child: Text(loc.smsPacksRefresh),
+              const SizedBox(height: 12),
+              TextField(
+                controller: _taxNumberController,
+                keyboardType: TextInputType.number,
+                decoration: InputDecoration(
+                  labelText: loc.smsPacksTaxNumber,
+                  border: const OutlineInputBorder(),
+                ),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: _taxOfficeController,
+                decoration: InputDecoration(
+                  labelText: loc.smsPacksTaxOffice,
+                  border: const OutlineInputBorder(),
+                ),
               ),
             ],
-          )
-        else
-          DropdownButtonFormField<int>(
-            decoration: InputDecoration(
-              labelText: loc.smsPacksCountry,
-              border: const OutlineInputBorder(),
-            ),
-            initialValue: _selectedCountryId,
-            onChanged: (val) {
-              if (val == null) return;
-              _onCountryChanged(val);
-            },
-            items: _countries
-                .map(
-                  (c) => DropdownMenuItem<int>(
-                    value: c['id'] as int?,
-                    child: Text(
-                      '${c['name'] ?? ''} (+${_cleanPhoneCode(c['phone_code']?.toString()) ?? '-'})',
-                    ),
-                  ),
-                )
-                .toList(),
-          ),
-        const SizedBox(height: 12),
-        if (_loadingCities)
-          const LinearProgressIndicator(minHeight: 2)
-        else if (_citiesError != null)
-          Row(
-            children: [
-              Expanded(
+          ],
+        ),
+        section(
+          title: loc.smsPacksStepSummary,
+          icon: Icons.tune_outlined,
+          children: [
+            if (!_isPurchaseRestricted) ...[
+              InputDecorator(
+                decoration: InputDecoration(
+                  labelText: loc.smsPacksPaymentMethod,
+                  border: const OutlineInputBorder(),
+                  prefixIcon: const Icon(Icons.credit_card_outlined),
+                ),
                 child: Text(
-                  _citiesError!,
-                  style: const TextStyle(color: Colors.red),
+                  loc.smsPacksPaymentMethod,
+                  style: const TextStyle(fontWeight: FontWeight.w600),
                 ),
               ),
-              TextButton(
-                onPressed: () => _loadCities(
-                  countryId: _selectedCountryId,
-                  preselectCityId: _selectedCityId,
-                  preselectDistrictId: _selectedDistrictId,
-                ),
-                child: Text(loc.smsPacksRefresh),
-              ),
+              const SizedBox(height: 12),
             ],
-          )
-        else
-          DropdownButtonFormField<int>(
-            decoration: InputDecoration(
-              labelText: loc.smsPacksCity,
-              border: const OutlineInputBorder(),
+            TextField(
+              controller: _noteController,
+              maxLines: 3,
+              decoration: InputDecoration(
+                labelText: loc.smsPacksNote,
+                border: const OutlineInputBorder(),
+                hintText: loc.smsPacksNoteHint,
+              ),
             ),
-            initialValue: _selectedCityId,
-            onChanged: _cities.isEmpty ? null : _onCityChanged,
-            items: _cities
-                .map(
-                  (c) => DropdownMenuItem<int>(
-                    value: c['id'] as int?,
-                    child: Text(c['name']?.toString() ?? ''),
-                  ),
-                )
-                .toList(),
-          ),
-        const SizedBox(height: 12),
-        if (_loadingDistricts)
-          const LinearProgressIndicator(minHeight: 2)
-        else if (_districtsError != null)
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  _districtsError!,
-                  style: const TextStyle(color: Colors.red),
+            const SizedBox(height: 8),
+            CheckboxListTile(
+              contentPadding: EdgeInsets.zero,
+              value: _agreementChecked,
+              onChanged: (val) {
+                setState(() {
+                  _agreementChecked = val ?? false;
+                });
+              },
+              title: Text(loc.smsPacksAgreementTitle),
+              controlAffinity: ListTileControlAffinity.leading,
+            ),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: TextButton.icon(
+                onPressed: _showContract,
+                icon: const Icon(Icons.description_outlined),
+                label: Text(
+                  _contractTitle?.isNotEmpty == true
+                      ? _contractTitle!
+                      : loc.smsPacksContract,
                 ),
               ),
-              TextButton(
-                onPressed: () => _loadDistricts(cityId: _selectedCityId),
-                child: Text(loc.smsPacksRefresh),
-              ),
-            ],
-          )
-        else
-          DropdownButtonFormField<int>(
-            decoration: InputDecoration(
-              labelText: loc.smsPacksDistrict,
-              border: const OutlineInputBorder(),
             ),
-            initialValue: _selectedDistrictId,
-            onChanged: _districts.isEmpty
-                ? null
-                : (val) {
-                    setState(() {
-                      _selectedDistrictId = val;
-                    });
-                  },
-            items: _districts
-                .map(
-                  (d) => DropdownMenuItem<int>(
-                    value: d['id'] as int?,
-                    child: Text(d['name']?.toString() ?? ''),
-                  ),
-                )
-                .toList(),
-          ),
-        const SizedBox(height: 12),
-        TextField(
-          controller: _phoneController,
-          keyboardType: TextInputType.phone,
-          decoration: InputDecoration(
-            labelText: loc.smsPacksPhone,
-            border: const OutlineInputBorder(),
-            prefixText:
-                _selectedPhoneCode != null && _selectedPhoneCode!.isNotEmpty
-                    ? '+$_selectedPhoneCode '
-                    : null,
-          ),
-        ),
-        const SizedBox(height: 12),
-        TextField(
-          controller: _identityController,
-          keyboardType: TextInputType.number,
-          decoration: InputDecoration(
-            labelText: loc.smsPacksIdentity,
-            border: const OutlineInputBorder(),
-          ),
-        ),
-        const SizedBox(height: 12),
-        TextField(
-          controller: _taxNumberController,
-          keyboardType: TextInputType.number,
-          decoration: InputDecoration(
-            labelText: loc.smsPacksTaxNumber,
-            border: const OutlineInputBorder(),
-          ),
-        ),
-        const SizedBox(height: 12),
-        TextField(
-          controller: _taxOfficeController,
-          decoration: InputDecoration(
-            labelText: loc.smsPacksTaxOffice,
-            border: const OutlineInputBorder(),
-          ),
-        ),
-        const SizedBox(height: 12),
-        TextField(
-          controller: _addressController,
-          minLines: 2,
-          maxLines: 4,
-          decoration: InputDecoration(
-            labelText: loc.smsPacksAddress,
-            border: const OutlineInputBorder(),
-          ),
-        ),
-        const SizedBox(height: 12),
-        if (!_isPurchaseRestricted) ...[
-          DropdownButtonFormField<String>(
-            decoration: InputDecoration(
-              labelText: loc.smsPacksPaymentMethod,
-              border: const OutlineInputBorder(),
-            ),
-            initialValue: _selectedPayment,
-            onChanged: (val) {
-              if (val == null) return;
-              setState(() {
-                _selectedPayment = val;
-              });
-            },
-            items: _paymentOptions
-                .map(
-                  (opt) => DropdownMenuItem(
-                    value: opt['value'],
-                    child: Text(
-                      opt['value'] == 'credit_card'
-                          ? loc.smsPacksPaymentMethod
-                          : (opt['label'] ?? ''),
-                    ),
-                  ),
-                )
-                .toList(),
-          ),
-          const SizedBox(height: 12),
-        ],
-        TextField(
-          controller: _noteController,
-          maxLines: 3,
-          decoration: InputDecoration(
-            labelText: loc.smsPacksNote,
-            border: const OutlineInputBorder(),
-            hintText: loc.smsPacksNoteHint,
-          ),
-        ),
-        CheckboxListTile(
-          contentPadding: EdgeInsets.zero,
-          value: _agreementChecked,
-          onChanged: (val) {
-            setState(() {
-              _agreementChecked = val ?? false;
-            });
-          },
-          title: Text(loc.smsPacksAgreementTitle),
-          controlAffinity: ListTileControlAffinity.leading,
-        ),
-        Align(
-          alignment: Alignment.centerLeft,
-          child: TextButton.icon(
-            onPressed: _showContract,
-            icon: const Icon(Icons.description_outlined),
-            label: Text(
-              _contractTitle?.isNotEmpty == true
-                  ? _contractTitle!
-                  : loc.smsPacksContract,
-            ),
-          ),
+          ],
         ),
       ],
     );
@@ -1735,92 +1855,187 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
                 )['label'] ??
                 ''));
 
+    Widget infoRow(String label, String value, {IconData? icon}) {
+      if (value.trim().isEmpty) return const SizedBox.shrink();
+      return Padding(
+        padding: const EdgeInsets.only(bottom: 8),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (icon != null) ...[
+              Icon(icon, size: 16, color: Colors.blueGrey.shade500),
+              const SizedBox(width: 8),
+            ],
+            Expanded(
+              child: RichText(
+                text: TextSpan(
+                  style: const TextStyle(color: Colors.black87, height: 1.35),
+                  children: [
+                    TextSpan(
+                      text: '$label: ',
+                      style: const TextStyle(fontWeight: FontWeight.w700),
+                    ),
+                    TextSpan(text: value),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Padding(
-          padding: EdgeInsets.zero,
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      pack['name']?.toString() ?? '-',
-                      style: const TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      '${loc.smsPacksPlanLabel}: ${_localizePlanLabel(pack['type']?.toString() ?? _selectedType)}',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 12),
-              FittedBox(
-                fit: BoxFit.scaleDown,
-                alignment: Alignment.centerRight,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Text(
-                      '₺$price',
-                      style: const TextStyle(
-                        fontWeight: FontWeight.w800,
-                        fontSize: 20,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(height: 6),
-                    if (priceWithTax.isNotEmpty)
-                      Text(
-                        '${loc.smsPacksVatIncluded} ₺$priceWithTax',
-                        style: const TextStyle(
-                            fontWeight: FontWeight.w700, fontSize: 14),
-                        overflow: TextOverflow.ellipsis,
-                        maxLines: 1,
-                      ),
-                  ],
-                ),
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Colors.indigo.shade600, Colors.blue.shade500],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            borderRadius: BorderRadius.circular(14),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.indigo.withValues(alpha: 0.2),
+                blurRadius: 10,
+                offset: const Offset(0, 6),
               ),
             ],
           ),
-        ),
-        const SizedBox(height: 8),
-        Text('${loc.smsPacksSmsLabel}: $smsCount'),
-        if (_companyController.text.trim().isNotEmpty)
-          Text(
-              '${loc.smsPacksCompanyLabel}: ${_companyController.text.trim()}'),
-        const SizedBox(height: 8),
-        const SizedBox(height: 16),
-        Text(
-          loc.smsPacksSummaryPurchaseInfo,
-          style: const TextStyle(fontWeight: FontWeight.w700),
-        ),
-        const SizedBox(height: 8),
-        Text(
-            '${loc.smsPacksBuyerLabel}: ${_nameController.text} ${_lastNameController.text}'),
-        Text('${loc.smsPacksEmailLabel}: ${_emailController.text}'),
-        if (_selectedCountryId != null)
-          Text(
-              '${loc.smsPacksCountryLabel}: ${_getNameById(_countries, _selectedCountryId)}'),
-        if (_selectedCityId != null)
-          Text(
-              '${loc.smsPacksCityLabel}: ${_getNameById(_cities, _selectedCityId)}'),
-        if (_selectedDistrictId != null)
-          Text(
-              '${loc.smsPacksDistrictLabel}: ${_getNameById(_districts, _selectedDistrictId)}'),
-        if (_phoneController.text.isNotEmpty)
-          Text(
-            '${loc.smsPacksPhoneLabel}: ${_selectedPhoneCode != null && _selectedPhoneCode!.isNotEmpty ? '+$_selectedPhoneCode ' : ''}${_phoneController.text}',
+          child: Row(
+            children: [
+              const Icon(Icons.verified_user, color: Colors.white),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  '${loc.smsPacksPaymentMethod} • SSL',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+              const Icon(Icons.lock_outline, color: Colors.white),
+            ],
           ),
-        Text('${loc.smsPacksPaymentLabel}: $paymentLabel'),
+        ),
+        const SizedBox(height: 12),
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: Colors.grey.shade200),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                loc.smsPacksSummaryPurchaseInfo,
+                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+              ),
+              const SizedBox(height: 10),
+              infoRow(loc.smsPacksPackLabel, pack['name']?.toString() ?? '-',
+                  icon: Icons.inventory_2_outlined),
+              infoRow(
+                loc.smsPacksPlanLabel,
+                _localizePlanLabel(pack['type']?.toString() ?? _selectedType),
+                icon: Icons.layers_outlined,
+              ),
+              infoRow(loc.smsPacksSmsLabel, smsCount, icon: Icons.sms_outlined),
+              const Divider(height: 20),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(loc.smsPacksAmountLabel),
+                  Text(
+                    '₺$price',
+                    style: const TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ],
+              ),
+              if (priceWithTax.isNotEmpty) ...[
+                const SizedBox(height: 4),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(loc.smsPacksVatIncluded),
+                    Text(
+                      '₺$priceWithTax',
+                      style: TextStyle(
+                        color: Colors.green.shade700,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ],
+          ),
+        ),
+        const SizedBox(height: 12),
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: Colors.grey.shade200),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                loc.smsPacksBuyerLabel,
+                style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
+              ),
+              const SizedBox(height: 10),
+              infoRow(
+                loc.smsPacksBuyerLabel,
+                '${_nameController.text} ${_lastNameController.text}'.trim(),
+                icon: Icons.person_outline,
+              ),
+              infoRow(loc.smsPacksEmailLabel, _emailController.text,
+                  icon: Icons.mail_outline),
+              infoRow(
+                loc.smsPacksPhoneLabel,
+                '${_selectedPhoneCode != null && _selectedPhoneCode!.isNotEmpty ? '+$_selectedPhoneCode ' : ''}${_phoneController.text}',
+                icon: Icons.phone_outlined,
+              ),
+              infoRow(
+                loc.smsPacksAddressLabel,
+                _addressController.text,
+                icon: Icons.location_on_outlined,
+              ),
+              if (_selectedCityId != null || _selectedDistrictId != null)
+                infoRow(
+                  loc.smsPacksCityLabel,
+                  '${_getNameById(_cities, _selectedCityId)} ${_getNameById(_districts, _selectedDistrictId)}'
+                      .trim(),
+                  icon: Icons.map_outlined,
+                ),
+              infoRow(loc.smsPacksPaymentLabel, paymentLabel,
+                  icon: Icons.credit_card_outlined),
+              if (_companyController.text.trim().isNotEmpty)
+                infoRow(
+                  loc.smsPacksCompanyLabel,
+                  _companyController.text.trim(),
+                  icon: Icons.business_outlined,
+                ),
+              if (_noteController.text.trim().isNotEmpty)
+                infoRow(loc.smsPacksNoteLabel, _noteController.text.trim(),
+                    icon: Icons.notes_outlined),
+            ],
+          ),
+        ),
         if (_isPurchaseRestricted) ...[
           const SizedBox(height: 8),
           Text(
@@ -1831,38 +2046,6 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
             ),
           ),
         ],
-        if (_taxNumberController.text.isNotEmpty)
-          Text('${loc.smsPacksTaxNumberLabel}: ${_taxNumberController.text}'),
-        if (_taxOfficeController.text.isNotEmpty)
-          Text('${loc.smsPacksTaxOfficeLabel}: ${_taxOfficeController.text}'),
-        if (_identityController.text.isNotEmpty)
-          Text('${loc.smsPacksIdentityLabel}: ${_identityController.text}'),
-        if (_addressController.text.isNotEmpty) ...[
-          const SizedBox(height: 8),
-          Text('${loc.smsPacksAddressLabel}: ${_addressController.text}'),
-        ],
-        if (_noteController.text.trim().isNotEmpty) ...[
-          const SizedBox(height: 8),
-          Text('${loc.smsPacksNoteLabel}: ${_noteController.text.trim()}'),
-        ],
-        const SizedBox(height: 20),
-        SizedBox(
-          width: double.infinity,
-          child: ElevatedButton.icon(
-            onPressed: _isPurchaseRestricted
-                ? null
-                : (_purchasing ? null : _purchasePack),
-            icon: _purchasing
-                ? const SizedBox(
-                    width: 16,
-                    height: 16,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : const Icon(Icons.check_circle),
-            label: Text(
-                _purchasing ? loc.smsPacksSubmitting : loc.smsPacksSubmitLabel),
-          ),
-        ),
       ],
     );
   }
@@ -2029,9 +2212,6 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
       setState(() {
         _currentStep = 2;
       });
-      if (!_isPurchaseRestricted) {
-        _purchasePack();
-      }
     } else {
       if (_isPurchaseRestricted) {
         _showSnack(loc.smsPacksAndroidOnlyMessage);
@@ -2120,30 +2300,72 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
                               controlsBuilder: (context, details) {
                                 final isLast =
                                     _currentStep == _buildSteps().length - 1;
+                                final continueButton = ElevatedButton(
+                                  onPressed:
+                                      _purchasing ? null : details.onStepContinue,
+                                  child: Text(
+                                    _purchasing
+                                        ? loc.smsPacksSubmitting
+                                        : loc.smsPacksNext,
+                                  ),
+                                );
                                 return Padding(
                                   padding: const EdgeInsets.only(top: 12),
-                                  child: Wrap(
-                                    spacing: 12,
-                                    runSpacing: 8,
-                                    children: [
-                                      ElevatedButton(
-                                        onPressed: _purchasing
-                                            ? null
-                                            : details.onStepContinue,
-                                        child: Text(
-                                          _purchasing
-                                              ? loc.smsPacksSubmitting
-                                              : (isLast
-                                                  ? loc.smsPacksBuy
-                                                  : loc.smsPacksNext),
+                                  child: isLast
+                                      ? Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.stretch,
+                                          children: [
+                                            ElevatedButton.icon(
+                                              onPressed: _purchasing
+                                                  ? null
+                                                  : details.onStepContinue,
+                                              icon: _purchasing
+                                                  ? const SizedBox(
+                                                      width: 16,
+                                                      height: 16,
+                                                      child:
+                                                          CircularProgressIndicator(
+                                                              strokeWidth: 2),
+                                                    )
+                                                  : const Icon(
+                                                      Icons.lock_outline),
+                                              style: ElevatedButton.styleFrom(
+                                                backgroundColor:
+                                                    Colors.indigo.shade600,
+                                                foregroundColor: Colors.white,
+                                                padding:
+                                                    const EdgeInsets.symmetric(
+                                                        vertical: 14),
+                                                shape: RoundedRectangleBorder(
+                                                  borderRadius:
+                                                      BorderRadius.circular(12),
+                                                ),
+                                              ),
+                                              label: Text(
+                                                _purchasing
+                                                    ? loc.smsPacksSubmitting
+                                                    : loc.smsPacksBuy,
+                                              ),
+                                            ),
+                                            const SizedBox(height: 8),
+                                            OutlinedButton(
+                                              onPressed: details.onStepCancel,
+                                              child: Text(loc.smsPacksBack),
+                                            ),
+                                          ],
+                                        )
+                                      : Wrap(
+                                          spacing: 12,
+                                          runSpacing: 8,
+                                          children: [
+                                            continueButton,
+                                            OutlinedButton(
+                                              onPressed: details.onStepCancel,
+                                              child: Text(loc.smsPacksBack),
+                                            ),
+                                          ],
                                         ),
-                                      ),
-                                      OutlinedButton(
-                                        onPressed: details.onStepCancel,
-                                        child: Text(loc.smsPacksBack),
-                                      ),
-                                    ],
-                                  ),
                                 );
                               },
                               steps: _buildSteps(),
@@ -2187,5 +2409,34 @@ class _PaymentPage extends StatelessWidget {
         body: SafeArea(child: WebViewWidget(controller: controller)),
       ),
     );
+  }
+}
+
+class _LocalPhoneMaskFormatter extends TextInputFormatter {
+  const _LocalPhoneMaskFormatter();
+
+  static const int _maxDigits = 10;
+
+  @override
+  TextEditingValue formatEditUpdate(
+      TextEditingValue oldValue, TextEditingValue newValue) {
+    final digits = newValue.text.replaceAll(RegExp(r'\D'), '');
+    final limited =
+        digits.length <= _maxDigits ? digits : digits.substring(0, _maxDigits);
+    final formatted = _format(limited);
+
+    return TextEditingValue(
+      text: formatted,
+      selection: TextSelection.collapsed(offset: formatted.length),
+    );
+  }
+
+  static String _format(String digits) {
+    if (digits.isEmpty) return '';
+    if (digits.length <= 3) return '($digits';
+    if (digits.length <= 6) {
+      return '(${digits.substring(0, 3)}) ${digits.substring(3)}';
+    }
+    return '(${digits.substring(0, 3)}) ${digits.substring(3, 6)} ${digits.substring(6)}';
   }
 }

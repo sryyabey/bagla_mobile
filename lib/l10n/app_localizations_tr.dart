@@ -1419,7 +1419,7 @@ class AppLocalizationsTr extends AppLocalizations {
   String get smsPacksAddress => 'Adres';
 
   @override
-  String get smsPacksPaymentMethod => 'Ödeme Yöntemi';
+  String get smsPacksPaymentMethod => 'Kredit kartı';
 
   @override
   String get smsPacksNote => 'Not';

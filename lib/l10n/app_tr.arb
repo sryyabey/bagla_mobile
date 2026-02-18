@@ -491,7 +491,7 @@
   "smsPacksTaxNumber": "Vergi No (opsiyonel)",
   "smsPacksTaxOffice": "Vergi Dairesi",
   "smsPacksAddress": "Adres",
-  "smsPacksPaymentMethod": "Ödeme Yöntemi",
+  "smsPacksPaymentMethod": "Kredit kartı",
   "smsPacksNote": "Not",
   "smsPacksNoteHint": "Faturaya eklenecek not veya özel talepler",
   "smsPacksAgreementTitle": "Satın alma sözleşmesini okudum, onaylıyorum.",

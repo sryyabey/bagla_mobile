@@ -133,7 +133,7 @@ class AppleAuthService {
         throw AppleAuthException.canceled();
       }
       throw AppleAuthException.server(
-        'Apple girişi başarısız: ${e.message ?? e.code}',
+        'Apple girişi başarısız: ${e.message}',
       );
     } on AppleAuthException {
       rethrow;
