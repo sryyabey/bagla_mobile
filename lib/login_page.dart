@@ -26,8 +26,7 @@ class _LoginPageState extends State<LoginPage> {
   final GoogleSignIn _googleSignIn = GoogleSignIn(
     scopes: const ['email'],
     // Use the Web client ID here so the backend can verify idToken audience.
-    serverClientId:
-        '99910465030-ng2ik9e1hpmbv9dg5530u7jr2e2emrmu.apps.googleusercontent.com',
+    serverClientId: googleWebServerClientId,
     // On iOS, the native clientId is read from GoogleService-Info.plist.
   );
   Locale _locale = const Locale('tr');
@@ -385,8 +384,7 @@ class _LoginPageState extends State<LoginPage> {
                       SizedBox(
                         width: double.infinity,
                         child: ElevatedButton.icon(
-                          onPressed:
-                              _isGoogleLoading ? null : _loginWithGoogle,
+                          onPressed: _isGoogleLoading ? null : _loginWithGoogle,
                           icon: _isGoogleLoading
                               ? const SizedBox(
                                   width: 20,
@@ -402,12 +400,12 @@ class _LoginPageState extends State<LoginPage> {
                                   height: 24,
                                   width: 24,
                                 ),
-                      label: Text(
-                        _isGoogleLoading
-                            ? loc.googleConnecting
-                            : loc.googleLoginButton,
-                        style: const TextStyle(color: Colors.black87),
-                      ),
+                          label: Text(
+                            _isGoogleLoading
+                                ? loc.googleConnecting
+                                : loc.googleLoginButton,
+                            style: const TextStyle(color: Colors.black87),
+                          ),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.white,
                             shape: RoundedRectangleBorder(
@@ -441,11 +439,11 @@ class _LoginPageState extends State<LoginPage> {
                             ),
                           );
                         },
-                    child: Text(
-                      loc.createAccountEmail,
-                      style: const TextStyle(color: Colors.white70),
-                    ),
-                  ),
+                        child: Text(
+                          loc.createAccountEmail,
+                          style: const TextStyle(color: Colors.white70),
+                        ),
+                      ),
                       const SizedBox(height: 40),
                     ],
                   ),

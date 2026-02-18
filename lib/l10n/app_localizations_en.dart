@@ -24,25 +24,25 @@ class AppLocalizationsEn extends AppLocalizations {
   String get googleLogin => 'Continue with Google';
 
   @override
-  String get onboardTitle1 => 'Build your bio link & share';
+  String get onboardTitle1 => 'Create your bio link page and stand out';
 
   @override
   String get onboardDesc1 =>
-      'Launch a single bio link, add socials and share it everywhere with QR or one tap.';
+      'Collect all your links on one page, share your bagla.app bio link, and make it easier to get discovered.';
 
   @override
-  String get onboardTitle2 => 'Appointments + SMS alerts';
+  String get onboardTitle2 => 'Track your appointments in one place';
 
   @override
   String get onboardDesc2 =>
-      'Book appointments, send confirmations by SMS, and keep the whole schedule in one place.';
+      'Plan client appointments, send reminders automatically, and run your day with clarity and control.';
 
   @override
-  String get onboardTitle3 => 'Bio link is free to start';
+  String get onboardTitle3 => 'Quick start for independent professionals';
 
   @override
   String get onboardDesc3 =>
-      'Begin free, publish your bio link instantly, upgrade only when you need extras.';
+      'Go live in minutes, unlock more as your business grows, and keep everything in bagla.app.';
 
   @override
   String get menuTitle => 'Menu';

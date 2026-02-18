@@ -27,8 +27,7 @@ class _RegisterPageState extends State<RegisterPage> {
   final String _deviceName = 'bagla_mobile';
   final GoogleSignIn _googleSignIn = GoogleSignIn(
     scopes: const ['email'],
-    serverClientId:
-        '99910465030-ng2ik9e1hpmbv9dg5530u7jr2e2emrmu.apps.googleusercontent.com',
+    serverClientId: googleWebServerClientId,
   );
 
   bool _isLoading = false;
@@ -346,8 +345,8 @@ class _RegisterPageState extends State<RegisterPage> {
                       borderRadius: BorderRadius.circular(12),
                       borderSide: BorderSide.none,
                     ),
-                    prefixIcon:
-                        const Icon(Icons.alternate_email, color: Colors.white70),
+                    prefixIcon: const Icon(Icons.alternate_email,
+                        color: Colors.white70),
                   ),
                 ),
                 const SizedBox(height: 16),
@@ -408,7 +407,9 @@ class _RegisterPageState extends State<RegisterPage> {
                             width: 24,
                           ),
                     label: Text(
-                      _isGoogleLoading ? 'Bağlanıyor...' : 'Google ile devam et',
+                      _isGoogleLoading
+                          ? 'Bağlanıyor...'
+                          : 'Google ile devam et',
                       style: const TextStyle(color: Colors.black87),
                     ),
                     style: ElevatedButton.styleFrom(

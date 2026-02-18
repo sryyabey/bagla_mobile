@@ -131,37 +131,37 @@ abstract class AppLocalizations {
   /// No description provided for @onboardTitle1.
   ///
   /// In en, this message translates to:
-  /// **'Build your bio link & share'**
+  /// **'Create your bio link page and stand out'**
   String get onboardTitle1;
 
   /// No description provided for @onboardDesc1.
   ///
   /// In en, this message translates to:
-  /// **'Launch a single bio link, add socials and share it everywhere with QR or one tap.'**
+  /// **'Collect all your links on one page, share your bagla.app bio link, and make it easier to get discovered.'**
   String get onboardDesc1;
 
   /// No description provided for @onboardTitle2.
   ///
   /// In en, this message translates to:
-  /// **'Appointments + SMS alerts'**
+  /// **'Track your appointments in one place'**
   String get onboardTitle2;
 
   /// No description provided for @onboardDesc2.
   ///
   /// In en, this message translates to:
-  /// **'Book appointments, send confirmations by SMS, and keep the whole schedule in one place.'**
+  /// **'Plan client appointments, send reminders automatically, and run your day with clarity and control.'**
   String get onboardDesc2;
 
   /// No description provided for @onboardTitle3.
   ///
   /// In en, this message translates to:
-  /// **'Bio link is free to start'**
+  /// **'Quick start for independent professionals'**
   String get onboardTitle3;
 
   /// No description provided for @onboardDesc3.
   ///
   /// In en, this message translates to:
-  /// **'Begin free, publish your bio link instantly, upgrade only when you need extras.'**
+  /// **'Go live in minutes, unlock more as your business grows, and keep everything in bagla.app.'**
   String get onboardDesc3;
 
   /// No description provided for @menuTitle.

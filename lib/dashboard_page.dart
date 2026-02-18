@@ -429,7 +429,8 @@ class _DashboardPageState extends State<DashboardPage> {
                   onPressed: () => _openTabOrPush(2, const CalendarPage()),
                   style: OutlinedButton.styleFrom(
                     foregroundColor: Colors.white,
-                    side: BorderSide(color: Colors.white.withValues(alpha: 0.7)),
+                    side:
+                        BorderSide(color: Colors.white.withValues(alpha: 0.7)),
                     padding: const EdgeInsets.symmetric(vertical: 11),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
@@ -777,7 +778,9 @@ class _DashboardPageState extends State<DashboardPage> {
     );
     final maxValue = limitedValues.isEmpty
         ? 1.0
-        : limitedValues.reduce((a, b) => a > b ? a : b).clamp(1.0, double.infinity);
+        : limitedValues
+            .reduce((a, b) => a > b ? a : b)
+            .clamp(1.0, double.infinity);
 
     return Column(
       children: List.generate(limitedLabels.length, (index) {
@@ -1021,7 +1024,8 @@ class _DashboardPageState extends State<DashboardPage> {
                           const SizedBox(height: 2),
                           Text(
                             _fmtDate(appt['date']?.toString()),
-                            style: const TextStyle(color: Colors.black54, fontSize: 12),
+                            style: const TextStyle(
+                                color: Colors.black54, fontSize: 12),
                           ),
                           if (phone.isNotEmpty)
                             Row(
@@ -1493,8 +1497,7 @@ class _DashboardPageState extends State<DashboardPage> {
                 try {
                   final googleSignIn = GoogleSignIn(
                     scopes: const ['email'],
-                    serverClientId:
-                        '99910465030-ng2ik9e1hpmbv9dg5530u7jr2e2emrmu.apps.googleusercontent.com',
+                    serverClientId: googleWebServerClientId,
                   );
                   await googleSignIn.signOut();
                   await googleSignIn.disconnect();

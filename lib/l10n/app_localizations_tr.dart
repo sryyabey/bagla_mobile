@@ -24,25 +24,25 @@ class AppLocalizationsTr extends AppLocalizations {
   String get googleLogin => 'Google ile devam et';
 
   @override
-  String get onboardTitle1 => 'Biyolinkini hazırla ve paylaş';
+  String get onboardTitle1 => 'Bio link sayfanı oluştur ve öne çık';
 
   @override
   String get onboardDesc1 =>
-      'Tüm sosyal linklerini tek biyolinkte topla, QR ile paylaş ve her yerde görün.';
+      'Tüm linklerini tek sayfada topla, bagla.app bio linkini paylaş ve seni keşfetmelerini kolaylaştır.';
 
   @override
-  String get onboardTitle2 => 'Randevu + SMS ile takip et';
+  String get onboardTitle2 => 'Randevularını tek yerden takip et';
 
   @override
   String get onboardDesc2 =>
-      'Randevu al, otomatik SMS gönder; takvimini ve bildirimleri tek ekrandan yönet.';
+      'Müşteri randevularını planla, hatırlatmaları otomatik gönder, gününü düzenli ve kontrollü yönet.';
 
   @override
-  String get onboardTitle3 => 'Biyolink ücretsiz başlar';
+  String get onboardTitle3 => 'Bireysel profesyoneller için hızlı başlangıç';
 
   @override
   String get onboardDesc3 =>
-      'Ücretsiz başla, biyolinkini anında yayınla; ihtiyaç oldukça paketleri aç.';
+      'Dakikalar içinde yayına çık, işin büyüdükçe özelliklerini artır; bagla.app yanında.';
 
   @override
   String get menuTitle => 'Menü';

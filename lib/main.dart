@@ -42,7 +42,8 @@ class BaglaAppState extends State<BaglaApp> {
 
   void _checkLoginStatus() async {
     final prefs = await SharedPreferences.getInstance();
-    final token = prefs.getString('bearer_token') ?? prefs.getString('authToken');
+    final token =
+        prefs.getString('bearer_token') ?? prefs.getString('authToken');
     if (token != null && token.isNotEmpty) {
       setState(() {
         _isLoggedIn = true;
@@ -156,29 +157,59 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final loc = AppLocalizations.of(context)!;
+    final loc = AppLocalizations.of(context);
+    final isTr = Localizations.localeOf(context).languageCode == 'tr';
+    final skipLabel = isTr ? 'Atla' : 'Skip';
+    final nextLabel = isTr ? 'İleri' : 'Next';
+    final startLabel = isTr ? 'Başlayalım' : "Let's start";
+    final headerTitle = isTr
+        ? 'Bio link ve randevu yönetimi'
+        : 'Bio link and appointment management';
+    final headerSubtitle = isTr
+        ? 'Bireysel çalışan profesyoneller için tek uygulama'
+        : 'One app for independent professionals';
 
     final pages = <_OnboardPage>[
       _OnboardPage(
         title: loc.onboardTitle1,
         desc: loc.onboardDesc1,
         image: 'assets/onboarding_biolink.png',
-        gradient: const [Color(0xFF0F172A), Color(0xFF312E81)],
-        accent: const Color(0xFF7C3AED),
+        badge: isTr ? 'Bio Link' : 'Bio Link',
+        highlights: isTr
+            ? const ['Tek link', 'Kişisel sayfa', 'Hızlı paylaşım']
+            : const ['Single link', 'Personal page', 'Fast sharing'],
+        gradient: const [Color(0xFF0B1020), Color(0xFF1F3B73)],
+        accent: const Color(0xFF4F9CF9),
       ),
       _OnboardPage(
         title: loc.onboardTitle2,
         desc: loc.onboardDesc2,
         image: 'assets/onboarding_sms.png',
-        gradient: const [Color(0xFF0B1224), Color(0xFF0EA5E9)],
-        accent: const Color(0xFF22D3EE),
+        badge: isTr ? 'Randevu' : 'Appointments',
+        highlights: isTr
+            ? const ['Takvim kontrolü', 'SMS hatırlatma', 'Müşteri takibi']
+            : const ['Calendar control', 'SMS reminders', 'Client tracking'],
+        gradient: const [Color(0xFF101927), Color(0xFF0C6A7A)],
+        accent: const Color(0xFF1FC7B6),
       ),
       _OnboardPage(
         title: loc.onboardTitle3,
         desc: loc.onboardDesc3,
         image: 'assets/onboarding_free.png',
-        gradient: const [Color(0xFF0F172A), Color(0xFF14B8A6)],
-        accent: const Color(0xFF34D399),
+        badge: isTr ? 'Hızlı Başlangıç' : 'Quick Start',
+        highlights: isTr
+            ? const [
+                'Dakikalar içinde yayında',
+                'Büyüdükçe yükselt',
+                'İşine odaklan'
+              ]
+            : const [
+                'Go live in minutes',
+                'Upgrade as you grow',
+                'Focus on your work'
+              ],
+        gradient: const [Color(0xFF151326), Color(0xFF15514F)],
+        accent: const Color(0xFF45D483),
       ),
     ];
 
@@ -200,20 +231,55 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Chip(
-                      backgroundColor:
-                          pages[_currentPage].accent.withOpacity(0.15),
-                      label: const Text(
-                        'Bagla.app',
-                        style: TextStyle(
-                            color: Colors.white, fontWeight: FontWeight.w600),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 12, vertical: 6),
+                            decoration: BoxDecoration(
+                              color:
+                                  pages[_currentPage].accent.withOpacity(0.16),
+                              borderRadius: BorderRadius.circular(99),
+                            ),
+                            child: Text(
+                              'bagla.app',
+                              style: TextStyle(
+                                color: pages[_currentPage].accent,
+                                fontWeight: FontWeight.w700,
+                                fontSize: 13,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 10),
+                          Text(
+                            headerTitle,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w700,
+                              fontSize: 18,
+                              height: 1.25,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            headerSubtitle,
+                            style: const TextStyle(
+                              color: Colors.white70,
+                              fontSize: 13,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
+                    const SizedBox(width: 12),
                     TextButton(
                       onPressed: _goToLogin,
-                      child: const Text(
-                        'Atla',
+                      child: Text(
+                        skipLabel,
                         style: TextStyle(
                           color: Colors.white70,
                           decoration: TextDecoration.underline,
@@ -236,9 +302,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     final page = pages[index];
                     return Padding(
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 24, vertical: 28),
+                          horizontal: 24, vertical: 20),
                       child: Container(
-                        padding: const EdgeInsets.all(24),
+                        padding: const EdgeInsets.fromLTRB(20, 20, 20, 18),
                         decoration: BoxDecoration(
                           color: Colors.white.withOpacity(0.06),
                           borderRadius: BorderRadius.circular(28),
@@ -253,71 +319,150 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                             ),
                           ],
                         ),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Container(
-                              width: double.infinity,
-                              height: 200,
-                              decoration: BoxDecoration(
-                                color: Colors.white.withOpacity(0.08),
-                                borderRadius: BorderRadius.circular(20),
-                                border: Border.all(
-                                  color: Colors.white.withOpacity(0.08),
+                        child: LayoutBuilder(
+                          builder: (context, constraints) {
+                            return SingleChildScrollView(
+                              child: ConstrainedBox(
+                                constraints: BoxConstraints(
+                                    minHeight: constraints.maxHeight),
+                                child: IntrinsicHeight(
+                                  child: Column(
+                                    children: [
+                                      Stack(
+                                        children: [
+                                          Container(
+                                            width: double.infinity,
+                                            height: 184,
+                                            decoration: BoxDecoration(
+                                              color: Colors.white
+                                                  .withOpacity(0.08),
+                                              borderRadius:
+                                                  BorderRadius.circular(20),
+                                              border: Border.all(
+                                                color: Colors.white
+                                                    .withOpacity(0.1),
+                                              ),
+                                            ),
+                                            clipBehavior: Clip.antiAlias,
+                                            child: page.image != null
+                                                ? Image.asset(
+                                                    page.image!,
+                                                    fit: BoxFit.cover,
+                                                  )
+                                                : const SizedBox.shrink(),
+                                          ),
+                                          Positioned(
+                                            top: 10,
+                                            left: 10,
+                                            child: Container(
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                      horizontal: 10,
+                                                      vertical: 6),
+                                              decoration: BoxDecoration(
+                                                color: Colors.black
+                                                    .withOpacity(0.45),
+                                                borderRadius:
+                                                    BorderRadius.circular(99),
+                                              ),
+                                              child: Text(
+                                                page.badge,
+                                                style: TextStyle(
+                                                  color: page.accent,
+                                                  fontWeight: FontWeight.w700,
+                                                  fontSize: 12,
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      const SizedBox(height: 20),
+                                      Text(
+                                        page.title,
+                                        style: const TextStyle(
+                                          fontSize: 25,
+                                          fontWeight: FontWeight.w800,
+                                          color: Colors.white,
+                                          height: 1.2,
+                                        ),
+                                        textAlign: TextAlign.center,
+                                      ),
+                                      const SizedBox(height: 10),
+                                      Text(
+                                        page.desc,
+                                        style: const TextStyle(
+                                          fontSize: 15.5,
+                                          color: Colors.white70,
+                                          height: 1.45,
+                                        ),
+                                        textAlign: TextAlign.center,
+                                      ),
+                                      const SizedBox(height: 16),
+                                      Wrap(
+                                        alignment: WrapAlignment.center,
+                                        spacing: 8,
+                                        runSpacing: 8,
+                                        children: page.highlights
+                                            .map(
+                                              (item) => Container(
+                                                padding:
+                                                    const EdgeInsets.symmetric(
+                                                  horizontal: 12,
+                                                  vertical: 7,
+                                                ),
+                                                decoration: BoxDecoration(
+                                                  color: Colors.white
+                                                      .withOpacity(0.08),
+                                                  borderRadius:
+                                                      BorderRadius.circular(99),
+                                                  border: Border.all(
+                                                    color: Colors.white
+                                                        .withOpacity(0.15),
+                                                  ),
+                                                ),
+                                                child: Text(
+                                                  item,
+                                                  style: const TextStyle(
+                                                    color: Colors.white70,
+                                                    fontSize: 12.5,
+                                                    fontWeight: FontWeight.w600,
+                                                  ),
+                                                ),
+                                              ),
+                                            )
+                                            .toList(),
+                                      ),
+                                      const Spacer(),
+                                      const SizedBox(height: 18),
+                                      Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.center,
+                                        children: List.generate(
+                                          pages.length,
+                                          (i) => AnimatedContainer(
+                                            duration: const Duration(
+                                                milliseconds: 250),
+                                            margin: const EdgeInsets.symmetric(
+                                                horizontal: 5),
+                                            height: 9,
+                                            width: _currentPage == i ? 30 : 11,
+                                            decoration: BoxDecoration(
+                                              color: _currentPage == i
+                                                  ? page.accent
+                                                  : Colors.white24,
+                                              borderRadius:
+                                                  BorderRadius.circular(16),
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
                                 ),
                               ),
-                              clipBehavior: Clip.antiAlias,
-                              child: page.image != null
-                                  ? Image.asset(
-                                      page.image!,
-                                      fit: BoxFit.cover,
-                                    )
-                                  : const SizedBox.shrink(),
-                            ),
-                            Column(
-                              children: [
-                                Text(
-                                  page.title,
-                                  style: const TextStyle(
-                                    fontSize: 26,
-                                    fontWeight: FontWeight.w800,
-                                    color: Colors.white,
-                                    height: 1.2,
-                                  ),
-                                  textAlign: TextAlign.center,
-                                ),
-                                const SizedBox(height: 12),
-                                Text(
-                                  page.desc,
-                                  style: const TextStyle(
-                                    fontSize: 16,
-                                    color: Colors.white70,
-                                    height: 1.5,
-                                  ),
-                                  textAlign: TextAlign.center,
-                                ),
-                              ],
-                            ),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: List.generate(
-                                pages.length,
-                                (i) => AnimatedContainer(
-                                  duration: const Duration(milliseconds: 250),
-                                  margin:
-                                      const EdgeInsets.symmetric(horizontal: 5),
-                                  height: 10,
-                                  width: _currentPage == i ? 32 : 12,
-                                  decoration: BoxDecoration(
-                                    color: _currentPage == i
-                                        ? page.accent
-                                        : Colors.white24,
-                                    borderRadius: BorderRadius.circular(16),
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ],
+                            );
+                          },
                         ),
                       ),
                     );
@@ -349,7 +494,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                       elevation: 0,
                     ),
                     child: Text(
-                      _currentPage == pages.length - 1 ? 'Başla' : 'İleri',
+                      _currentPage == pages.length - 1 ? startLabel : nextLabel,
                       style: const TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.w700,
@@ -377,6 +522,8 @@ class _OnboardPage {
   final String title;
   final String desc;
   final String? image;
+  final String badge;
+  final List<String> highlights;
   final List<Color> gradient;
   final Color accent;
 
@@ -384,6 +531,8 @@ class _OnboardPage {
     required this.title,
     required this.desc,
     required this.image,
+    required this.badge,
+    required this.highlights,
     required this.gradient,
     required this.accent,
   });
