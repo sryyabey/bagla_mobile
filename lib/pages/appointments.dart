@@ -441,11 +441,11 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
               ElevatedButton.icon(
                 onPressed: () {
                   if (!_hasUserPack) {
-                      _showSnack(
-                        _isIosPaymentRestricted
-                            ? loc.iosSmsPurchaseRestrictionMessage
-                            : loc.appointmentsPackageRequired,
-                      );
+                    _showSnack(
+                      _isIosPaymentRestricted
+                          ? loc.iosSmsPurchaseRestrictionMessage
+                          : loc.appointmentsPackageRequired,
+                    );
                     if (!_isIosPaymentRestricted) {
                       Navigator.push(
                         context,
@@ -1323,8 +1323,12 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
         ? appt['appointment_status_id'] as int
         : int.tryParse(appt['appointment_status_id']?.toString() ?? '');
 
-    final TextEditingController dateCtrl =
-        TextEditingController(text: appt['date']?.toString() ?? '');
+    final rawDate = appt['date']?.toString() ?? '';
+    final TextEditingController dateCtrl = TextEditingController(
+      text: rawDate.trim().isEmpty
+          ? ''
+          : _formatDateDisplay(_parseInputDateOrNow(rawDate)),
+    );
     final TextEditingController timeCtrl =
         TextEditingController(text: _formatTime(appt['time']));
     final TextEditingController notesCtrl =
@@ -1348,6 +1352,10 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
+      useSafeArea: true,
+      constraints: BoxConstraints(
+        maxHeight: MediaQuery.of(context).size.height * 0.96,
+      ),
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -1444,15 +1452,22 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
               }
             }
 
+            final media = MediaQuery.of(ctx);
+            final bottomInset =
+                media.viewInsets.bottom + media.viewPadding.bottom + 16;
+
             return SafeArea(
+              top: false,
               child: Padding(
                 padding: EdgeInsets.only(
-                  bottom: MediaQuery.of(ctx).viewInsets.bottom + 48,
+                  bottom: bottomInset,
                   left: 16,
                   right: 16,
                   top: 16,
                 ),
                 child: SingleChildScrollView(
+                  keyboardDismissBehavior:
+                      ScrollViewKeyboardDismissBehavior.onDrag,
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -1635,6 +1650,10 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
                       SizedBox(
                         width: double.infinity,
                         child: ElevatedButton.icon(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.green.shade600,
+                            foregroundColor: Colors.white,
+                          ),
                           onPressed: (appointmentId == null ||
                                   customerId == null ||
                                   effectiveStatusId == null ||
@@ -1747,6 +1766,7 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
+      useSafeArea: true,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -1982,6 +2002,10 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
+      useSafeArea: true,
+      constraints: BoxConstraints(
+        maxHeight: MediaQuery.of(context).size.height * 0.96,
+      ),
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -2075,78 +2099,226 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
               }
             }
 
-            return Padding(
-              padding: EdgeInsets.only(
-                bottom: MediaQuery.of(ctx).viewInsets.bottom,
-                left: 16,
-                right: 16,
-                top: 16,
-              ),
-              child: SingleChildScrollView(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              loc.reschedule,
-                              style: const TextStyle(
-                                  fontSize: 16, fontWeight: FontWeight.bold),
+            final media = MediaQuery.of(ctx);
+            final bottomInset =
+                media.viewInsets.bottom + media.viewPadding.bottom + 16;
+
+            return SafeArea(
+              top: false,
+              child: Padding(
+                padding: EdgeInsets.only(
+                  bottom: bottomInset,
+                  left: 16,
+                  right: 16,
+                  top: 16,
+                ),
+                child: SingleChildScrollView(
+                  keyboardDismissBehavior:
+                      ScrollViewKeyboardDismissBehavior.onDrag,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                loc.reschedule,
+                                style: const TextStyle(
+                                    fontSize: 16, fontWeight: FontWeight.bold),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                customerName,
+                                style: const TextStyle(
+                                  fontSize: 14,
+                                  color: Colors.grey,
+                                ),
+                              ),
+                            ],
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.close),
+                            onPressed: () => Navigator.of(ctx).pop(),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: TextField(
+                              controller: dateCtrl,
+                              readOnly: true,
+                              decoration: InputDecoration(
+                                labelText: loc.date,
+                                hintText: loc.calendarDateHint,
+                              ),
+                              onTap: pickDate,
                             ),
-                            const SizedBox(height: 4),
-                            Text(
-                              customerName,
-                              style: const TextStyle(
-                                fontSize: 14,
-                                color: Colors.grey,
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: TextField(
+                              controller: timeCtrl,
+                              readOnly: true,
+                              decoration: InputDecoration(
+                                labelText: loc.timeSelect,
+                                hintText: loc.calendarTimeSlotHint,
                               ),
                             ),
-                          ],
-                        ),
-                        IconButton(
-                          icon: const Icon(Icons.close),
-                          onPressed: () => Navigator.of(ctx).pop(),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: TextField(
-                            controller: dateCtrl,
-                            readOnly: true,
-                            decoration: InputDecoration(
-                              labelText: loc.date,
-                              hintText: loc.calendarDateHint,
-                            ),
-                            onTap: pickDate,
                           ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: TextField(
-                            controller: timeCtrl,
-                            readOnly: true,
-                            decoration: InputDecoration(
-                              labelText: loc.timeSelect,
-                              hintText: loc.calendarTimeSlotHint,
-                            ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      Row(
+                        children: [
+                          ElevatedButton.icon(
+                            onPressed: localLoadingSlots ? null : loadSlots,
+                            icon: localLoadingSlots
+                                ? const SizedBox(
+                                    width: 16,
+                                    height: 16,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      valueColor:
+                                          AlwaysStoppedAnimation(Colors.white),
+                                    ),
+                                  )
+                                : const Icon(Icons.schedule),
+                            label: Text(loc.getAvailableTimes),
                           ),
+                          const SizedBox(width: 12),
+                          if (localSlotsError != null)
+                            Expanded(
+                              child: Text(
+                                localSlotsError!,
+                                style: const TextStyle(color: Colors.red),
+                              ),
+                            ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      if (localLoadingSlots)
+                        const LinearProgressIndicator(minHeight: 2),
+                      DropdownButtonFormField<int>(
+                        initialValue: localSelectedStatusId,
+                        isExpanded: true,
+                        decoration: InputDecoration(
+                          labelText: loc.status,
+                          hintText: _loadingStatuses
+                              ? loc.calendarLoading
+                              : loc.appointmentsStatusSelectHint,
+                          errorText: _statusesError,
                         ),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    Row(
-                      children: [
-                        ElevatedButton.icon(
-                          onPressed: localLoadingSlots ? null : loadSlots,
-                          icon: localLoadingSlots
+                        items: _appointmentStatuses
+                            .map(
+                              (s) => DropdownMenuItem<int>(
+                                value: s['id'] as int?,
+                                child: Text(_localizedStatusLabel(s)),
+                              ),
+                            )
+                            .toList(),
+                        onChanged: _loadingStatuses
+                            ? null
+                            : (val) {
+                                setModalState(() {
+                                  localSelectedStatusId = val;
+                                  _statusesError = null;
+                                });
+                              },
+                      ),
+                      const SizedBox(height: 8),
+                      if (localSlots.isNotEmpty)
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: localSlots.map((slot) {
+                            final time = slot['time']?.toString() ?? '';
+                            final booked = slot['booked'] == true;
+                            final selected = localSelectedTime == time;
+                            return ChoiceChip(
+                              label: Text(time),
+                              selected: selected,
+                              onSelected: booked
+                                  ? null
+                                  : (val) {
+                                      if (val) {
+                                        setModalState(() {
+                                          localSelectedTime = time;
+                                          timeCtrl.text = time;
+                                          localSlotsError = null;
+                                        });
+                                      }
+                                    },
+                              disabledColor: Colors.grey.shade300,
+                              selectedColor: Colors.green.shade200,
+                              labelStyle: TextStyle(
+                                color: booked
+                                    ? Colors.grey
+                                    : (selected
+                                        ? Colors.black
+                                        : Colors.black87),
+                              ),
+                            );
+                          }).toList(),
+                        ),
+                      const SizedBox(height: 8),
+                      TextField(
+                        controller: notesCtrl,
+                        maxLines: 2,
+                        decoration: InputDecoration(labelText: loc.note),
+                      ),
+                      SwitchListTile(
+                        contentPadding: EdgeInsets.zero,
+                        title: Text(loc.doNotSendSms),
+                        subtitle: Text(loc.smsOffForAppointment),
+                        value: localNoSms,
+                        onChanged: (val) {
+                          setModalState(() {
+                            localNoSms = val;
+                          });
+                        },
+                      ),
+                      SwitchListTile(
+                        contentPadding: EdgeInsets.zero,
+                        title: Text(loc.doNotSendReminder),
+                        subtitle: Text(loc.reminderOffForAppointment),
+                        value: localNoReminder,
+                        onChanged: (val) {
+                          setModalState(() {
+                            localNoReminder = val;
+                          });
+                        },
+                      ),
+                      const SizedBox(height: 12),
+                      Container(
+                        padding: const EdgeInsets.symmetric(vertical: 10),
+                        width: double.infinity,
+                        child: ElevatedButton.icon(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: primaryColor,
+                            foregroundColor: Colors.white,
+                          ),
+                          onPressed: (customerId == null || _creatingRebook)
+                              ? null
+                              : () async {
+                                  Navigator.of(ctx).pop();
+                                  await _createAppointmentForCustomer(
+                                    customerId: customerId,
+                                    date: dateCtrl.text.trim(),
+                                    time: (localSelectedTime ?? timeCtrl.text)
+                                        .trim(),
+                                    notes: notesCtrl.text.trim(),
+                                    noSms: localNoSms,
+                                    noReminder: localNoReminder,
+                                    appointmentStatusId: localSelectedStatusId,
+                                  );
+                                },
+                          icon: _creatingRebook
                               ? const SizedBox(
                                   width: 16,
                                   height: 16,
@@ -2156,146 +2328,13 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
                                         AlwaysStoppedAnimation(Colors.white),
                                   ),
                                 )
-                              : const Icon(Icons.schedule),
-                          label: Text(loc.getAvailableTimes),
+                              : const Icon(Icons.flash_on),
+                          label: Text(loc.rescheduleAppointment),
                         ),
-                        const SizedBox(width: 12),
-                        if (localSlotsError != null)
-                          Expanded(
-                            child: Text(
-                              localSlotsError!,
-                              style: const TextStyle(color: Colors.red),
-                            ),
-                          ),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    if (localLoadingSlots)
-                      const LinearProgressIndicator(minHeight: 2),
-                    DropdownButtonFormField<int>(
-                      initialValue: localSelectedStatusId,
-                      isExpanded: true,
-                      decoration: InputDecoration(
-                        labelText: loc.status,
-                        hintText: _loadingStatuses
-                            ? loc.calendarLoading
-                            : loc.appointmentsStatusSelectHint,
-                        errorText: _statusesError,
                       ),
-                      items: _appointmentStatuses
-                          .map(
-                            (s) => DropdownMenuItem<int>(
-                              value: s['id'] as int?,
-                              child: Text(_localizedStatusLabel(s)),
-                            ),
-                          )
-                          .toList(),
-                      onChanged: _loadingStatuses
-                          ? null
-                          : (val) {
-                              setModalState(() {
-                                localSelectedStatusId = val;
-                                _statusesError = null;
-                              });
-                            },
-                    ),
-                    const SizedBox(height: 8),
-                    if (localSlots.isNotEmpty)
-                      Wrap(
-                        spacing: 8,
-                        runSpacing: 8,
-                        children: localSlots.map((slot) {
-                          final time = slot['time']?.toString() ?? '';
-                          final booked = slot['booked'] == true;
-                          final selected = localSelectedTime == time;
-                          return ChoiceChip(
-                            label: Text(time),
-                            selected: selected,
-                            onSelected: booked
-                                ? null
-                                : (val) {
-                                    if (val) {
-                                      setModalState(() {
-                                        localSelectedTime = time;
-                                        timeCtrl.text = time;
-                                        localSlotsError = null;
-                                      });
-                                    }
-                                  },
-                            disabledColor: Colors.grey.shade300,
-                            selectedColor: Colors.green.shade200,
-                            labelStyle: TextStyle(
-                              color: booked
-                                  ? Colors.grey
-                                  : (selected ? Colors.black : Colors.black87),
-                            ),
-                          );
-                        }).toList(),
-                      ),
-                    const SizedBox(height: 8),
-                    TextField(
-                      controller: notesCtrl,
-                      maxLines: 2,
-                      decoration: InputDecoration(labelText: loc.note),
-                    ),
-                    SwitchListTile(
-                      contentPadding: EdgeInsets.zero,
-                      title: Text(loc.doNotSendSms),
-                      subtitle: Text(loc.smsOffForAppointment),
-                      value: localNoSms,
-                      onChanged: (val) {
-                        setModalState(() {
-                          localNoSms = val;
-                        });
-                      },
-                    ),
-                    SwitchListTile(
-                      contentPadding: EdgeInsets.zero,
-                      title: Text(loc.doNotSendReminder),
-                      subtitle: Text(loc.reminderOffForAppointment),
-                      value: localNoReminder,
-                      onChanged: (val) {
-                        setModalState(() {
-                          localNoReminder = val;
-                        });
-                      },
-                    ),
-                    const SizedBox(height: 12),
-                    Container(
-                      padding: const EdgeInsets.symmetric(vertical: 10),
-                      width: double.infinity,
-                      child: ElevatedButton.icon(
-                        onPressed: (customerId == null || _creatingRebook)
-                            ? null
-                            : () async {
-                                Navigator.of(ctx).pop();
-                                await _createAppointmentForCustomer(
-                                  customerId: customerId,
-                                  date: dateCtrl.text.trim(),
-                                  time: (localSelectedTime ?? timeCtrl.text)
-                                      .trim(),
-                                  notes: notesCtrl.text.trim(),
-                                  noSms: localNoSms,
-                                  noReminder: localNoReminder,
-                                  appointmentStatusId: localSelectedStatusId,
-                                );
-                              },
-                        icon: _creatingRebook
-                            ? const SizedBox(
-                                width: 16,
-                                height: 16,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  valueColor:
-                                      AlwaysStoppedAnimation(Colors.white),
-                                ),
-                              )
-                            : const Icon(Icons.flash_on),
-                        label: Text(loc.rescheduleAppointment),
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                  ],
+                      const SizedBox(height: 8),
+                    ],
+                  ),
                 ),
               ),
             );

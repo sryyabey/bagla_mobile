@@ -2,10 +2,10 @@ import 'dart:convert';
 
 import 'package:bagla_mobile/config.dart';
 import 'package:bagla_mobile/dashboard_page.dart';
-import 'package:bagla_mobile/pages/appointments.dart';
 import 'package:bagla_mobile/pages/working_preferences.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -45,6 +45,64 @@ Color _bootstrapColor(String? alias) {
       return const Color(0xFF212529);
     default:
       return Colors.blueGrey;
+  }
+}
+
+class _PhoneMaskFormatter extends TextInputFormatter {
+  static final RegExp _digitsOnly = RegExp(r'\D');
+
+  int _digitCount(String text, int endOffset) {
+    final left = text.substring(0, endOffset.clamp(0, text.length));
+    return left.replaceAll(_digitsOnly, '').length;
+  }
+
+  int _offsetForDigits(String masked, int digits) {
+    if (digits <= 0) return 0;
+    int seen = 0;
+    for (int i = 0; i < masked.length; i++) {
+      final c = masked.codeUnitAt(i);
+      if (c >= 48 && c <= 57) {
+        seen++;
+        if (seen == digits) return i + 1;
+      }
+    }
+    return masked.length;
+  }
+
+  String _applyMask(String raw) {
+    final digits = raw.replaceAll(_digitsOnly, '');
+    final limited = digits.length > 10 ? digits.substring(0, 10) : digits;
+    final b = StringBuffer();
+
+    if (limited.isNotEmpty) {
+      b.write('(');
+      b.write(limited.substring(0, limited.length.clamp(0, 3)));
+      if (limited.length >= 3) b.write(')');
+    }
+    if (limited.length > 3) {
+      b.write(' ');
+      b.write(limited.substring(3, limited.length.clamp(3, 6)));
+    }
+    if (limited.length > 6) {
+      b.write(' ');
+      b.write(limited.substring(6, limited.length.clamp(6, 10)));
+    }
+    return b.toString();
+  }
+
+  @override
+  TextEditingValue formatEditUpdate(
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
+    final masked = _applyMask(newValue.text);
+    final digitsBefore = _digitCount(newValue.text, newValue.selection.end);
+    final target = _offsetForDigits(masked, digitsBefore);
+    return TextEditingValue(
+      text: masked,
+      selection: TextSelection.collapsed(offset: target),
+      composing: TextRange.empty,
+    );
   }
 }
 
@@ -296,6 +354,7 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
   String? _autoExpandedWeekKey;
   final Map<String, GlobalKey> _daySectionKeys = {};
   bool _slotActionBusy = false;
+  int? _cachedDefaultStatusId;
   static const Color _primaryColor = Color(0xFF6366F1);
 
   AppLocalizations get loc => AppLocalizations.of(context);
@@ -442,7 +501,1188 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
   }
 
   Future<void> _refreshWeek() async {
-    ref.invalidate(weeklyCalendarProvider(_weekStart));
+    final refreshFuture =
+        ref.refresh(weeklyCalendarProvider(_weekStart).future);
+    await refreshFuture;
+  }
+
+  InputDecoration _modalInputDecoration({
+    required String labelText,
+    String? hintText,
+    Widget? prefixIcon,
+    Widget? suffixIcon,
+  }) {
+    return InputDecoration(
+      labelText: labelText,
+      hintText: hintText,
+      prefixIcon: prefixIcon,
+      suffixIcon: suffixIcon,
+      filled: true,
+      fillColor: const Color(0xFFF8FAFC),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide(color: Colors.grey.shade300),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide(color: Colors.grey.shade300),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: _primaryColor, width: 1.2),
+      ),
+    );
+  }
+
+  Future<int?> _resolveDefaultStatusId() async {
+    if (_cachedDefaultStatusId != null) return _cachedDefaultStatusId;
+    final token = await _getToken();
+    if (token == null || token.isEmpty) return null;
+
+    final dio = Dio(
+      BaseOptions(
+        baseUrl: apiBaseUrl,
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Accept': 'application/json',
+        },
+      ),
+    );
+
+    try {
+      final resp = await dio.get('/api/settings/appointment-statuses');
+      final raw = resp.data is Map
+          ? ((resp.data as Map)['data'] ?? resp.data)
+          : resp.data;
+      if (raw is! List) return null;
+      final list = raw.map((e) => Map<String, dynamic>.from(e as Map)).toList();
+      if (list.isEmpty) return null;
+
+      int? parseId(Map<String, dynamic> s) {
+        final id = s['id'];
+        if (id is int) return id;
+        return int.tryParse(id?.toString() ?? '');
+      }
+
+      for (final s in list) {
+        final alias = s['alias']?.toString().toLowerCase();
+        final id = parseId(s);
+        if (alias == 'pending' && id != null) {
+          _cachedDefaultStatusId = id;
+          return id;
+        }
+      }
+      final fallback = parseId(list.first);
+      _cachedDefaultStatusId = fallback;
+      return fallback;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  Future<Map<String, dynamic>?> _showCustomerPickerSheet() async {
+    final token = await _getToken();
+    if (token == null || token.isEmpty) {
+      _showSnack(loc.calendarSessionMissing);
+      return null;
+    }
+    if (!mounted) return null;
+    final maxSheetHeight = MediaQuery.of(context).size.height * 0.9;
+
+    final dio = Dio(
+      BaseOptions(
+        baseUrl: apiBaseUrl,
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Accept': 'application/json',
+        },
+      ),
+    );
+
+    return showModalBottomSheet<Map<String, dynamic>>(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      constraints: BoxConstraints(
+        maxHeight: maxSheetHeight,
+      ),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) {
+        final searchCtrl = TextEditingController();
+        const letters = [
+          '#',
+          'A',
+          'B',
+          'C',
+          'Ç',
+          'D',
+          'E',
+          'F',
+          'G',
+          'Ğ',
+          'H',
+          'I',
+          'İ',
+          'J',
+          'K',
+          'L',
+          'M',
+          'N',
+          'O',
+          'Ö',
+          'P',
+          'R',
+          'S',
+          'Ş',
+          'T',
+          'U',
+          'Ü',
+          'V',
+          'Y',
+          'Z',
+        ];
+        List<Map<String, dynamic>> customers = [];
+        bool loading = false;
+        String? error;
+        int page = 1;
+        int lastPage = 1;
+        String selectedLetter = '#';
+        bool initialized = false;
+
+        Future<void> load(StateSetter setModalState,
+            {bool reset = false}) async {
+          if (reset) {
+            page = 1;
+            lastPage = 1;
+            customers = [];
+          } else if (page > lastPage) {
+            return;
+          }
+
+          setModalState(() {
+            loading = true;
+            error = null;
+          });
+
+          try {
+            final resp = await dio.get(
+              '/api/customers',
+              queryParameters: {
+                'search': searchCtrl.text.trim(),
+                if (selectedLetter != '#') 'starts_with': selectedLetter,
+                'sort_field': 'name',
+                'sort_direction': 'asc',
+                'per_page': 30,
+                'page': page,
+              },
+            );
+            final body = resp.data;
+            final data = body is Map ? (body['data'] ?? const []) : const [];
+            final meta = body is Map && body['meta'] is Map
+                ? Map<String, dynamic>.from(body['meta'] as Map)
+                : <String, dynamic>{};
+            final fetched = data is List
+                ? data.map((e) => Map<String, dynamic>.from(e as Map)).toList()
+                : <Map<String, dynamic>>[];
+
+            setModalState(() {
+              customers.addAll(fetched);
+              page = (meta['current_page'] as int?) != null
+                  ? (meta['current_page'] as int) + 1
+                  : page + 1;
+              lastPage = (meta['last_page'] as int?) ?? 1;
+              loading = false;
+            });
+          } catch (e) {
+            setModalState(() {
+              loading = false;
+              error = e.toString();
+            });
+          }
+        }
+
+        return StatefulBuilder(
+          builder: (ctx, setModalState) {
+            if (!initialized) {
+              initialized = true;
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                load(setModalState, reset: true);
+              });
+            }
+
+            final bottomInset = MediaQuery.of(ctx).viewInsets.bottom + 12;
+            return Padding(
+              padding: EdgeInsets.fromLTRB(16, 16, 16, bottomInset),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Center(
+                    child: Container(
+                      width: 42,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: Colors.black.withValues(alpha: 0.14),
+                        borderRadius: BorderRadius.circular(99),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      const Text(
+                        'Rehber',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      const Spacer(),
+                      IconButton(
+                        onPressed: () => Navigator.of(ctx).pop(),
+                        icon: const Icon(Icons.close),
+                      ),
+                    ],
+                  ),
+                  TextField(
+                    controller: searchCtrl,
+                    decoration: _modalInputDecoration(
+                      labelText: 'Kişi Ara',
+                      hintText: loc.customersSearchHint,
+                      prefixIcon: const Icon(Icons.search),
+                      suffixIcon: IconButton(
+                        onPressed: () => load(setModalState, reset: true),
+                        icon: const Icon(Icons.refresh),
+                      ),
+                    ),
+                    onSubmitted: (_) => load(setModalState, reset: true),
+                    onChanged: (_) => load(setModalState, reset: true),
+                  ),
+                  const SizedBox(height: 8),
+                  Flexible(
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 34,
+                          margin: const EdgeInsets.only(right: 8),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFF8FAFC),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: Colors.grey.shade200),
+                          ),
+                          child: ListView(
+                            padding: const EdgeInsets.symmetric(vertical: 6),
+                            children: letters.map((letter) {
+                              final active = selectedLetter == letter;
+                              return InkWell(
+                                onTap: () {
+                                  if (selectedLetter == letter) return;
+                                  setModalState(() {
+                                    selectedLetter = letter;
+                                  });
+                                  load(setModalState, reset: true);
+                                },
+                                child: Container(
+                                  height: 20,
+                                  alignment: Alignment.center,
+                                  margin:
+                                      const EdgeInsets.symmetric(vertical: 1),
+                                  decoration: BoxDecoration(
+                                    color: active
+                                        ? _primaryColor.withValues(alpha: 0.14)
+                                        : Colors.transparent,
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: Text(
+                                    letter,
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      fontWeight: active
+                                          ? FontWeight.w700
+                                          : FontWeight.w500,
+                                      color: active
+                                          ? _primaryColor
+                                          : Colors.blueGrey,
+                                    ),
+                                  ),
+                                ),
+                              );
+                            }).toList(),
+                          ),
+                        ),
+                        Expanded(
+                          child: loading && customers.isEmpty
+                              ? const Center(child: CircularProgressIndicator())
+                              : error != null
+                                  ? Center(
+                                      child: Text(
+                                        error!,
+                                        style:
+                                            const TextStyle(color: Colors.red),
+                                      ),
+                                    )
+                                  : ListView.builder(
+                                      itemCount: customers.length + 1,
+                                      itemBuilder: (context, index) {
+                                        if (index == customers.length) {
+                                          if (page > lastPage) {
+                                            return const SizedBox(height: 12);
+                                          }
+                                          return Padding(
+                                            padding: const EdgeInsets.symmetric(
+                                                vertical: 8),
+                                            child: OutlinedButton(
+                                              onPressed: loading
+                                                  ? null
+                                                  : () => load(setModalState),
+                                              child: loading
+                                                  ? const SizedBox(
+                                                      width: 16,
+                                                      height: 16,
+                                                      child:
+                                                          CircularProgressIndicator(
+                                                        strokeWidth: 2,
+                                                      ),
+                                                    )
+                                                  : Text(loc.customersLoadMore),
+                                            ),
+                                          );
+                                        }
+                                        final c = customers[index];
+                                        final name =
+                                            c['name']?.toString().trim() ?? '-';
+                                        final lastname =
+                                            c['lastname']?.toString().trim() ??
+                                                '';
+                                        final phone =
+                                            c['phone']?.toString().trim() ?? '';
+                                        return Container(
+                                          margin: const EdgeInsets.only(
+                                            bottom: 8,
+                                          ),
+                                          decoration: BoxDecoration(
+                                            color: const Color(0xFFF8FAFC),
+                                            borderRadius:
+                                                BorderRadius.circular(12),
+                                            border: Border.all(
+                                              color: Colors.grey.shade200,
+                                            ),
+                                          ),
+                                          child: ListTile(
+                                            title: Text(
+                                              '$name $lastname'.trim(),
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
+                                            subtitle: phone.isEmpty
+                                                ? null
+                                                : Text(phone),
+                                            trailing: const Icon(
+                                              Icons.chevron_right,
+                                              size: 18,
+                                            ),
+                                            onTap: () =>
+                                                Navigator.of(ctx).pop(c),
+                                          ),
+                                        );
+                                      },
+                                    ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Future<void> _showCreateSlotSheet({
+    required String initialDate,
+    required String initialTime,
+  }) async {
+    final dateCtrl = TextEditingController(
+      text: _formatDateDisplay(_parseInputDateOrNow(initialDate)),
+    );
+    final timeCtrl = TextEditingController(text: initialTime);
+    final notesCtrl = TextEditingController();
+    final newNameCtrl = TextEditingController();
+    final newLastNameCtrl = TextEditingController();
+    final newPhoneCtrl = TextEditingController();
+    final newEmailCtrl = TextEditingController();
+    final phoneMaskFormatter = _PhoneMaskFormatter();
+    String? selectedTime = initialTime;
+    Map<String, dynamic>? selectedCustomer;
+    bool createForNewCustomer = false;
+    bool localNoSms = false;
+    bool localNoReminder = false;
+    bool localIsFirstAppointment = false;
+    List<Map<String, dynamic>> localSlots = [];
+    bool localLoadingSlots = false;
+    String? localSlotsError;
+    String? localSaveError;
+    // ── Design tokens ────────────────────────────────────────────────────────
+    const bg = Color(0xFFF9F9F9);
+    const surface = Colors.white;
+    const accent = Color(0xFF111111);
+    const muted = Color(0xFF8A8A8A);
+    const border = Color(0xFFE8E8E8);
+    const success = Color(0xFF18A058);
+    const danger = Color(0xFFE53935);
+    const radius = 14.0;
+
+    InputDecoration field({
+      required String label,
+      String? hint,
+      Widget? prefix,
+    }) =>
+        InputDecoration(
+          labelText: label,
+          hintText: hint,
+          prefixIcon: prefix,
+          labelStyle: const TextStyle(fontSize: 13, color: muted),
+          hintStyle: const TextStyle(fontSize: 13, color: muted),
+          filled: true,
+          fillColor: surface,
+          contentPadding:
+              const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(radius),
+            borderSide: const BorderSide(color: border),
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(radius),
+            borderSide: const BorderSide(color: border),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(radius),
+            borderSide: const BorderSide(color: accent, width: 1.5),
+          ),
+        );
+
+    await showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      backgroundColor: bg,
+      constraints: BoxConstraints(
+        maxHeight: MediaQuery.of(context).size.height * 0.96,
+      ),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (ctx, setModalState) {
+            Future<void> loadSlots() async {
+              final rawDate = dateCtrl.text.trim();
+              if (rawDate.isEmpty) {
+                _showSnack(loc.calendarSelectDateFirst);
+                return;
+              }
+              final date = _normalizeSlotDate(rawDate);
+              final token = await _getToken();
+              if (token == null || token.isEmpty) {
+                _showSnack(loc.calendarSessionMissing);
+                return;
+              }
+              setModalState(() {
+                localLoadingSlots = true;
+                localSlotsError = null;
+                localSlots = [];
+              });
+              final dio = Dio(
+                BaseOptions(
+                  baseUrl: apiBaseUrl,
+                  headers: {
+                    'Authorization': 'Bearer $token',
+                    'Accept': 'application/json',
+                  },
+                ),
+              );
+              try {
+                final resp = await dio.get(
+                  '/api/appointments/time-slots',
+                  queryParameters: {'date': date},
+                );
+                final raw = resp.data is Map
+                    ? ((resp.data as Map)['data'] ?? resp.data)
+                    : resp.data;
+                final slots = raw is List
+                    ? raw
+                        .map((e) => Map<String, dynamic>.from(e as Map))
+                        .toList()
+                    : <Map<String, dynamic>>[];
+                setModalState(() {
+                  localSlots = slots;
+                  localLoadingSlots = false;
+                  localSlotsError = null;
+                  final hasSelected = localSlots.any(
+                      (s) => (s['time']?.toString() ?? '') == selectedTime);
+                  if (!hasSelected) {
+                    selectedTime = null;
+                    timeCtrl.clear();
+                  }
+                });
+              } catch (e) {
+                setModalState(() {
+                  localLoadingSlots = false;
+                  localSlotsError = loc.calendarFetchFailed(e.toString());
+                });
+              }
+            }
+
+            Future<void> pickDate() async {
+              final now = DateTime.now();
+              final minDate = DateTime(now.year, now.month, now.day);
+              final maxDate = DateTime(now.year + 5, 12, 31);
+              final initial = _clampDate(
+                _parseInputDateOrNow(dateCtrl.text.trim()),
+                minDate,
+                maxDate,
+              );
+              final picked = await showDatePicker(
+                context: ctx,
+                initialDate: initial,
+                firstDate: minDate,
+                lastDate: maxDate,
+              );
+              if (picked == null) return;
+              setModalState(() {
+                dateCtrl.text = _formatDateDisplay(picked);
+                localSlots = [];
+                localSlotsError = null;
+                selectedTime = null;
+                timeCtrl.clear();
+              });
+              await loadSlots();
+            }
+
+            Future<void> pickCustomer() async {
+              final picked = await _showCustomerPickerSheet();
+              if (picked == null) return;
+              setModalState(() => selectedCustomer = picked);
+              final customerId = _asInt(picked['id']);
+              if (customerId == null) return;
+              final token = await _getToken();
+              if (token == null || token.isEmpty) return;
+              final dio = Dio(
+                BaseOptions(
+                  baseUrl: apiBaseUrl,
+                  headers: {
+                    'Authorization': 'Bearer $token',
+                    'Accept': 'application/json',
+                  },
+                ),
+              );
+              try {
+                final resp = await dio
+                    .get('/api/customers/$customerId/appointment-defaults');
+                final raw = resp.data is Map
+                    ? ((resp.data as Map)['data'] ?? resp.data)
+                    : resp.data;
+                if (raw is Map) {
+                  setModalState(() {
+                    if ((raw['last_note']?.toString().trim() ?? '')
+                        .isNotEmpty) {
+                      notesCtrl.text = raw['last_note'].toString();
+                    }
+                    localNoSms = raw['default_no_sms'] == true ||
+                        raw['default_no_sms'] == 1;
+                    localNoReminder = raw['default_no_reminder'] == true ||
+                        raw['default_no_reminder'] == 1;
+                  });
+                }
+              } catch (_) {}
+            }
+
+            Future<void> submit() async {
+              if (_slotActionBusy) return;
+              setModalState(() => localSaveError = null);
+              final token = await _getToken();
+              if (token == null || token.isEmpty) {
+                setModalState(
+                    () => localSaveError = loc.calendarSessionMissing);
+                return;
+              }
+              final dateInput = dateCtrl.text.trim();
+              final createDate = _normalizeSlotDate(dateInput);
+              final time = (selectedTime ?? timeCtrl.text).trim();
+              if (createDate.isEmpty || time.isEmpty) {
+                setModalState(
+                    () => localSaveError = loc.calendarDateTimeRequired);
+                return;
+              }
+              final defaultStatusId = await _resolveDefaultStatusId();
+              if (defaultStatusId == null) {
+                setModalState(
+                    () => localSaveError = loc.appointmentsStatusMissing);
+                return;
+              }
+              setState(() => _slotActionBusy = true);
+              final dio = Dio(
+                BaseOptions(
+                  baseUrl: apiBaseUrl,
+                  headers: {
+                    'Authorization': 'Bearer $token',
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json',
+                  },
+                ),
+              );
+              try {
+                int? customerId = _asInt(selectedCustomer?['id']);
+                if (createForNewCustomer) {
+                  final firstName = newNameCtrl.text.trim();
+                  final lastName = newLastNameCtrl.text.trim();
+                  final phone = newPhoneCtrl.text.trim();
+                  final email = newEmailCtrl.text.trim();
+                  if (firstName.isEmpty || phone.isEmpty) {
+                    setModalState(
+                        () => localSaveError = loc.appointmentsRequiredFields);
+                    return;
+                  }
+                  final createCustomerResp =
+                      await dio.post('/api/customers', data: {
+                    'name': '$firstName $lastName'.trim(),
+                    'phone': phone,
+                    'email': email.isEmpty ? null : email,
+                  });
+                  final raw = createCustomerResp.data is Map
+                      ? ((createCustomerResp.data as Map)['data'] ??
+                          createCustomerResp.data)
+                      : createCustomerResp.data;
+                  if (raw is Map) customerId = _asInt(raw['id']);
+                  if (customerId == null) {
+                    setModalState(
+                        () => localSaveError = loc.calendarCreateFailed);
+                    return;
+                  }
+                } else {
+                  customerId = _asInt(selectedCustomer?['id']);
+                  if (customerId == null) {
+                    setModalState(() => localSaveError = 'Kişi seçiniz.');
+                    return;
+                  }
+                }
+                try {
+                  await dio.post('/api/appointments/validate', data: {
+                    'customer_id': customerId,
+                    'date': createDate,
+                    'time': time,
+                  });
+                } on DioException catch (e) {
+                  final status = e.response?.statusCode;
+                  final message = e.response?.data is Map
+                      ? (e.response?.data['message']?.toString() ?? '')
+                      : '';
+                  if (status == 409) {
+                    setModalState(() {
+                      localSaveError =
+                          message.isNotEmpty ? message : 'Seçilen saat dolu.';
+                    });
+                    return;
+                  }
+                  if (status == 422) {
+                    setModalState(() {
+                      localSaveError = message.isNotEmpty
+                          ? message
+                          : loc.calendarDateTimeRequired;
+                    });
+                    return;
+                  }
+                  rethrow;
+                }
+                await dio.post('/api/appointments', data: {
+                  'customer_id': customerId,
+                  'appointment_status_id': defaultStatusId,
+                  'date': createDate,
+                  'time': time,
+                  'notes': notesCtrl.text.trim(),
+                  'is_first_appointment': localIsFirstAppointment,
+                  'no_sms': localNoSms,
+                  'no_reminder': localNoReminder,
+                });
+                if (ctx.mounted) Navigator.of(ctx).pop();
+                _showSnack(loc.calendarCreateSuccess, success: true);
+                await _refreshWeek();
+              } on DioException catch (e) {
+                final status = e.response?.statusCode;
+                String? msg;
+                if (e.response?.data is Map) {
+                  final data = e.response!.data as Map;
+                  msg =
+                      data['message']?.toString() ?? data['error']?.toString();
+                  if (status == 422 && (msg == null || msg.isEmpty)) {
+                    final rawErrors = data['errors'];
+                    if (rawErrors is Map && rawErrors.isNotEmpty) {
+                      final first = rawErrors.values.first;
+                      msg = first is List && first.isNotEmpty
+                          ? first.first?.toString()
+                          : first?.toString();
+                    }
+                  }
+                }
+                if (status == 422 && msg != null && msg.isNotEmpty) {
+                  setModalState(() => localSaveError = msg);
+                  return;
+                }
+                setModalState(() {
+                  localSaveError = '${loc.calendarCreateFailed}'
+                      '${status != null ? ' (HTTP $status)' : ''}'
+                      '${msg != null ? ': $msg' : ''}';
+                });
+              } finally {
+                if (mounted) setState(() => _slotActionBusy = false);
+              }
+            }
+
+            final media = MediaQuery.of(ctx);
+            final bottomInset =
+                media.viewInsets.bottom + media.viewPadding.bottom + 24;
+            final selectedCustomerName = selectedCustomer == null
+                ? ''
+                : '${selectedCustomer!['name'] ?? ''} ${selectedCustomer!['lastname'] ?? ''}'
+                    .trim();
+
+            return SafeArea(
+              top: false,
+              child: SingleChildScrollView(
+                keyboardDismissBehavior:
+                    ScrollViewKeyboardDismissBehavior.onDrag,
+                padding: EdgeInsets.fromLTRB(20, 16, 20, bottomInset),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Center(
+                      child: Container(
+                        width: 36,
+                        height: 4,
+                        decoration: BoxDecoration(
+                          color: border,
+                          borderRadius: BorderRadius.circular(99),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            loc.calendarAddAppointment,
+                            style: const TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.w700,
+                              letterSpacing: -0.4,
+                              color: accent,
+                            ),
+                          ),
+                        ),
+                        IconButton(
+                          tooltip: loc.appointmentsClose,
+                          onPressed: () => Navigator.of(ctx).pop(),
+                          icon: const Icon(Icons.close),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    const _SectionLabel(text: 'Kişi'),
+                    const SizedBox(height: 10),
+                    Container(
+                      decoration: BoxDecoration(
+                        color: border,
+                        borderRadius: BorderRadius.circular(radius),
+                      ),
+                      padding: const EdgeInsets.all(3),
+                      child: Row(
+                        children: [
+                          _TabButton(
+                            label: 'Mevcut Kişi',
+                            selected: !createForNewCustomer,
+                            onTap: () => setModalState(() {
+                              createForNewCustomer = false;
+                            }),
+                          ),
+                          _TabButton(
+                            label: 'Yeni Kişi',
+                            selected: createForNewCustomer,
+                            onTap: () => setModalState(() {
+                              createForNewCustomer = true;
+                              selectedCustomer = null;
+                            }),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    if (!createForNewCustomer) ...[
+                      GestureDetector(
+                        onTap: pickCustomer,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 14,
+                            vertical: 13,
+                          ),
+                          decoration: BoxDecoration(
+                            color: surface,
+                            borderRadius: BorderRadius.circular(radius),
+                            border: Border.all(color: border),
+                          ),
+                          child: Row(
+                            children: [
+                              const Icon(Icons.person_outline,
+                                  size: 18, color: muted),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: Text(
+                                  selectedCustomerName.isEmpty
+                                      ? 'Kişi seçiniz'
+                                      : selectedCustomerName,
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    color: selectedCustomerName.isEmpty
+                                        ? muted
+                                        : accent,
+                                    fontWeight: selectedCustomerName.isEmpty
+                                        ? FontWeight.w400
+                                        : FontWeight.w600,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                              const Icon(Icons.chevron_right,
+                                  size: 18, color: muted),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ] else ...[
+                      Row(
+                        children: [
+                          Expanded(
+                            child: TextField(
+                              controller: newNameCtrl,
+                              decoration: field(
+                                label: loc.appointmentsFieldName,
+                                hint: loc.appointmentsFieldNameHint,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: TextField(
+                              controller: newLastNameCtrl,
+                              decoration: field(
+                                label: loc.appointmentsFieldLastName,
+                                hint: loc.appointmentsFieldLastNameHint,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 10),
+                      TextField(
+                        controller: newPhoneCtrl,
+                        keyboardType: TextInputType.phone,
+                        inputFormatters: [
+                          FilteringTextInputFormatter.allow(
+                              RegExp(r'[0-9() ]')),
+                          phoneMaskFormatter,
+                        ],
+                        decoration: field(
+                          label: loc.appointmentsFieldPhone,
+                          hint: '(555) 545 4444',
+                          prefix: const Icon(Icons.phone_outlined, size: 18),
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      TextField(
+                        controller: newEmailCtrl,
+                        keyboardType: TextInputType.emailAddress,
+                        decoration: field(
+                          label: loc.customersEmail,
+                          hint: loc.appointmentsFieldEmailHint,
+                          prefix: const Icon(Icons.mail_outline, size: 18),
+                        ),
+                      ),
+                    ],
+                    const SizedBox(height: 20),
+                    const _ThinDivider(),
+                    const SizedBox(height: 20),
+                    const _SectionLabel(text: 'Tarih & Saat'),
+                    const SizedBox(height: 10),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: TextField(
+                            controller: dateCtrl,
+                            readOnly: true,
+                            onTap: pickDate,
+                            decoration: field(
+                              label: loc.date,
+                              hint: loc.calendarDateHint,
+                              prefix: const Icon(Icons.calendar_today_outlined,
+                                  size: 18),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: TextField(
+                            controller: timeCtrl,
+                            readOnly: true,
+                            decoration: field(
+                              label: loc.timeSelect,
+                              hint: loc.calendarTimeSlotHint,
+                              prefix: const Icon(Icons.access_time, size: 18),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    SizedBox(
+                      width: double.infinity,
+                      child: OutlinedButton(
+                        onPressed: localLoadingSlots ? null : loadSlots,
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: accent,
+                          side: const BorderSide(color: border, width: 1.5),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(radius),
+                          ),
+                          padding: const EdgeInsets.symmetric(vertical: 13),
+                        ),
+                        child: localLoadingSlots
+                            ? const SizedBox(
+                                width: 16,
+                                height: 16,
+                                child:
+                                    CircularProgressIndicator(strokeWidth: 2),
+                              )
+                            : Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  const Icon(Icons.schedule, size: 16),
+                                  const SizedBox(width: 6),
+                                  Text(
+                                    loc.calendarFetchAvailableSlots,
+                                    style: const TextStyle(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                      ),
+                    ),
+                    if (localSlotsError != null) ...[
+                      const SizedBox(height: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 12, vertical: 10),
+                        decoration: BoxDecoration(
+                          color: danger.withValues(alpha: 0.06),
+                          borderRadius: BorderRadius.circular(10),
+                          border:
+                              Border.all(color: danger.withValues(alpha: 0.2)),
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(Icons.error_outline,
+                                size: 14, color: danger),
+                            const SizedBox(width: 6),
+                            Expanded(
+                              child: Text(
+                                localSlotsError!,
+                                style: const TextStyle(
+                                    fontSize: 12, color: danger),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                    if (localSlots.isNotEmpty) ...[
+                      const SizedBox(height: 14),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: localSlots.map((slot) {
+                          final slotTime = slot['time']?.toString() ?? '';
+                          final booked =
+                              slot['booked'] == true || slot['booked'] == 1;
+                          final selected = selectedTime == slotTime;
+                          return GestureDetector(
+                            onTap: booked
+                                ? null
+                                : () => setModalState(() {
+                                      selectedTime = slotTime;
+                                      timeCtrl.text = slotTime;
+                                      localSlotsError = null;
+                                    }),
+                            child: AnimatedContainer(
+                              duration: const Duration(milliseconds: 150),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 14,
+                                vertical: 8,
+                              ),
+                              decoration: BoxDecoration(
+                                color: booked
+                                    ? const Color(0xFFF3F3F3)
+                                    : selected
+                                        ? success
+                                        : surface,
+                                borderRadius: BorderRadius.circular(10),
+                                border: Border.all(
+                                  color: booked
+                                      ? border
+                                      : selected
+                                          ? success
+                                          : border,
+                                ),
+                              ),
+                              child: Text(
+                                slotTime,
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w600,
+                                  color: booked
+                                      ? muted
+                                      : selected
+                                          ? Colors.white
+                                          : accent,
+                                  decoration: booked
+                                      ? TextDecoration.lineThrough
+                                      : null,
+                                ),
+                              ),
+                            ),
+                          );
+                        }).toList(),
+                      ),
+                    ],
+                    const SizedBox(height: 20),
+                    const _ThinDivider(),
+                    const SizedBox(height: 20),
+                    _SectionLabel(text: loc.note),
+                    const SizedBox(height: 10),
+                    TextField(
+                      controller: notesCtrl,
+                      maxLines: 3,
+                      decoration: field(label: '', hint: 'Not ekleyin...')
+                          .copyWith(labelText: null),
+                    ),
+                    const SizedBox(height: 20),
+                    const _ThinDivider(),
+                    const SizedBox(height: 8),
+                    _MinimalSwitch(
+                      label: loc.appointmentsFirstAppointment,
+                      value: localIsFirstAppointment,
+                      onChanged: (v) =>
+                          setModalState(() => localIsFirstAppointment = v),
+                    ),
+                    _MinimalSwitch(
+                      label: loc.doNotSendSms,
+                      value: localNoSms,
+                      onChanged: (v) => setModalState(() => localNoSms = v),
+                    ),
+                    _MinimalSwitch(
+                      label: loc.doNotSendReminder,
+                      value: localNoReminder,
+                      onChanged: (v) =>
+                          setModalState(() => localNoReminder = v),
+                    ),
+                    if (localSaveError != null) ...[
+                      const SizedBox(height: 12),
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 10,
+                        ),
+                        decoration: BoxDecoration(
+                          color: danger.withValues(alpha: 0.08),
+                          borderRadius: BorderRadius.circular(10),
+                          border:
+                              Border.all(color: danger.withValues(alpha: 0.25)),
+                        ),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Padding(
+                              padding: EdgeInsets.only(top: 1),
+                              child: Icon(
+                                Icons.error_outline,
+                                size: 14,
+                                color: danger,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                localSaveError!,
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  color: danger,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                    const SizedBox(height: 20),
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        onPressed: _slotActionBusy ? null : submit,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: accent,
+                          foregroundColor: Colors.white,
+                          disabledBackgroundColor:
+                              accent.withValues(alpha: 0.4),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(radius),
+                          ),
+                          padding: const EdgeInsets.symmetric(vertical: 15),
+                          elevation: 0,
+                        ),
+                        child: _slotActionBusy
+                            ? const SizedBox(
+                                width: 18,
+                                height: 18,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: Colors.white,
+                                ),
+                              )
+                            : Text(
+                                loc.save,
+                                style: const TextStyle(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w700,
+                                  letterSpacing: 0.2,
+                                ),
+                              ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
   }
 
   Future<void> _showSlotActionSheet({
@@ -455,7 +1695,7 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
     final customerId = _asInt(appointment['customer_id']);
     final statusId = _resolveStatusId(appointment);
     if (customerId == null) {
-      _showSnack('Müşteri bilgisi bulunamadı.');
+      _showSnack('Kişi bilgisi bulunamadı.');
       return;
     }
     if (!createNewForCustomer && appointmentId == null) {
@@ -474,7 +1714,8 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
     final timeCtrl = TextEditingController(text: initialTime);
     final notesCtrl =
         TextEditingController(text: appointment['notes']?.toString() ?? '');
-    bool localNoSms = appointment['no_sms'] == true || appointment['no_sms'] == 1;
+    bool localNoSms =
+        appointment['no_sms'] == true || appointment['no_sms'] == 1;
     bool localNoReminder =
         appointment['no_reminder'] == true || appointment['no_reminder'] == 1;
     List<Map<String, dynamic>> localSlots = [];
@@ -485,6 +1726,10 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
     await showModalBottomSheet(
       context: context,
       isScrollControlled: true,
+      useSafeArea: true,
+      constraints: BoxConstraints(
+        maxHeight: MediaQuery.of(context).size.height * 0.96,
+      ),
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -641,7 +1886,8 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
                   await dio.post('/api/appointments', data: payload);
                   _showSnack(loc.calendarCreateSuccess, success: true);
                 } else {
-                  await dio.put('/api/appointments/$appointmentId', data: payload);
+                  await dio.put('/api/appointments/$appointmentId',
+                      data: payload);
                   _showSnack(loc.calendarUpdateSuccess, success: true);
                 }
 
@@ -666,13 +1912,21 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
               }
             }
 
+            final media = MediaQuery.of(ctx);
+            final bottomInset =
+                media.viewInsets.bottom + media.viewPadding.bottom + 16;
+            final compactWidth = media.size.width < 360;
+
             return SafeArea(
-              child: Padding(
+              top: false,
+              child: SingleChildScrollView(
+                keyboardDismissBehavior:
+                    ScrollViewKeyboardDismissBehavior.onDrag,
                 padding: EdgeInsets.only(
                   left: 16,
                   right: 16,
                   top: 16,
-                  bottom: MediaQuery.of(ctx).viewInsets.bottom + 16,
+                  bottom: bottomInset,
                 ),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
@@ -688,10 +1942,23 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
                       ),
                     ),
                     const SizedBox(height: 12),
-                    Row(
+                    Flex(
+                      direction: compactWidth ? Axis.vertical : Axis.horizontal,
                       children: [
-                        Expanded(
-                          child: TextField(
+                        if (!compactWidth)
+                          Expanded(
+                            child: TextField(
+                              controller: dateCtrl,
+                              readOnly: true,
+                              onTap: pickDate,
+                              decoration: InputDecoration(
+                                labelText: loc.date,
+                                hintText: loc.calendarDateHint,
+                              ),
+                            ),
+                          )
+                        else
+                          TextField(
                             controller: dateCtrl,
                             readOnly: true,
                             onTap: pickDate,
@@ -700,10 +1967,23 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
                               hintText: loc.calendarDateHint,
                             ),
                           ),
+                        SizedBox(
+                          width: compactWidth ? 0 : 12,
+                          height: compactWidth ? 12 : 0,
                         ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: TextField(
+                        if (!compactWidth)
+                          Expanded(
+                            child: TextField(
+                              controller: timeCtrl,
+                              readOnly: true,
+                              decoration: InputDecoration(
+                                labelText: loc.timeSelect,
+                                hintText: loc.calendarTimeSlotHint,
+                              ),
+                            ),
+                          )
+                        else
+                          TextField(
                             controller: timeCtrl,
                             readOnly: true,
                             decoration: InputDecoration(
@@ -711,11 +1991,11 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
                               hintText: loc.calendarTimeSlotHint,
                             ),
                           ),
-                        ),
                       ],
                     ),
                     const SizedBox(height: 8),
-                    Row(
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         ElevatedButton.icon(
                           onPressed: localLoadingSlots ? null : loadSlots,
@@ -723,19 +2003,19 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
                               ? const SizedBox(
                                   width: 16,
                                   height: 16,
-                                  child: CircularProgressIndicator(strokeWidth: 2),
+                                  child:
+                                      CircularProgressIndicator(strokeWidth: 2),
                                 )
                               : const Icon(Icons.schedule),
                           label: Text(loc.calendarFetchAvailableSlots),
                         ),
-                        const SizedBox(width: 12),
-                        if (localSlotsError != null)
-                          Expanded(
-                            child: Text(
-                              localSlotsError!,
-                              style: const TextStyle(color: Colors.red),
-                            ),
+                        if (localSlotsError != null) ...[
+                          const SizedBox(height: 8),
+                          Text(
+                            localSlotsError!,
+                            style: const TextStyle(color: Colors.red),
                           ),
+                        ],
                       ],
                     ),
                     const SizedBox(height: 8),
@@ -747,7 +2027,8 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
                         runSpacing: 8,
                         children: localSlots.map((slot) {
                           final slotTime = slot['time']?.toString() ?? '';
-                          final booked = slot['booked'] == true || slot['booked'] == 1;
+                          final booked =
+                              slot['booked'] == true || slot['booked'] == 1;
                           final canUseBooked =
                               !createNewForCustomer && slotTime == initialTime;
                           final disabled = booked && !canUseBooked;
@@ -802,15 +2083,25 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
                       width: double.infinity,
                       child: ElevatedButton.icon(
                         onPressed: _slotActionBusy ? null : submit,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: createNewForCustomer
+                              ? _primaryColor
+                              : Colors.green.shade600,
+                          foregroundColor: Colors.white,
+                        ),
                         icon: _slotActionBusy
                             ? const SizedBox(
                                 width: 16,
                                 height: 16,
-                                child: CircularProgressIndicator(strokeWidth: 2),
+                                child:
+                                    CircularProgressIndicator(strokeWidth: 2),
                               )
-                            : Icon(createNewForCustomer ? Icons.add : Icons.save),
+                            : Icon(
+                                createNewForCustomer ? Icons.add : Icons.save),
                         label: Text(
-                          createNewForCustomer ? loc.rescheduleAppointment : loc.save,
+                          createNewForCustomer
+                              ? loc.rescheduleAppointment
+                              : loc.save,
                         ),
                       ),
                     ),
@@ -879,6 +2170,54 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
     final statusColors = data.statusColors;
     final workingPrefs = data.workingPreferences;
 
+    String normalizeDateKey(String raw) {
+      final value = raw.trim();
+      if (value.isEmpty) return value;
+      if (value.length >= 10 && RegExp(r'^\d{4}-\d{2}-\d{2}').hasMatch(value)) {
+        return value.substring(0, 10);
+      }
+      final parsed = DateTime.tryParse(value);
+      if (parsed == null) return value;
+      final y = parsed.year.toString().padLeft(4, '0');
+      final m = parsed.month.toString().padLeft(2, '0');
+      final d = parsed.day.toString().padLeft(2, '0');
+      return '$y-$m-$d';
+    }
+
+    String normalizeTimeKey(String raw) {
+      final value = raw.trim();
+      if (value.isEmpty) return value;
+      final match = RegExp(r'^(\d{2}):(\d{2})(?::\d{2})?$').firstMatch(value);
+      if (match != null) {
+        return '${match.group(1)}:${match.group(2)}';
+      }
+      final parsed = DateTime.tryParse(value);
+      if (parsed == null) return value;
+      final h = parsed.hour.toString().padLeft(2, '0');
+      final m = parsed.minute.toString().padLeft(2, '0');
+      return '$h:$m';
+    }
+
+    final appointmentsLookup = <String, List<dynamic>>{};
+    appointmentsBySlot.forEach((key, value) {
+      appointmentsLookup[key] = value;
+      final idx = key.lastIndexOf('_');
+      if (idx <= 0) return;
+      final rawDate = key.substring(0, idx);
+      final rawTime = key.substring(idx + 1);
+      final normalizedKey =
+          '${normalizeDateKey(rawDate)}_${normalizeTimeKey(rawTime)}';
+      appointmentsLookup.putIfAbsent(normalizedKey, () => value);
+    });
+
+    List<dynamic> appointmentsForSlot(String dayDate, String slotTime) {
+      final rawKey = '${dayDate}_$slotTime';
+      return appointmentsLookup[rawKey] ??
+          appointmentsLookup[
+              '${normalizeDateKey(dayDate)}_${normalizeTimeKey(slotTime)}'] ??
+          const [];
+    }
+
     Color statusColorFor(Map<String, dynamic>? appointment) {
       final alias =
           appointment?['appointment_status']?['alias']?.toString() ?? '';
@@ -896,8 +2235,7 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
         return const SizedBox.shrink();
       }
 
-      final key = '${day.date}_$time';
-      final appts = appointmentsBySlot[key] ?? const [];
+      final appts = appointmentsForSlot(day.date, time);
       final appointment = appts.isNotEmpty && appts.first is Map
           ? Map<String, dynamic>.from(appts.first as Map)
           : null;
@@ -940,7 +2278,7 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      fullName.isNotEmpty ? fullName : loc.calendarCustomer,
+                      fullName.isNotEmpty ? fullName : 'Kişi',
                       style: const TextStyle(
                           fontWeight: FontWeight.bold, fontSize: 14),
                       overflow: TextOverflow.ellipsis,
@@ -948,7 +2286,8 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
                     const SizedBox(height: 2),
                     Text(
                       phone.isNotEmpty ? phone : '',
-                      style: const TextStyle(fontSize: 12, color: Colors.black87),
+                      style:
+                          const TextStyle(fontSize: 12, color: Colors.black87),
                       overflow: TextOverflow.ellipsis,
                     ),
                     const SizedBox(height: 4),
@@ -1032,18 +2371,10 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
 
       return InkWell(
         borderRadius: BorderRadius.circular(12),
-        onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) => AppointmentsPage(
-                initialQuickDate: day.date,
-                initialQuickTime: time,
-                autoShowQuick: true,
-              ),
-            ),
-          );
-        },
+        onTap: () => _showCreateSlotSheet(
+          initialDate: day.date,
+          initialTime: time,
+        ),
         child: Container(
           constraints: const BoxConstraints(minHeight: 62),
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
@@ -1083,14 +2414,14 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
     }
 
     Widget buildDaySection(WeekDayInfo day) {
-      final sectionKey = _daySectionKeys.putIfAbsent(day.date, () => GlobalKey());
+      final sectionKey =
+          _daySectionKeys.putIfAbsent(day.date, () => GlobalKey());
       final slots = data.timeSlotsByDay[day.date] ?? const [];
       final working = _dayWorking(day, workingPrefs);
       final isExpanded = _expandedDayDate == day.date;
       final focusSlot = _nearestUpcomingSlotTime(slots, day.date);
       final bookedCount = slots.where((slot) {
-        final key = '${day.date}_${slot.time}';
-        final appts = appointmentsBySlot[key] ?? const [];
+        final appts = appointmentsForSlot(day.date, slot.time);
         return appts.isNotEmpty;
       }).length;
 
@@ -1124,7 +2455,8 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
                 });
               },
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
                 decoration: BoxDecoration(
                   color: Colors.grey.shade50,
                   borderRadius: BorderRadius.vertical(
@@ -1222,12 +2554,14 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
                                   ),
                                   child: Text(
                                     loc.calendarNoData,
-                                    style: const TextStyle(color: Colors.black54),
+                                    style:
+                                        const TextStyle(color: Colors.black54),
                                   ),
                                 ),
                               )
                             : Padding(
-                                padding: const EdgeInsets.fromLTRB(12, 10, 12, 12),
+                                padding:
+                                    const EdgeInsets.fromLTRB(12, 10, 12, 12),
                                 child: Column(
                                   children: slots.map((slot) {
                                     return Padding(
@@ -1249,10 +2583,15 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
     }
 
     return Expanded(
-      child: ListView.builder(
-        padding: EdgeInsets.only(bottom: widget.showBottomNav ? 96 : 20),
-        itemCount: data.weekDays.length,
-        itemBuilder: (context, index) => buildDaySection(data.weekDays[index]),
+      child: RefreshIndicator(
+        onRefresh: _refreshWeek,
+        child: ListView.builder(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: EdgeInsets.only(bottom: widget.showBottomNav ? 96 : 20),
+          itemCount: data.weekDays.length,
+          itemBuilder: (context, index) =>
+              buildDaySection(data.weekDays[index]),
+        ),
       ),
     );
   }
@@ -1426,8 +2765,9 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
               const Divider(height: 1),
               const SizedBox(height: 8),
               asyncData.when(
-                data: (d) =>
-                    d.hasTimeSlots ? const SizedBox.shrink() : _buildWorkingPrefCallout(),
+                data: (d) => d.hasTimeSlots
+                    ? const SizedBox.shrink()
+                    : _buildWorkingPrefCallout(),
                 loading: () => const SizedBox.shrink(),
                 error: (_, __) => const SizedBox.shrink(),
               ),
@@ -1435,7 +2775,20 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
               asyncData.when(
                 data: (d) {
                   if (d.weekDays.isEmpty) {
-                    return Text(loc.calendarNoData);
+                    return Expanded(
+                      child: RefreshIndicator(
+                        onRefresh: _refreshWeek,
+                        child: ListView(
+                          physics: const AlwaysScrollableScrollPhysics(),
+                          children: [
+                            Padding(
+                              padding: const EdgeInsets.only(top: 24),
+                              child: Center(child: Text(loc.calendarNoData)),
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
                   }
                   return _buildDayList(d);
                 },
@@ -1443,10 +2796,21 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
                   child: Center(child: CircularProgressIndicator()),
                 ),
                 error: (e, _) => Expanded(
-                  child: Center(
-                    child: Text(
-                      'Hata: ${e.toString()}',
-                      style: const TextStyle(color: Colors.red),
+                  child: RefreshIndicator(
+                    onRefresh: _refreshWeek,
+                    child: ListView(
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.only(top: 24),
+                          child: Center(
+                            child: Text(
+                              'Hata: ${e.toString()}',
+                              style: const TextStyle(color: Colors.red),
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ),
@@ -1461,6 +2825,113 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
               onIndexSelected: widget.onTabSelected,
             )
           : null,
+    );
+  }
+}
+
+class _SectionLabel extends StatelessWidget {
+  final String text;
+  const _SectionLabel({required this.text});
+
+  @override
+  Widget build(BuildContext context) => Text(
+        text,
+        style: const TextStyle(
+          fontSize: 11,
+          fontWeight: FontWeight.w700,
+          letterSpacing: 0.8,
+          color: Color(0xFF8A8A8A),
+        ),
+      );
+}
+
+class _ThinDivider extends StatelessWidget {
+  const _ThinDivider();
+
+  @override
+  Widget build(BuildContext context) =>
+      const Divider(height: 1, thickness: 1, color: Color(0xFFEEEEEE));
+}
+
+class _TabButton extends StatelessWidget {
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  const _TabButton({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: GestureDetector(
+        onTap: onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 160),
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          decoration: BoxDecoration(
+            color: selected ? Colors.white : Colors.transparent,
+            borderRadius: BorderRadius.circular(11),
+            boxShadow: selected
+                ? [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.06),
+                      blurRadius: 4,
+                      offset: const Offset(0, 1),
+                    ),
+                  ]
+                : null,
+          ),
+          alignment: Alignment.center,
+          child: Text(
+            label,
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+              color:
+                  selected ? const Color(0xFF111111) : const Color(0xFF8A8A8A),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _MinimalSwitch extends StatelessWidget {
+  final String label;
+  final bool value;
+  final ValueChanged<bool> onChanged;
+
+  const _MinimalSwitch({
+    required this.label,
+    required this.value,
+    required this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 2),
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(
+              label,
+              style: const TextStyle(fontSize: 14, color: Color(0xFF333333)),
+            ),
+          ),
+          Switch.adaptive(
+            value: value,
+            onChanged: onChanged,
+            activeThumbColor: const Color(0xFF111111),
+            materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+          ),
+        ],
+      ),
     );
   }
 }
