@@ -16,8 +16,19 @@ class WorkingPreferencesPage extends StatefulWidget {
 
 class _WorkingPreferencesPageState extends State<WorkingPreferencesPage> {
   AppLocalizations get loc => AppLocalizations.of(context);
-  static const Color _backgroundColor = Color(0xFFF7F9FC);
-  static const Color _primaryColor = Color(0xFF6366F1);
+  static const Color _bg = Color(0xFFF5F6FA);
+  static const Color _surface = Color(0xFFFFFFFF);
+  static const Color _surfaceAlt = Color(0xFFF9FAFB);
+  static const Color _border = Color(0xFFE8EAF0);
+  static const Color _accent = Color(0xFF5B5FD9);
+  static const Color _accentLight = Color(0xFFEEEEFF);
+  static const Color _textPrimary = Color(0xFF1A1A2E);
+  static const Color _textSecondary = Color(0xFF6B7280);
+  static const Color _textMuted = Color(0xFFB0B7C3);
+  static const Color _success = Color(0xFF10B981);
+  static const Color _successBg = Color(0xFFECFDF5);
+  static const Color _danger = Color(0xFFEF4444);
+  static const Color _dangerBg = Color(0xFFFEF2F2);
 
   bool _loading = true;
   bool _saving = false;
@@ -196,8 +207,7 @@ class _WorkingPreferencesPageState extends State<WorkingPreferencesPage> {
         _showSnack(loc.workingPrefsSaveSuccess, success: true);
         await _loadPreferences();
       } else {
-        String message =
-            loc.workingPrefsSaveFailedStatus(response.statusCode);
+        String message = loc.workingPrefsSaveFailedStatus(response.statusCode);
         try {
           final decoded = jsonDecode(response.body);
           message = decoded['message']?.toString() ?? message;
@@ -217,10 +227,66 @@ class _WorkingPreferencesPageState extends State<WorkingPreferencesPage> {
 
   void _showSnack(String message, {bool success = false}) {
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: success ? Colors.green : Colors.red,
+    final color = success ? _success : _danger;
+    final bg = success ? _successBg : _dangerBg;
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          behavior: SnackBarBehavior.floating,
+          margin: const EdgeInsets.all(16),
+          backgroundColor: bg,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+            side: BorderSide(color: color.withValues(alpha: 0.4)),
+          ),
+          content: Row(
+            children: [
+              Icon(
+                success ? Icons.check_circle_rounded : Icons.error_rounded,
+                size: 18,
+                color: color,
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  message,
+                  style: TextStyle(color: color, fontWeight: FontWeight.w600),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+  }
+
+  InputDecoration _inputDecoration({
+    required String labelText,
+    bool compact = false,
+  }) {
+    return InputDecoration(
+      labelText: labelText,
+      filled: true,
+      fillColor: _surfaceAlt,
+      labelStyle: TextStyle(
+        fontSize: compact ? 12 : 13,
+        color: _textSecondary,
+      ),
+      isDense: compact,
+      contentPadding: compact
+          ? const EdgeInsets.symmetric(horizontal: 10, vertical: 9)
+          : const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(compact ? 8 : 11),
+        borderSide: const BorderSide(color: _border),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(compact ? 8 : 11),
+        borderSide: const BorderSide(color: _border),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(compact ? 8 : 11),
+        borderSide: const BorderSide(color: _accent, width: 1.5),
       ),
     );
   }
@@ -229,19 +295,20 @@ class _WorkingPreferencesPageState extends State<WorkingPreferencesPage> {
     required Widget child,
     String? title,
     String? subtitle,
+    IconData? icon,
     EdgeInsetsGeometry padding = const EdgeInsets.all(16),
   }) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: _surface,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: Colors.grey.shade200),
+        border: Border.all(color: _border),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.03),
-            blurRadius: 10,
-            offset: const Offset(0, 6),
-          )
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
         ],
       ),
       padding: padding,
@@ -249,19 +316,38 @@ class _WorkingPreferencesPageState extends State<WorkingPreferencesPage> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           if (title != null)
-            Text(
-              title,
-              style: const TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w700,
-              ),
+            Row(
+              children: [
+                if (icon != null) ...[
+                  Container(
+                    width: 32,
+                    height: 32,
+                    decoration: BoxDecoration(
+                      color: _accentLight,
+                      borderRadius: BorderRadius.circular(9),
+                    ),
+                    child: Icon(icon, size: 18, color: _accent),
+                  ),
+                  const SizedBox(width: 10),
+                ],
+                Expanded(
+                  child: Text(
+                    title,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                      color: _textPrimary,
+                    ),
+                  ),
+                ),
+              ],
             ),
           if (subtitle != null)
             Padding(
-              padding: const EdgeInsets.only(top: 4, bottom: 10),
+              padding: const EdgeInsets.only(top: 6, bottom: 10),
               child: Text(
                 subtitle,
-                style: const TextStyle(color: Colors.black54),
+                style: const TextStyle(color: _textSecondary, fontSize: 13),
               ),
             )
           else if (title != null)
@@ -407,30 +493,58 @@ class _WorkingPreferencesPageState extends State<WorkingPreferencesPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: _backgroundColor,
+      backgroundColor: _bg,
       appBar: AppBar(
         automaticallyImplyLeading: false,
         elevation: 0,
-        backgroundColor: Colors.white,
-        foregroundColor: Colors.black87,
+        scrolledUnderElevation: 0,
+        backgroundColor: _surface,
+        foregroundColor: _textSecondary,
+        bottom: const PreferredSize(
+          preferredSize: Size.fromHeight(1),
+          child: Divider(height: 1, thickness: 1, color: _border),
+        ),
         leading: IconButton(
           tooltip: MaterialLocalizations.of(context).backButtonTooltip,
           onPressed: _goBack,
-          icon: const Icon(Icons.arrow_back),
+          icon: const Icon(Icons.arrow_back_rounded, size: 20),
         ),
         title: Text(
           loc.workingPrefsTitle,
-          style: const TextStyle(fontWeight: FontWeight.w700),
+          style: const TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w700,
+            color: _textPrimary,
+          ),
         ),
         actions: [
           IconButton(
             tooltip: loc.dashboardHome,
             onPressed: _goHome,
-            icon: const Icon(Icons.home_outlined),
+            icon: const Icon(Icons.home_rounded, size: 20),
           ),
         ],
       ),
       body: _buildBody(),
+      bottomNavigationBar:
+          (!_loading && _error == null) ? _buildStickySaveBar() : null,
+    );
+  }
+
+  Widget _buildStickySaveBar() {
+    return Container(
+      color: _surface,
+      padding: const EdgeInsets.fromLTRB(16, 10, 16, 12),
+      child: SafeArea(
+        top: false,
+        child: _PrimaryButton(
+          onPressed: _savePreferences,
+          icon: Icons.save_rounded,
+          label: loc.workingPrefsSave,
+          loadingLabel: loc.workingPrefsSaving,
+          isLoading: _saving,
+        ),
+      ),
     );
   }
 
@@ -443,20 +557,33 @@ class _WorkingPreferencesPageState extends State<WorkingPreferencesPage> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
+            Container(
+              width: 68,
+              height: 68,
+              decoration: const BoxDecoration(
+                color: _dangerBg,
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.error_outline_rounded,
+                color: _danger,
+                size: 30,
+              ),
+            ),
+            const SizedBox(height: 12),
             Padding(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.symmetric(horizontal: 24),
               child: Text(
                 _error!,
                 textAlign: TextAlign.center,
+                style: const TextStyle(color: _textSecondary),
               ),
             ),
-            ElevatedButton(
+            const SizedBox(height: 12),
+            _PrimaryButton(
               onPressed: _loadPreferences,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: _primaryColor,
-                foregroundColor: Colors.white,
-              ),
-              child: Text(loc.workingPrefsRetry),
+              icon: Icons.refresh_rounded,
+              label: loc.workingPrefsRetry,
             ),
           ],
         ),
@@ -465,68 +592,64 @@ class _WorkingPreferencesPageState extends State<WorkingPreferencesPage> {
 
     return RefreshIndicator(
       onRefresh: _loadPreferences,
-      child: ListView(
-        padding: const EdgeInsets.all(16),
-        physics: const AlwaysScrollableScrollPhysics(),
-        children: [
-          _sectionCard(
-            title: loc.workingPrefsFirstSessionTitle,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                DropdownButtonFormField<int>(
-                  initialValue: _firstAppointmentSessionCount,
-                  decoration: InputDecoration(
-                    labelText: loc.workingPrefsSelect,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10),
+      child: TweenAnimationBuilder<double>(
+        tween: Tween(begin: 0, end: 1),
+        duration: const Duration(milliseconds: 420),
+        curve: Curves.easeOut,
+        builder: (context, value, child) {
+          return Opacity(opacity: value, child: child);
+        },
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(16, 20, 16, 108),
+          physics: const AlwaysScrollableScrollPhysics(),
+          children: [
+            _sectionCard(
+              title: loc.workingPrefsFirstSessionTitle,
+              icon: Icons.tune_rounded,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const _SectionLabel(text: 'SESSION'),
+                  const SizedBox(height: 8),
+                  DropdownButtonFormField<int>(
+                    initialValue: _firstAppointmentSessionCount,
+                    decoration: _inputDecoration(
+                      labelText: loc.workingPrefsSelect,
                     ),
+                    icon: const Icon(
+                      Icons.expand_more_rounded,
+                      size: 18,
+                      color: _textMuted,
+                    ),
+                    dropdownColor: _surface,
+                    items: [
+                      DropdownMenuItem(
+                          value: 1,
+                          child: Text(loc.workingPrefsSessionOption(1))),
+                      DropdownMenuItem(
+                          value: 2,
+                          child: Text(loc.workingPrefsSessionOption(2))),
+                      DropdownMenuItem(
+                          value: 3,
+                          child: Text(loc.workingPrefsSessionOption(3))),
+                    ],
+                    onChanged: (val) {
+                      if (val == null) return;
+                      setState(() {
+                        _firstAppointmentSessionCount = val;
+                      });
+                    },
                   ),
-                  items: [
-                    DropdownMenuItem(
-                        value: 1,
-                        child: Text(loc.workingPrefsSessionOption(1))),
-                    DropdownMenuItem(
-                        value: 2,
-                        child: Text(loc.workingPrefsSessionOption(2))),
-                    DropdownMenuItem(
-                        value: 3,
-                        child: Text(loc.workingPrefsSessionOption(3))),
-                  ],
-                  onChanged: (val) {
-                    if (val == null) return;
-                    setState(() {
-                      _firstAppointmentSessionCount = val;
-                    });
-                  },
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
-          const SizedBox(height: 12),
-          ..._preferences.map(_buildDayCard),
-          const SizedBox(height: 12),
-          _buildHolidaysCard(),
-          const SizedBox(height: 20),
-          ElevatedButton.icon(
-            onPressed: _saving ? null : _savePreferences,
-            icon: _saving
-                ? const SizedBox(
-                    width: 18,
-                    height: 18,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : const Icon(Icons.save),
-            label: Text(
-                _saving ? loc.workingPrefsSaving : loc.workingPrefsSave),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: _primaryColor,
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(vertical: 14),
-            ),
-          ),
-          const SizedBox(height: 20),
-        ],
+            const SizedBox(height: 12),
+            ..._preferences.map(_buildDayCard),
+            const SizedBox(height: 12),
+            _buildHolidaysCard(),
+            const SizedBox(height: 8),
+          ],
+        ),
       ),
     );
   }
@@ -536,13 +659,23 @@ class _WorkingPreferencesPageState extends State<WorkingPreferencesPage> {
     return _sectionCard(
       title: dayName,
       subtitle: loc.workingPrefsDaySubtitle,
+      icon: Icons.schedule_rounded,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          const _SectionLabel(text: 'STATUS'),
+          const SizedBox(height: 8),
           Row(
             children: [
-              Text(loc.workingPrefsWorking),
-              Switch(
+              Text(
+                loc.workingPrefsWorking,
+                style: const TextStyle(
+                  color: _textPrimary,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const Spacer(),
+              _ToggleSwitch(
                 value: pref.isWorking,
                 onChanged: (val) {
                   setState(() {
@@ -552,6 +685,8 @@ class _WorkingPreferencesPageState extends State<WorkingPreferencesPage> {
               ),
             ],
           ),
+          const SizedBox(height: 8),
+          const _SectionLabel(text: 'TIME SLOTS'),
           const SizedBox(height: 8),
           Column(
             children: pref.timeSlots
@@ -564,8 +699,12 @@ class _WorkingPreferencesPageState extends State<WorkingPreferencesPage> {
             alignment: Alignment.centerLeft,
             child: TextButton.icon(
               onPressed: () => _addSlot(pref),
-              icon: const Icon(Icons.add),
+              icon: const Icon(Icons.add_rounded),
               label: Text(loc.workingPrefsAddSlot),
+              style: TextButton.styleFrom(
+                foregroundColor: _accent,
+                textStyle: const TextStyle(fontWeight: FontWeight.w700),
+              ),
             ),
           ),
         ],
@@ -573,8 +712,7 @@ class _WorkingPreferencesPageState extends State<WorkingPreferencesPage> {
     );
   }
 
-  Widget _buildSlotRow(
-      _DayPreference pref, int index, _TimeSlot slot) {
+  Widget _buildSlotRow(_DayPreference pref, int index, _TimeSlot slot) {
     final startOptions = _timeOptionsWithCurrent(slot.start);
     final endOptions = _timeOptionsWithCurrent(slot.end);
     final periodOptions = _periodOptionsWithCurrent(slot.period);
@@ -590,6 +728,12 @@ class _WorkingPreferencesPageState extends State<WorkingPreferencesPage> {
               isExpanded: true,
               isDense: true,
               initialValue: _initialTimeValue(startOptions, slot.start),
+              icon: const Icon(
+                Icons.expand_more_rounded,
+                size: 18,
+                color: _textMuted,
+              ),
+              dropdownColor: _surface,
               items: startOptions
                   .map(
                     (t) => DropdownMenuItem(
@@ -598,8 +742,9 @@ class _WorkingPreferencesPageState extends State<WorkingPreferencesPage> {
                     ),
                   )
                   .toList(),
-              decoration: InputDecoration(
+              decoration: _inputDecoration(
                 labelText: loc.workingPrefsStart,
+                compact: true,
               ),
               onChanged: (val) {
                 if (val == null) return;
@@ -617,6 +762,12 @@ class _WorkingPreferencesPageState extends State<WorkingPreferencesPage> {
               isExpanded: true,
               isDense: true,
               initialValue: _initialTimeValue(endOptions, slot.end),
+              icon: const Icon(
+                Icons.expand_more_rounded,
+                size: 18,
+                color: _textMuted,
+              ),
+              dropdownColor: _surface,
               items: endOptions
                   .map(
                     (t) => DropdownMenuItem(
@@ -625,8 +776,9 @@ class _WorkingPreferencesPageState extends State<WorkingPreferencesPage> {
                     ),
                   )
                   .toList(),
-              decoration: InputDecoration(
+              decoration: _inputDecoration(
                 labelText: loc.workingPrefsEnd,
+                compact: true,
               ),
               onChanged: (val) {
                 if (val == null) return;
@@ -644,6 +796,12 @@ class _WorkingPreferencesPageState extends State<WorkingPreferencesPage> {
               isDense: true,
               isExpanded: true,
               iconSize: 20,
+              icon: const Icon(
+                Icons.expand_more_rounded,
+                size: 18,
+                color: _textMuted,
+              ),
+              dropdownColor: _surface,
               initialValue: _initialPeriodValue(periodOptions, slot.period),
               items: periodOptions
                   .map(
@@ -653,12 +811,8 @@ class _WorkingPreferencesPageState extends State<WorkingPreferencesPage> {
                     ),
                   )
                   .toList(),
-              decoration: InputDecoration(
-                labelText: loc.workingPrefsPeriod,
-                isDense: true,
-                contentPadding:
-                    const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
-              ),
+              decoration: _inputDecoration(
+                  labelText: loc.workingPrefsPeriod, compact: true),
               onChanged: (val) {
                 if (val == null) return;
                 setState(() {
@@ -677,7 +831,7 @@ class _WorkingPreferencesPageState extends State<WorkingPreferencesPage> {
               onPressed: pref.timeSlots.length <= 1
                   ? null
                   : () => _removeSlot(pref, index),
-              icon: const Icon(Icons.delete),
+              icon: const Icon(Icons.delete_rounded),
             ),
           ),
         ],
@@ -688,11 +842,11 @@ class _WorkingPreferencesPageState extends State<WorkingPreferencesPage> {
   Widget _buildHolidaysCard() {
     return _sectionCard(
       title: loc.workingPrefsHolidaysTitle,
+      icon: Icons.event_available_rounded,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          if (_holidays.isEmpty)
-            Text(loc.workingPrefsHolidaysEmpty),
+          if (_holidays.isEmpty) Text(loc.workingPrefsHolidaysEmpty),
           ..._holidays.asMap().entries.map((entry) {
             final index = entry.key;
             final holiday = entry.value;
@@ -707,9 +861,9 @@ class _WorkingPreferencesPageState extends State<WorkingPreferencesPage> {
                           key: ValueKey('begin-$index-${holiday.holidayBegin}'),
                           readOnly: true,
                           initialValue: holiday.holidayBegin,
-                          decoration: InputDecoration(
+                          decoration: _inputDecoration(
                             labelText: loc.workingPrefsHolidayStart,
-                            isDense: true,
+                            compact: true,
                           ),
                           onTap: () => _pickHolidayDate(index, true),
                         ),
@@ -720,9 +874,9 @@ class _WorkingPreferencesPageState extends State<WorkingPreferencesPage> {
                           key: ValueKey('end-$index-${holiday.holidayEnd}'),
                           readOnly: true,
                           initialValue: holiday.holidayEnd,
-                          decoration: InputDecoration(
+                          decoration: _inputDecoration(
                             labelText: loc.workingPrefsHolidayEnd,
-                            isDense: true,
+                            compact: true,
                           ),
                           onTap: () => _pickHolidayDate(index, false),
                         ),
@@ -730,25 +884,25 @@ class _WorkingPreferencesPageState extends State<WorkingPreferencesPage> {
                       SizedBox(
                         width: 40,
                         child: IconButton(
-                          tooltip: 'Sil',
+                          tooltip: loc.workingPrefsDelete,
                           padding: EdgeInsets.zero,
-                          constraints:
-                              const BoxConstraints.tightFor(width: 36, height: 36),
+                          constraints: const BoxConstraints.tightFor(
+                              width: 36, height: 36),
                           visualDensity: VisualDensity.compact,
-                            onPressed: () => _removeHoliday(index),
-                            icon: const Icon(Icons.delete),
-                          ),
+                          onPressed: () => _removeHoliday(index),
+                          icon: const Icon(Icons.delete_rounded),
+                        ),
                       ),
                     ],
                   ),
                   const SizedBox(height: 8),
                   TextFormField(
-                  key: ValueKey('reason-$index-${holiday.reason}'),
-                  initialValue: holiday.reason,
-                  decoration: InputDecoration(
-                    labelText: loc.workingPrefsHolidayReason,
-                    isDense: true,
-                  ),
+                    key: ValueKey('reason-$index-${holiday.reason}'),
+                    initialValue: holiday.reason,
+                    decoration: _inputDecoration(
+                      labelText: loc.workingPrefsHolidayReason,
+                      compact: true,
+                    ),
                     onChanged: (val) {
                       setState(() {
                         holiday.reason = val;
@@ -763,11 +917,149 @@ class _WorkingPreferencesPageState extends State<WorkingPreferencesPage> {
             alignment: Alignment.centerLeft,
             child: TextButton.icon(
               onPressed: _addHoliday,
-              icon: const Icon(Icons.add),
+              icon: const Icon(Icons.add_rounded),
               label: Text(loc.workingPrefsHolidayAdd),
+              style: TextButton.styleFrom(
+                foregroundColor: _accent,
+                textStyle: const TextStyle(fontWeight: FontWeight.w700),
+              ),
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _SectionLabel extends StatelessWidget {
+  final String text;
+  const _SectionLabel({required this.text});
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      text.toUpperCase(),
+      style: const TextStyle(
+        fontSize: 10.5,
+        fontWeight: FontWeight.w700,
+        letterSpacing: 1.3,
+        color: Color(0xFFB0B7C3),
+      ),
+    );
+  }
+}
+
+class _ToggleSwitch extends StatelessWidget {
+  final bool value;
+  final ValueChanged<bool> onChanged;
+
+  const _ToggleSwitch({
+    required this.value,
+    required this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: () => onChanged(!value),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        width: 44,
+        height: 24,
+        padding: const EdgeInsets.all(2),
+        decoration: BoxDecoration(
+          color: value ? const Color(0xFF5B5FD9) : const Color(0xFFE8EAF0),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: AnimatedAlign(
+          duration: const Duration(milliseconds: 180),
+          alignment: value ? Alignment.centerRight : Alignment.centerLeft,
+          child: Container(
+            width: 20,
+            height: 20,
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              shape: BoxShape.circle,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _PrimaryButton extends StatelessWidget {
+  final VoidCallback? onPressed;
+  final String label;
+  final String? loadingLabel;
+  final IconData icon;
+  final bool isLoading;
+
+  const _PrimaryButton({
+    required this.onPressed,
+    required this.label,
+    required this.icon,
+    this.loadingLabel,
+    this.isLoading = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final enabled = onPressed != null && !isLoading;
+    final bg = enabled ? const Color(0xFF5B5FD9) : const Color(0xFFEEEEFF);
+    final fg = enabled ? Colors.white : const Color(0xFF5B5FD9);
+
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 180),
+      height: 52,
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: BorderRadius.circular(14),
+        boxShadow: enabled
+            ? [
+                BoxShadow(
+                  color: const Color(0xFF5B5FD9).withValues(alpha: 0.25),
+                  blurRadius: 18,
+                  offset: const Offset(0, 6),
+                ),
+              ]
+            : null,
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(14),
+          onTap: enabled ? onPressed : null,
+          child: Center(
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                if (isLoading) ...[
+                  const SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: Color(0xFF5B5FD9),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                ] else ...[
+                  Icon(icon, size: 18, color: fg),
+                  const SizedBox(width: 8),
+                ],
+                Text(
+                  isLoading ? (loadingLabel ?? label) : label,
+                  style: TextStyle(
+                    color: fg,
+                    fontWeight: FontWeight.w700,
+                    fontSize: 15,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -801,8 +1093,7 @@ class _DayPreference {
     );
   }
 
-  Map<String, dynamic> toJson(
-      {String Function(String value)? normalizeTime}) {
+  Map<String, dynamic> toJson({String Function(String value)? normalizeTime}) {
     return {
       'day_of_week': dayOfWeek,
       'is_working': isWorking,
