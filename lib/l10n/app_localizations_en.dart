@@ -89,6 +89,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get customersEdit => 'Edit Contact';
 
   @override
+  String get customersAddSubtitle => 'Add a new contact';
+
+  @override
+  String get customersEditSubtitle => 'Edit contact details';
+
+  @override
   String get customersDelete => 'Delete';
 
   @override
@@ -181,6 +187,14 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get customersAppointmentNote => 'Note';
+
+  @override
+  String get customersAppointmentNoteHint => 'Add an appointment note...';
+
+  @override
+  String customersEmptyForLetter(Object letter) {
+    return 'No contacts starting with \"$letter\" were found.';
+  }
 
   @override
   String get customersFirstAppointment => 'First appointment?';
@@ -769,6 +783,40 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get calendarAddAppointment => 'Add appointment';
+
+  @override
+  String get calendarGuideTitle => 'Guide';
+
+  @override
+  String get calendarPerson => 'Person';
+
+  @override
+  String get calendarExistingPerson => 'Existing Person';
+
+  @override
+  String get calendarNewPerson => 'New Person';
+
+  @override
+  String get calendarSelectPerson => 'Please select a person';
+
+  @override
+  String get calendarDateTimeSection => 'Date & Time';
+
+  @override
+  String get calendarNoteHint => 'Add a note...';
+
+  @override
+  String get calendarSlotBusy => 'Selected time slot is full.';
+
+  @override
+  String get calendarCustomerInfoMissing => 'Person info not found.';
+
+  @override
+  String get calendarAppointmentInfoMissing => 'Appointment info not found.';
+
+  @override
+  String get calendarAppointmentStatusMissing =>
+      'Appointment status not found.';
 
   @override
   String get calendarActionNew => 'New';

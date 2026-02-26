@@ -242,6 +242,18 @@ abstract class AppLocalizations {
   /// **'Edit Contact'**
   String get customersEdit;
 
+  /// No description provided for @customersAddSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Add a new contact'**
+  String get customersAddSubtitle;
+
+  /// No description provided for @customersEditSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit contact details'**
+  String get customersEditSubtitle;
+
   /// No description provided for @customersDelete.
   ///
   /// In en, this message translates to:
@@ -403,6 +415,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Note'**
   String get customersAppointmentNote;
+
+  /// No description provided for @customersAppointmentNoteHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Add an appointment note...'**
+  String get customersAppointmentNoteHint;
+
+  /// No description provided for @customersEmptyForLetter.
+  ///
+  /// In en, this message translates to:
+  /// **'No contacts starting with \"{letter}\" were found.'**
+  String customersEmptyForLetter(Object letter);
 
   /// No description provided for @customersFirstAppointment.
   ///
@@ -1453,6 +1477,72 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Add appointment'**
   String get calendarAddAppointment;
+
+  /// No description provided for @calendarGuideTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Guide'**
+  String get calendarGuideTitle;
+
+  /// No description provided for @calendarPerson.
+  ///
+  /// In en, this message translates to:
+  /// **'Person'**
+  String get calendarPerson;
+
+  /// No description provided for @calendarExistingPerson.
+  ///
+  /// In en, this message translates to:
+  /// **'Existing Person'**
+  String get calendarExistingPerson;
+
+  /// No description provided for @calendarNewPerson.
+  ///
+  /// In en, this message translates to:
+  /// **'New Person'**
+  String get calendarNewPerson;
+
+  /// No description provided for @calendarSelectPerson.
+  ///
+  /// In en, this message translates to:
+  /// **'Please select a person'**
+  String get calendarSelectPerson;
+
+  /// No description provided for @calendarDateTimeSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Date & Time'**
+  String get calendarDateTimeSection;
+
+  /// No description provided for @calendarNoteHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Add a note...'**
+  String get calendarNoteHint;
+
+  /// No description provided for @calendarSlotBusy.
+  ///
+  /// In en, this message translates to:
+  /// **'Selected time slot is full.'**
+  String get calendarSlotBusy;
+
+  /// No description provided for @calendarCustomerInfoMissing.
+  ///
+  /// In en, this message translates to:
+  /// **'Person info not found.'**
+  String get calendarCustomerInfoMissing;
+
+  /// No description provided for @calendarAppointmentInfoMissing.
+  ///
+  /// In en, this message translates to:
+  /// **'Appointment info not found.'**
+  String get calendarAppointmentInfoMissing;
+
+  /// No description provided for @calendarAppointmentStatusMissing.
+  ///
+  /// In en, this message translates to:
+  /// **'Appointment status not found.'**
+  String get calendarAppointmentStatusMissing;
 
   /// No description provided for @calendarActionNew.
   ///

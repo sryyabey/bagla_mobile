@@ -140,6 +140,43 @@ class _CustomersPageState extends State<CustomersPage> {
     'Y',
     'Z',
   ];
+  static const Set<String> _alphabetLetterSet = {
+    '#',
+    'A',
+    'B',
+    'C',
+    'Ç',
+    'D',
+    'E',
+    'F',
+    'G',
+    'Ğ',
+    'H',
+    'I',
+    'İ',
+    'J',
+    'K',
+    'L',
+    'M',
+    'N',
+    'O',
+    'Ö',
+    'P',
+    'R',
+    'S',
+    'Ş',
+    'T',
+    'U',
+    'Ü',
+    'V',
+    'Y',
+    'Z',
+  };
+
+  List<Map<String, dynamic>>? _visibleCustomersCache;
+  int _visibleCustomersCacheStamp = -1;
+  String _visibleCustomersCacheLetter = '';
+  int _customersMutationStamp = 0;
 
   @override
   void initState() {
@@ -249,7 +286,7 @@ class _CustomersPageState extends State<CustomersPage> {
     for (int i = 0; i < trimmed.length; i++) {
       final ch = trimmed[i];
       final normalized = _normalizeInitial(ch);
-      if (_alphabetLetters.contains(normalized) && normalized != '#') {
+      if (_alphabetLetterSet.contains(normalized) && normalized != '#') {
         return normalized;
       }
     }
@@ -257,16 +294,26 @@ class _CustomersPageState extends State<CustomersPage> {
   }
 
   List<Map<String, dynamic>> _visibleCustomers() {
+    if (_visibleCustomersCache != null &&
+        _visibleCustomersCacheStamp == _customersMutationStamp &&
+        _visibleCustomersCacheLetter == _selectedLetter) {
+      return _visibleCustomersCache!;
+    }
     final sorted = [..._customers];
     sorted.sort((a, b) {
       final an = _customerName(a).toLowerCase();
       final bn = _customerName(b).toLowerCase();
       return an.compareTo(bn);
     });
-    if (_selectedLetter == '#') return sorted;
-    return sorted
-        .where((c) => _initialForName(_customerName(c)) == _selectedLetter)
-        .toList();
+    final result = _selectedLetter == '#'
+        ? sorted
+        : sorted
+            .where((c) => _initialForName(_customerName(c)) == _selectedLetter)
+            .toList();
+    _visibleCustomersCache = result;
+    _visibleCustomersCacheStamp = _customersMutationStamp;
+    _visibleCustomersCacheLetter = _selectedLetter;
+    return result;
   }
 
   Future<void> _fetchCustomers({required bool reset}) async {
@@ -329,6 +376,7 @@ class _CustomersPageState extends State<CustomersPage> {
           } else {
             _customers.addAll(fetched);
           }
+          _customersMutationStamp++;
           _currentPage = (meta['current_page'] as int?) ?? pageToLoad;
           _lastPage = (meta['last_page'] as int?) ?? _currentPage;
           _loading = false;
@@ -526,8 +574,8 @@ class _CustomersPageState extends State<CustomersPage> {
                             ),
                             Text(
                               customer == null
-                                  ? 'Yeni müşteri ekle'
-                                  : 'Müşteri bilgilerini düzenle',
+                                  ? loc.customersAddSubtitle
+                                  : loc.customersEditSubtitle,
                               style: const TextStyle(
                                 fontSize: 14,
                                 color: _textSecondary,
@@ -698,7 +746,8 @@ class _CustomersPageState extends State<CustomersPage> {
                 horizontal: 16,
                 vertical: 16,
               ),
-              hintStyle: TextStyle(color: _textSecondary.withOpacity(0.5)),
+              hintStyle:
+                  TextStyle(color: _textSecondary.withValues(alpha: 0.5)),
             ),
           ),
         ),
@@ -718,7 +767,7 @@ class _CustomersPageState extends State<CustomersPage> {
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: _dangerColor.withOpacity(0.1),
+                  color: _dangerColor.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: const Icon(Icons.warning_outlined, color: _dangerColor),
@@ -881,7 +930,8 @@ class _CustomersPageState extends State<CustomersPage> {
                           onPressed: () => _confirmDelete(customer),
                           icon: const Icon(Icons.delete_outline, size: 20),
                           style: IconButton.styleFrom(
-                            backgroundColor: _dangerColor.withOpacity(0.1),
+                            backgroundColor:
+                                _dangerColor.withValues(alpha: 0.1),
                             foregroundColor: _dangerColor,
                           ),
                         ),
@@ -1028,9 +1078,9 @@ class _CustomersPageState extends State<CustomersPage> {
         onPressed: () => _openCustomerForm(),
         elevation: 4,
         icon: const Icon(Icons.add),
-        label: const Text(
-          'Yeni Müşteri',
-          style: TextStyle(fontWeight: FontWeight.w600),
+        label: Text(
+          loc.customersAdd,
+          style: const TextStyle(fontWeight: FontWeight.w600),
         ),
       ),
       body: SafeArea(
@@ -1090,7 +1140,8 @@ class _CustomersPageState extends State<CustomersPage> {
                                   Container(
                                     padding: const EdgeInsets.all(16),
                                     decoration: BoxDecoration(
-                                      color: _dangerColor.withOpacity(0.1),
+                                      color:
+                                          _dangerColor.withValues(alpha: 0.1),
                                       borderRadius: BorderRadius.circular(16),
                                     ),
                                     child: const Icon(
@@ -1238,7 +1289,10 @@ class _CustomersPageState extends State<CustomersPage> {
                                                 child: Text(
                                                   _selectedLetter == '#'
                                                       ? loc.customersEmpty
-                                                      : '"$_selectedLetter" ile başlayan müşteri bulunamadı.',
+                                                      : loc
+                                                          .customersEmptyForLetter(
+                                                          _selectedLetter,
+                                                        ),
                                                   style: const TextStyle(
                                                     color: _textSecondary,
                                                     fontSize: 14,
@@ -1261,49 +1315,58 @@ class _CustomersPageState extends State<CustomersPage> {
                                                 ),
                                             ],
                                           )
-                                        : ListView(
+                                        : ListView.builder(
                                             padding: const EdgeInsets.fromLTRB(
                                                 16, 8, 16, 100),
-                                            children: [
-                                              ...visibleCustomers
-                                                  .map(_customerCard),
-                                              if (_loadingMore)
-                                                const Padding(
+                                            itemCount: visibleCustomers.length +
+                                                (_loadingMore ? 1 : 0) +
+                                                (canLoadMore ? 1 : 0),
+                                            itemBuilder: (context, index) {
+                                              if (index <
+                                                  visibleCustomers.length) {
+                                                return _customerCard(
+                                                  visibleCustomers[index],
+                                                );
+                                              }
+                                              final footerIndex = index -
+                                                  visibleCustomers.length;
+                                              if (_loadingMore &&
+                                                  footerIndex == 0) {
+                                                return const Padding(
                                                   padding: EdgeInsets.symmetric(
                                                       vertical: 16),
                                                   child: Center(
                                                     child:
                                                         CircularProgressIndicator(),
                                                   ),
-                                                ),
-                                              if (canLoadMore)
-                                                Padding(
-                                                  padding:
-                                                      const EdgeInsets.only(
-                                                          top: 8),
-                                                  child: OutlinedButton(
-                                                    onPressed: () =>
-                                                        _fetchCustomers(
-                                                            reset: false),
-                                                    style: OutlinedButton
-                                                        .styleFrom(
-                                                      padding: const EdgeInsets
-                                                          .symmetric(
-                                                        vertical: 16,
-                                                      ),
-                                                      shape:
-                                                          RoundedRectangleBorder(
-                                                        borderRadius:
-                                                            BorderRadius
-                                                                .circular(12),
-                                                      ),
+                                                );
+                                              }
+                                              return Padding(
+                                                padding: const EdgeInsets.only(
+                                                    top: 8),
+                                                child: OutlinedButton(
+                                                  onPressed: () =>
+                                                      _fetchCustomers(
+                                                          reset: false),
+                                                  style:
+                                                      OutlinedButton.styleFrom(
+                                                    padding: const EdgeInsets
+                                                        .symmetric(
+                                                      vertical: 16,
                                                     ),
-                                                    child: Text(
-                                                      loc.customersLoadMore,
+                                                    shape:
+                                                        RoundedRectangleBorder(
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                              12),
                                                     ),
                                                   ),
+                                                  child: Text(
+                                                    loc.customersLoadMore,
+                                                  ),
                                                 ),
-                                            ],
+                                              );
+                                            },
                                           ),
                                   ),
                                 ],
@@ -1615,7 +1678,7 @@ class _CustomerAppointmentsSheetState
                           Container(
                             padding: const EdgeInsets.all(10),
                             decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.2),
+                              color: Colors.white.withValues(alpha: 0.2),
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: const Icon(
@@ -1641,7 +1704,7 @@ class _CustomerAppointmentsSheetState
                                   widget.customer['name']?.toString() ?? '',
                                   style: TextStyle(
                                     fontSize: 14,
-                                    color: Colors.white.withOpacity(0.9),
+                                    color: Colors.white.withValues(alpha: 0.9),
                                   ),
                                 ),
                               ],
@@ -1664,7 +1727,8 @@ class _CustomerAppointmentsSheetState
                                 color: _primaryLight,
                                 borderRadius: BorderRadius.circular(12),
                                 border: Border.all(
-                                    color: _primaryColor.withOpacity(0.2)),
+                                    color:
+                                        _primaryColor.withValues(alpha: 0.2)),
                               ),
                               child: ListTile(
                                 contentPadding: const EdgeInsets.symmetric(
@@ -1674,7 +1738,7 @@ class _CustomerAppointmentsSheetState
                                 leading: Container(
                                   padding: const EdgeInsets.all(8),
                                   decoration: BoxDecoration(
-                                    color: _primaryColor.withOpacity(0.1),
+                                    color: _primaryColor.withValues(alpha: 0.1),
                                     borderRadius: BorderRadius.circular(8),
                                   ),
                                   child: const Icon(
@@ -1762,7 +1826,7 @@ class _CustomerAppointmentsSheetState
                               Container(
                                 padding: const EdgeInsets.all(16),
                                 decoration: BoxDecoration(
-                                  color: _dangerColor.withOpacity(0.1),
+                                  color: _dangerColor.withValues(alpha: 0.1),
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                                 child: Row(
@@ -1784,18 +1848,19 @@ class _CustomerAppointmentsSheetState
                               Container(
                                 padding: const EdgeInsets.all(16),
                                 decoration: BoxDecoration(
-                                  color: _textSecondary.withOpacity(0.1),
+                                  color: _textSecondary.withValues(alpha: 0.1),
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                                 child: Row(
                                   children: [
-                                    Icon(Icons.info_outline,
+                                    const Icon(Icons.info_outline,
                                         color: _textSecondary),
                                     const SizedBox(width: 12),
                                     Expanded(
                                       child: Text(
                                         loc.appointmentsSelectAvailableTime,
-                                        style: TextStyle(color: _textSecondary),
+                                        style: const TextStyle(
+                                            color: _textSecondary),
                                       ),
                                     ),
                                   ],
@@ -1829,18 +1894,18 @@ class _CustomerAppointmentsSheetState
                                         color: selected
                                             ? _primaryColor
                                             : (booked
-                                                ? _textSecondary
-                                                    .withOpacity(0.1)
+                                                ? _textSecondary.withValues(
+                                                    alpha: 0.1)
                                                 : _primaryLight),
                                         borderRadius: BorderRadius.circular(12),
                                         border: Border.all(
                                           color: selected
                                               ? _primaryColor
                                               : (booked
-                                                  ? _textSecondary
-                                                      .withOpacity(0.2)
-                                                  : _primaryColor
-                                                      .withOpacity(0.3)),
+                                                  ? _textSecondary.withValues(
+                                                      alpha: 0.2)
+                                                  : _primaryColor.withValues(
+                                                      alpha: 0.3)),
                                         ),
                                       ),
                                       child: Text(
@@ -1894,10 +1959,11 @@ class _CustomerAppointmentsSheetState
                                     controller: noteController,
                                     minLines: 3,
                                     maxLines: 5,
-                                    decoration: const InputDecoration(
+                                    decoration: InputDecoration(
                                       border: InputBorder.none,
-                                      contentPadding: EdgeInsets.all(16),
-                                      hintText: 'Randevu notu ekleyin...',
+                                      contentPadding: const EdgeInsets.all(16),
+                                      hintText:
+                                          loc.customersAppointmentNoteHint,
                                     ),
                                   ),
                                 ),
@@ -1933,7 +1999,7 @@ class _CustomerAppointmentsSheetState
                                         ),
                                       ],
                                     ),
-                                    activeColor: _primaryColor,
+                                    activeThumbColor: _primaryColor,
                                   ),
                                   const Divider(height: 1),
                                   SwitchListTile(
@@ -1955,7 +2021,7 @@ class _CustomerAppointmentsSheetState
                                         ),
                                       ],
                                     ),
-                                    activeColor: _primaryColor,
+                                    activeThumbColor: _primaryColor,
                                   ),
                                   const Divider(height: 1),
                                   SwitchListTile(
@@ -1979,7 +2045,7 @@ class _CustomerAppointmentsSheetState
                                         ),
                                       ],
                                     ),
-                                    activeColor: _primaryColor,
+                                    activeThumbColor: _primaryColor,
                                   ),
                                 ],
                               ),
@@ -1992,9 +2058,9 @@ class _CustomerAppointmentsSheetState
                     // Footer
                     Container(
                       padding: const EdgeInsets.all(24),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFF9FAFB),
-                        borderRadius: const BorderRadius.vertical(
+                      decoration: const BoxDecoration(
+                        color: Color(0xFFF9FAFB),
+                        borderRadius: BorderRadius.vertical(
                           bottom: Radius.circular(24),
                         ),
                       ),
@@ -2196,258 +2262,259 @@ class _CustomerAppointmentsSheetState
   @override
   Widget build(BuildContext context) {
     final customerName = widget.customer['name']?.toString() ?? '-';
+    final Widget bodyContent;
 
-    return Container(
-      decoration: const BoxDecoration(
-        color: _cardColor,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      child: SafeArea(
+    if (_loading) {
+      bodyContent = const Center(child: CircularProgressIndicator());
+    } else if (_error != null) {
+      bodyContent = SingleChildScrollView(
+        padding: const EdgeInsets.all(24),
         child: Column(
-          mainAxisSize: MainAxisSize.min,
           children: [
-            // Header
             Container(
-              padding: const EdgeInsets.all(24),
+              padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                borderRadius: const BorderRadius.vertical(
-                  top: Radius.circular(24),
-                ),
+                color: _dangerColor.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(16),
               ),
-              child: Row(
+              child: Column(
                 children: [
-                  Container(
-                    padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.2),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: const Icon(
-                      Icons.event_note,
-                      color: Colors.white,
-                      size: 24,
-                    ),
+                  const Icon(
+                    Icons.error_outline,
+                    size: 48,
+                    color: _dangerColor,
                   ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          loc.customersAppointments,
-                          style: const TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w700,
-                            color: Colors.white,
-                          ),
-                        ),
-                        Text(
-                          customerName,
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: Colors.white.withOpacity(0.9),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  IconButton(
-                    onPressed: _creating ? null : _openCreateAppointmentDialog,
-                    icon: const Icon(Icons.add_circle,
-                        color: Colors.white, size: 28),
-                    tooltip: loc.customersCreateAppointment,
+                  const SizedBox(height: 12),
+                  Text(
+                    _error!,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(color: _dangerColor),
                   ),
                 ],
               ),
             ),
-
-            // Body
-            if (_loading)
-              const Padding(
-                padding: EdgeInsets.all(48),
-                child: Center(child: CircularProgressIndicator()),
-              )
-            else if (_error != null)
-              Padding(
-                padding: const EdgeInsets.all(24),
-                child: Column(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: _dangerColor.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: Column(
-                        children: [
-                          const Icon(
-                            Icons.error_outline,
-                            size: 48,
-                            color: _dangerColor,
-                          ),
-                          const SizedBox(height: 12),
-                          Text(
-                            _error!,
-                            textAlign: TextAlign.center,
-                            style: const TextStyle(color: _dangerColor),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    ElevatedButton.icon(
-                      onPressed: _fetchAppointments,
-                      icon: const Icon(Icons.refresh),
-                      label: Text(loc.customersRetry),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: _primaryColor,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 24,
-                          vertical: 12,
-                        ),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
-                    ),
-                  ],
+            const SizedBox(height: 16),
+            ElevatedButton.icon(
+              onPressed: _fetchAppointments,
+              icon: const Icon(Icons.refresh),
+              label: Text(loc.customersRetry),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: _primaryColor,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 12,
                 ),
-              )
-            else if (_appointments.isEmpty)
-              Padding(
-                padding: const EdgeInsets.all(48),
-                child: Column(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(20),
-                      decoration: BoxDecoration(
-                        color: _primaryLight,
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: const Icon(
-                        Icons.calendar_today_outlined,
-                        size: 48,
-                        color: _primaryColor,
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
-                      loc.customersNoAppointments,
-                      style: const TextStyle(
-                        fontSize: 16,
-                        color: _textSecondary,
-                      ),
-                    ),
-                  ],
-                ),
-              )
-            else
-              Flexible(
-                child: ListView.builder(
-                  shrinkWrap: true,
-                  padding: const EdgeInsets.all(24),
-                  itemCount: _appointments.length,
-                  itemBuilder: (context, index) {
-                    final appt = _appointments[index];
-                    final status = appt['appointment_status'] is Map
-                        ? (appt['appointment_status'] as Map)['name']
-                                ?.toString() ??
-                            (appt['appointment_status'] as Map)['alias']
-                                ?.toString() ??
-                            ''
-                        : '';
-                    return Container(
-                      margin: const EdgeInsets.only(bottom: 12),
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [
-                            _primaryLight,
-                            _primaryLight.withOpacity(0.5),
-                          ],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        ),
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(
-                          color: _primaryColor.withOpacity(0.2),
-                        ),
-                      ),
-                      child: Row(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 16,
-                              vertical: 12,
-                            ),
-                            decoration: BoxDecoration(
-                              color: _primaryColor,
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Text(
-                              _fmtTime(appt['time']?.toString()),
-                              style: const TextStyle(
-                                fontWeight: FontWeight.w700,
-                                color: Colors.white,
-                                fontSize: 16,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 16),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  _fmtDate(appt['date']?.toString()),
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.w600,
-                                    fontSize: 15,
-                                    color: _textPrimary,
-                                  ),
-                                ),
-                                if (status.isNotEmpty) ...[
-                                  const SizedBox(height: 4),
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 8,
-                                      vertical: 4,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      color: _primaryColor.withOpacity(0.1),
-                                      borderRadius: BorderRadius.circular(6),
-                                    ),
-                                    child: Text(
-                                      status,
-                                      style: const TextStyle(
-                                        fontSize: 12,
-                                        color: _primaryColor,
-                                        fontWeight: FontWeight.w600,
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ],
-                            ),
-                          ),
-                          const Icon(
-                            Icons.arrow_forward_ios,
-                            size: 16,
-                            color: _textSecondary,
-                          ),
-                        ],
-                      ),
-                    );
-                  },
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
                 ),
               ),
+            ),
           ],
+        ),
+      );
+    } else if (_appointments.isEmpty) {
+      bodyContent = SingleChildScrollView(
+        padding: const EdgeInsets.all(48),
+        child: Column(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: _primaryLight,
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: const Icon(
+                Icons.calendar_today_outlined,
+                size: 48,
+                color: _primaryColor,
+              ),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              loc.customersNoAppointments,
+              style: const TextStyle(
+                fontSize: 16,
+                color: _textSecondary,
+              ),
+            ),
+          ],
+        ),
+      );
+    } else {
+      bodyContent = ListView.builder(
+        padding: const EdgeInsets.all(24),
+        itemCount: _appointments.length,
+        itemBuilder: (context, index) {
+          final appt = _appointments[index];
+          final status = appt['appointment_status'] is Map
+              ? (appt['appointment_status'] as Map)['name']?.toString() ??
+                  (appt['appointment_status'] as Map)['alias']?.toString() ??
+                  ''
+              : '';
+          return Container(
+            margin: const EdgeInsets.only(bottom: 12),
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  _primaryLight,
+                  _primaryLight.withValues(alpha: 0.5),
+                ],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: _primaryColor.withValues(alpha: 0.2),
+              ),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 12,
+                  ),
+                  decoration: BoxDecoration(
+                    color: _primaryColor,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    _fmtTime(appt['time']?.toString()),
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w700,
+                      color: Colors.white,
+                      fontSize: 16,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        _fmtDate(appt['date']?.toString()),
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w600,
+                          fontSize: 15,
+                          color: _textPrimary,
+                        ),
+                      ),
+                      if (status.isNotEmpty) ...[
+                        const SizedBox(height: 4),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 4,
+                          ),
+                          decoration: BoxDecoration(
+                            color: _primaryColor.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Text(
+                            status,
+                            style: const TextStyle(
+                              fontSize: 12,
+                              color: _primaryColor,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+                const Icon(
+                  Icons.arrow_forward_ios,
+                  size: 16,
+                  color: _textSecondary,
+                ),
+              ],
+            ),
+          );
+        },
+      );
+    }
+
+    return FractionallySizedBox(
+      heightFactor: 0.9,
+      child: Container(
+        decoration: const BoxDecoration(
+          color: _cardColor,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        child: SafeArea(
+          top: false,
+          child: Column(
+            children: [
+              // Header (always visible)
+              Container(
+                padding: const EdgeInsets.all(24),
+                decoration: const BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.vertical(
+                    top: Radius.circular(24),
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.2),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Icon(
+                        Icons.event_note,
+                        color: Colors.white,
+                        size: 24,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            loc.customersAppointments,
+                            style: const TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w700,
+                              color: Colors.white,
+                            ),
+                          ),
+                          Text(
+                            customerName,
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Colors.white.withValues(alpha: 0.9),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    IconButton(
+                      onPressed:
+                          _creating ? null : _openCreateAppointmentDialog,
+                      icon: const Icon(
+                        Icons.add_circle,
+                        color: Colors.white,
+                        size: 28,
+                      ),
+                      tooltip: loc.customersCreateAppointment,
+                    ),
+                  ],
+                ),
+              ),
+              Expanded(child: bodyContent),
+            ],
+          ),
         ),
       ),
     );

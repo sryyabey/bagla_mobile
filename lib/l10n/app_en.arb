@@ -24,6 +24,8 @@
   "customersRefresh": "Refresh",
   "customersAdd": "Add Contact",
   "customersEdit": "Edit Contact",
+  "customersAddSubtitle": "Add a new contact",
+  "customersEditSubtitle": "Edit contact details",
   "customersDelete": "Delete",
   "customersDeleteConfirmTitle": "Delete contact?",
   "customersDeleteConfirmBody": "Are you sure you want to delete this contact?",
@@ -51,6 +53,13 @@
   "customersAppointmentDate": "Date",
   "customersAppointmentTime": "Time",
   "customersAppointmentNote": "Note",
+  "customersAppointmentNoteHint": "Add an appointment note...",
+  "customersEmptyForLetter": "No contacts starting with \"{letter}\" were found.",
+  "@customersEmptyForLetter": {
+    "placeholders": {
+      "letter": {}
+    }
+  },
   "customersFirstAppointment": "First appointment?",
   "customersNoSms": "Do not send SMS",
   "customersNoReminder": "Do not send reminder",
@@ -297,6 +306,17 @@
     }
   },
   "calendarAddAppointment": "Add appointment",
+  "calendarGuideTitle": "Guide",
+  "calendarPerson": "Person",
+  "calendarExistingPerson": "Existing Person",
+  "calendarNewPerson": "New Person",
+  "calendarSelectPerson": "Please select a person",
+  "calendarDateTimeSection": "Date & Time",
+  "calendarNoteHint": "Add a note...",
+  "calendarSlotBusy": "Selected time slot is full.",
+  "calendarCustomerInfoMissing": "Person info not found.",
+  "calendarAppointmentInfoMissing": "Appointment info not found.",
+  "calendarAppointmentStatusMissing": "Appointment status not found.",
   "calendarActionNew": "New",
   "calendarActionEdit": "Edit",
   "calendarFetchAvailableSlots": "Get available slots",

@@ -89,6 +89,12 @@ class AppLocalizationsTr extends AppLocalizations {
   String get customersEdit => 'Kişiyi Düzenle';
 
   @override
+  String get customersAddSubtitle => 'Yeni kişi ekle';
+
+  @override
+  String get customersEditSubtitle => 'Kişi bilgilerini düzenle';
+
+  @override
   String get customersDelete => 'Sil';
 
   @override
@@ -181,6 +187,14 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get customersAppointmentNote => 'Not';
+
+  @override
+  String get customersAppointmentNoteHint => 'Randevu notu ekleyin...';
+
+  @override
+  String customersEmptyForLetter(Object letter) {
+    return '\"$letter\" ile başlayan kişi bulunamadı.';
+  }
 
   @override
   String get customersFirstAppointment => 'İlk randevu mu?';
@@ -770,6 +784,39 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get calendarAddAppointment => 'Randevu ekle';
+
+  @override
+  String get calendarGuideTitle => 'Rehber';
+
+  @override
+  String get calendarPerson => 'Kişi';
+
+  @override
+  String get calendarExistingPerson => 'Mevcut Kişi';
+
+  @override
+  String get calendarNewPerson => 'Yeni Kişi';
+
+  @override
+  String get calendarSelectPerson => 'Kişi seçiniz';
+
+  @override
+  String get calendarDateTimeSection => 'Tarih & Saat';
+
+  @override
+  String get calendarNoteHint => 'Not ekleyin...';
+
+  @override
+  String get calendarSlotBusy => 'Seçilen saat dolu.';
+
+  @override
+  String get calendarCustomerInfoMissing => 'Kişi bilgisi bulunamadı.';
+
+  @override
+  String get calendarAppointmentInfoMissing => 'Randevu bilgisi bulunamadı.';
+
+  @override
+  String get calendarAppointmentStatusMissing => 'Randevu durumu bulunamadı.';
 
   @override
   String get calendarActionNew => 'Yeni';

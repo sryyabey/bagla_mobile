@@ -2099,120 +2099,289 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
               }
             }
 
+            const bg = Color(0xFFF9F9F9);
+            const surface = Colors.white;
+            const accent = Color(0xFF111111);
+            const muted = Color(0xFF8A8A8A);
+            const border = Color(0xFFE8E8E8);
+            const success = Color(0xFF18A058);
+            const danger = Color(0xFFE53935);
+            const radius = 14.0;
+
+            InputDecoration field({
+              required String label,
+              String? hint,
+              Widget? prefix,
+              String? error,
+            }) =>
+                InputDecoration(
+                  labelText: label,
+                  hintText: hint,
+                  errorText: error,
+                  prefixIcon: prefix,
+                  labelStyle: const TextStyle(fontSize: 13, color: muted),
+                  hintStyle: const TextStyle(fontSize: 13, color: muted),
+                  filled: true,
+                  fillColor: surface,
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 12,
+                  ),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(radius),
+                    borderSide: const BorderSide(color: border),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(radius),
+                    borderSide: const BorderSide(color: border),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(radius),
+                    borderSide: const BorderSide(color: accent, width: 1.5),
+                  ),
+                );
+
+            Widget minimalSwitch({
+              required String title,
+              required String subtitle,
+              required bool value,
+              required ValueChanged<bool> onChanged,
+            }) {
+              return Padding(
+                padding: const EdgeInsets.symmetric(vertical: 2),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            title,
+                            style: const TextStyle(
+                              fontSize: 14,
+                              color: Color(0xFF333333),
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                          const SizedBox(height: 1),
+                          Text(
+                            subtitle,
+                            style: const TextStyle(fontSize: 12, color: muted),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Switch.adaptive(
+                      value: value,
+                      onChanged: onChanged,
+                      activeThumbColor: accent,
+                      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    ),
+                  ],
+                ),
+              );
+            }
+
             final media = MediaQuery.of(ctx);
             final bottomInset =
-                media.viewInsets.bottom + media.viewPadding.bottom + 16;
+                media.viewInsets.bottom + media.viewPadding.bottom + 24;
 
             return SafeArea(
               top: false,
-              child: Padding(
-                padding: EdgeInsets.only(
-                  bottom: bottomInset,
-                  left: 16,
-                  right: 16,
-                  top: 16,
-                ),
+              child: Container(
+                color: bg,
                 child: SingleChildScrollView(
                   keyboardDismissBehavior:
                       ScrollViewKeyboardDismissBehavior.onDrag,
+                  padding: EdgeInsets.fromLTRB(20, 16, 20, bottomInset),
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                loc.reschedule,
-                                style: const TextStyle(
-                                    fontSize: 16, fontWeight: FontWeight.bold),
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                customerName,
-                                style: const TextStyle(
-                                  fontSize: 14,
-                                  color: Colors.grey,
-                                ),
-                              ),
-                            ],
+                      Center(
+                        child: Container(
+                          width: 36,
+                          height: 4,
+                          decoration: BoxDecoration(
+                            color: border,
+                            borderRadius: BorderRadius.circular(99),
                           ),
-                          IconButton(
-                            icon: const Icon(Icons.close),
-                            onPressed: () => Navigator.of(ctx).pop(),
+                        ),
+                      ),
+                      const SizedBox(height: 18),
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  loc.reschedule,
+                                  style: const TextStyle(
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.w700,
+                                    letterSpacing: -0.4,
+                                    color: accent,
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  customerName,
+                                  style: const TextStyle(
+                                    fontSize: 13,
+                                    color: muted,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          InkWell(
+                            borderRadius: BorderRadius.circular(10),
+                            onTap: () => Navigator.of(ctx).pop(),
+                            child: Container(
+                              width: 34,
+                              height: 34,
+                              decoration: BoxDecoration(
+                                color: surface,
+                                borderRadius: BorderRadius.circular(10),
+                                border: Border.all(color: border),
+                              ),
+                              child: const Icon(
+                                Icons.close,
+                                size: 18,
+                                color: accent,
+                              ),
+                            ),
                           ),
                         ],
                       ),
-                      const SizedBox(height: 8),
+                      const SizedBox(height: 22),
+                      const Text(
+                        'TARIH & SAAT',
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: 0.8,
+                          color: muted,
+                        ),
+                      ),
+                      const SizedBox(height: 10),
                       Row(
                         children: [
                           Expanded(
                             child: TextField(
                               controller: dateCtrl,
                               readOnly: true,
-                              decoration: InputDecoration(
-                                labelText: loc.date,
-                                hintText: loc.calendarDateHint,
+                              decoration: field(
+                                label: loc.date,
+                                hint: loc.calendarDateHint,
+                                prefix: const Icon(
+                                  Icons.calendar_today_outlined,
+                                  size: 18,
+                                ),
                               ),
                               onTap: pickDate,
                             ),
                           ),
-                          const SizedBox(width: 12),
+                          const SizedBox(width: 10),
                           Expanded(
                             child: TextField(
                               controller: timeCtrl,
                               readOnly: true,
-                              decoration: InputDecoration(
-                                labelText: loc.timeSelect,
-                                hintText: loc.calendarTimeSlotHint,
+                              decoration: field(
+                                label: loc.timeSelect,
+                                hint: loc.calendarTimeSlotHint,
+                                prefix: const Icon(Icons.access_time, size: 18),
                               ),
                             ),
                           ),
                         ],
                       ),
-                      const SizedBox(height: 8),
-                      Row(
-                        children: [
-                          ElevatedButton.icon(
-                            onPressed: localLoadingSlots ? null : loadSlots,
-                            icon: localLoadingSlots
-                                ? const SizedBox(
-                                    width: 16,
-                                    height: 16,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                      valueColor:
-                                          AlwaysStoppedAnimation(Colors.white),
+                      const SizedBox(height: 12),
+                      SizedBox(
+                        width: double.infinity,
+                        child: OutlinedButton(
+                          onPressed: localLoadingSlots ? null : loadSlots,
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: accent,
+                            side: const BorderSide(color: border, width: 1.5),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(radius),
+                            ),
+                            padding: const EdgeInsets.symmetric(vertical: 13),
+                          ),
+                          child: localLoadingSlots
+                              ? const SizedBox(
+                                  width: 16,
+                                  height: 16,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                  ),
+                                )
+                              : Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    const Icon(Icons.schedule, size: 16),
+                                    const SizedBox(width: 6),
+                                    Text(
+                                      loc.getAvailableTimes,
+                                      style: const TextStyle(
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.w600,
+                                      ),
                                     ),
-                                  )
-                                : const Icon(Icons.schedule),
-                            label: Text(loc.getAvailableTimes),
-                          ),
-                          const SizedBox(width: 12),
-                          if (localSlotsError != null)
-                            Expanded(
-                              child: Text(
-                                localSlotsError!,
-                                style: const TextStyle(color: Colors.red),
-                              ),
-                            ),
-                        ],
+                                  ],
+                                ),
+                        ),
                       ),
-                      const SizedBox(height: 8),
-                      if (localLoadingSlots)
-                        const LinearProgressIndicator(minHeight: 2),
+                      if (localSlotsError != null) ...[
+                        const SizedBox(height: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 10,
+                          ),
+                          decoration: BoxDecoration(
+                            color: danger.withValues(alpha: 0.06),
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(
+                                color: danger.withValues(alpha: 0.2)),
+                          ),
+                          child: Row(
+                            children: [
+                              const Icon(
+                                Icons.error_outline,
+                                size: 14,
+                                color: danger,
+                              ),
+                              const SizedBox(width: 6),
+                              Expanded(
+                                child: Text(
+                                  localSlotsError!,
+                                  style: const TextStyle(
+                                    fontSize: 12,
+                                    color: danger,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                      const SizedBox(height: 12),
                       DropdownButtonFormField<int>(
                         initialValue: localSelectedStatusId,
                         isExpanded: true,
-                        decoration: InputDecoration(
-                          labelText: loc.status,
-                          hintText: _loadingStatuses
+                        decoration: field(
+                          label: loc.status,
+                          hint: _loadingStatuses
                               ? loc.calendarLoading
                               : loc.appointmentsStatusSelectHint,
-                          errorText: _statusesError,
+                          error: _statusesError,
                         ),
                         items: _appointmentStatuses
                             .map(
@@ -2231,8 +2400,8 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
                                 });
                               },
                       ),
-                      const SizedBox(height: 8),
-                      if (localSlots.isNotEmpty)
+                      if (localSlots.isNotEmpty) ...[
+                        const SizedBox(height: 14),
                         Wrap(
                           spacing: 8,
                           runSpacing: 8,
@@ -2240,42 +2409,74 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
                             final time = slot['time']?.toString() ?? '';
                             final booked = slot['booked'] == true;
                             final selected = localSelectedTime == time;
-                            return ChoiceChip(
-                              label: Text(time),
-                              selected: selected,
-                              onSelected: booked
+                            return GestureDetector(
+                              onTap: booked
                                   ? null
-                                  : (val) {
-                                      if (val) {
-                                        setModalState(() {
-                                          localSelectedTime = time;
-                                          timeCtrl.text = time;
-                                          localSlotsError = null;
-                                        });
-                                      }
-                                    },
-                              disabledColor: Colors.grey.shade300,
-                              selectedColor: Colors.green.shade200,
-                              labelStyle: TextStyle(
-                                color: booked
-                                    ? Colors.grey
-                                    : (selected
-                                        ? Colors.black
-                                        : Colors.black87),
+                                  : () => setModalState(() {
+                                        localSelectedTime = time;
+                                        timeCtrl.text = time;
+                                        localSlotsError = null;
+                                      }),
+                              child: AnimatedContainer(
+                                duration: const Duration(milliseconds: 150),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 14,
+                                  vertical: 8,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: booked
+                                      ? const Color(0xFFF3F3F3)
+                                      : selected
+                                          ? success
+                                          : surface,
+                                  borderRadius: BorderRadius.circular(10),
+                                  border: Border.all(
+                                    color: booked
+                                        ? border
+                                        : selected
+                                            ? success
+                                            : border,
+                                  ),
+                                ),
+                                child: Text(
+                                  time,
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w600,
+                                    color: booked
+                                        ? muted
+                                        : selected
+                                            ? Colors.white
+                                            : accent,
+                                    decoration: booked
+                                        ? TextDecoration.lineThrough
+                                        : null,
+                                  ),
+                                ),
                               ),
                             );
                           }).toList(),
                         ),
-                      const SizedBox(height: 8),
+                      ],
+                      const SizedBox(height: 20),
+                      const Divider(
+                        height: 1,
+                        thickness: 1,
+                        color: Color(0xFFEEEEEE),
+                      ),
+                      const SizedBox(height: 20),
                       TextField(
                         controller: notesCtrl,
-                        maxLines: 2,
-                        decoration: InputDecoration(labelText: loc.note),
+                        maxLines: 3,
+                        decoration: field(
+                          label: '',
+                          hint: 'Not ekleyin...',
+                        ).copyWith(labelText: null),
                       ),
-                      SwitchListTile(
-                        contentPadding: EdgeInsets.zero,
-                        title: Text(loc.doNotSendSms),
-                        subtitle: Text(loc.smsOffForAppointment),
+                      const SizedBox(height: 16),
+                      minimalSwitch(
+                        title: loc.doNotSendSms,
+                        subtitle: loc.smsOffForAppointment,
                         value: localNoSms,
                         onChanged: (val) {
                           setModalState(() {
@@ -2283,10 +2484,9 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
                           });
                         },
                       ),
-                      SwitchListTile(
-                        contentPadding: EdgeInsets.zero,
-                        title: Text(loc.doNotSendReminder),
-                        subtitle: Text(loc.reminderOffForAppointment),
+                      minimalSwitch(
+                        title: loc.doNotSendReminder,
+                        subtitle: loc.reminderOffForAppointment,
                         value: localNoReminder,
                         onChanged: (val) {
                           setModalState(() {
@@ -2294,14 +2494,20 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
                           });
                         },
                       ),
-                      const SizedBox(height: 12),
-                      Container(
-                        padding: const EdgeInsets.symmetric(vertical: 10),
+                      const SizedBox(height: 18),
+                      SizedBox(
                         width: double.infinity,
-                        child: ElevatedButton.icon(
+                        child: ElevatedButton(
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: primaryColor,
+                            backgroundColor: accent,
                             foregroundColor: Colors.white,
+                            disabledBackgroundColor:
+                                accent.withValues(alpha: 0.4),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(radius),
+                            ),
+                            padding: const EdgeInsets.symmetric(vertical: 15),
+                            elevation: 0,
                           ),
                           onPressed: (customerId == null || _creatingRebook)
                               ? null
@@ -2318,21 +2524,25 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
                                     appointmentStatusId: localSelectedStatusId,
                                   );
                                 },
-                          icon: _creatingRebook
+                          child: _creatingRebook
                               ? const SizedBox(
-                                  width: 16,
-                                  height: 16,
+                                  width: 18,
+                                  height: 18,
                                   child: CircularProgressIndicator(
                                     strokeWidth: 2,
-                                    valueColor:
-                                        AlwaysStoppedAnimation(Colors.white),
+                                    color: Colors.white,
                                   ),
                                 )
-                              : const Icon(Icons.flash_on),
-                          label: Text(loc.rescheduleAppointment),
+                              : Text(
+                                  loc.rescheduleAppointment,
+                                  style: const TextStyle(
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w700,
+                                    letterSpacing: 0.2,
+                                  ),
+                                ),
                         ),
                       ),
-                      const SizedBox(height: 8),
                     ],
                   ),
                 ),

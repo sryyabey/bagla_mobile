@@ -24,6 +24,8 @@
   "customersRefresh": "Yenile",
   "customersAdd": "Kişi Ekle",
   "customersEdit": "Kişiyi Düzenle",
+  "customersAddSubtitle": "Yeni kişi ekle",
+  "customersEditSubtitle": "Kişi bilgilerini düzenle",
   "customersDelete": "Sil",
   "customersDeleteConfirmTitle": "Kişi silinsin mi?",
   "customersDeleteConfirmBody": "Bu kişiyi silmek istediğinizden emin misiniz?",
@@ -51,6 +53,13 @@
   "customersAppointmentDate": "Tarih",
   "customersAppointmentTime": "Saat",
   "customersAppointmentNote": "Not",
+  "customersAppointmentNoteHint": "Randevu notu ekleyin...",
+  "customersEmptyForLetter": "\"{letter}\" ile başlayan kişi bulunamadı.",
+  "@customersEmptyForLetter": {
+    "placeholders": {
+      "letter": {}
+    }
+  },
   "customersFirstAppointment": "İlk randevu mu?",
   "customersNoSms": "SMS gönderme",
   "customersNoReminder": "Hatırlatma gönderme",
@@ -297,6 +306,17 @@
     }
   },
   "calendarAddAppointment": "Randevu ekle",
+  "calendarGuideTitle": "Rehber",
+  "calendarPerson": "Kişi",
+  "calendarExistingPerson": "Mevcut Kişi",
+  "calendarNewPerson": "Yeni Kişi",
+  "calendarSelectPerson": "Kişi seçiniz",
+  "calendarDateTimeSection": "Tarih & Saat",
+  "calendarNoteHint": "Not ekleyin...",
+  "calendarSlotBusy": "Seçilen saat dolu.",
+  "calendarCustomerInfoMissing": "Kişi bilgisi bulunamadı.",
+  "calendarAppointmentInfoMissing": "Randevu bilgisi bulunamadı.",
+  "calendarAppointmentStatusMissing": "Randevu durumu bulunamadı.",
   "calendarActionNew": "Yeni",
   "calendarActionEdit": "Düzenle",
   "calendarFetchAvailableSlots": "Boş Saatleri Getir",

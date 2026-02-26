@@ -24,17 +24,43 @@ class _SmsTemplatesPageState extends State<SmsTemplatesPage> {
   static const Color _primaryColor = Color(0xFF6366F1);
 
   List<Map<String, dynamic>> _templates = [];
-  int? _selectedMain;
-  int? _selectedReminder;
-  int? _selectedCancel;
-  int? _selectedUpdate;
+  Map<String, List<Map<String, dynamic>>> _templatesByCategory = {};
+  Map<String, List<Map<String, dynamic>>> _templatesByAlias = {};
+  final ValueNotifier<int?> _selectedMain = ValueNotifier<int?>(null);
+  final ValueNotifier<int?> _selectedReminder = ValueNotifier<int?>(null);
+  final ValueNotifier<int?> _selectedCancel = ValueNotifier<int?>(null);
+  final ValueNotifier<int?> _selectedUpdate = ValueNotifier<int?>(null);
   Map<String, dynamic>? _selectedTemplatesMeta;
-  bool _mainExpanded = true;
-  bool _reminderExpanded = false;
-  bool _cancelExpanded = false;
-  bool _updateExpanded = false;
+  final ValueNotifier<bool> _mainExpanded = ValueNotifier<bool>(true);
+  final ValueNotifier<bool> _reminderExpanded = ValueNotifier<bool>(false);
+  final ValueNotifier<bool> _cancelExpanded = ValueNotifier<bool>(false);
+  final ValueNotifier<bool> _updateExpanded = ValueNotifier<bool>(false);
   Timer? _autoSaveTimer;
   String? _lastSavedSelectionKey;
+
+  int? _asInt(dynamic value) {
+    if (value is int) return value;
+    return int.tryParse(value?.toString() ?? '');
+  }
+
+  void _rebuildTemplateIndexes(List<Map<String, dynamic>> list) {
+    final byCategory = <String, List<Map<String, dynamic>>>{};
+    final byAlias = <String, List<Map<String, dynamic>>>{};
+    for (final tpl in list) {
+      final category = tpl['category']?.toString().toLowerCase();
+      if (category != null && category.isNotEmpty) {
+        byCategory
+            .putIfAbsent(category, () => <Map<String, dynamic>>[])
+            .add(tpl);
+      }
+      final alias = tpl['alias']?.toString().toLowerCase();
+      if (alias != null && alias.isNotEmpty) {
+        byAlias.putIfAbsent(alias, () => <Map<String, dynamic>>[]).add(tpl);
+      }
+    }
+    _templatesByCategory = byCategory;
+    _templatesByAlias = byAlias;
+  }
 
   void _goHome() {
     Navigator.of(context).pushAndRemoveUntil(
@@ -65,6 +91,14 @@ class _SmsTemplatesPageState extends State<SmsTemplatesPage> {
   @override
   void dispose() {
     _autoSaveTimer?.cancel();
+    _selectedMain.dispose();
+    _selectedReminder.dispose();
+    _selectedCancel.dispose();
+    _selectedUpdate.dispose();
+    _mainExpanded.dispose();
+    _reminderExpanded.dispose();
+    _cancelExpanded.dispose();
+    _updateExpanded.dispose();
     super.dispose();
   }
 
@@ -124,20 +158,22 @@ class _SmsTemplatesPageState extends State<SmsTemplatesPage> {
         if (!mounted) return;
         setState(() {
           _templates = list;
+          _rebuildTemplateIndexes(list);
           _selectedTemplatesMeta = selected is Map<String, dynamic>
               ? Map<String, dynamic>.from(selected)
               : null;
-          _selectedMain = _selectedTemplatesMeta?['main_template_id'] as int? ??
-              _selectedMain;
-          _selectedReminder =
-              _selectedTemplatesMeta?['reminder_template_id'] as int? ??
-                  _selectedReminder;
-          _selectedCancel =
-              _selectedTemplatesMeta?['cancel_template_id'] as int? ??
-                  _selectedCancel;
-          _selectedUpdate =
-              _selectedTemplatesMeta?['update_template_id'] as int? ??
-                  _selectedUpdate;
+          _selectedMain.value =
+              _asInt(_selectedTemplatesMeta?['main_template_id']) ??
+                  _selectedMain.value;
+          _selectedReminder.value =
+              _asInt(_selectedTemplatesMeta?['reminder_template_id']) ??
+                  _selectedReminder.value;
+          _selectedCancel.value =
+              _asInt(_selectedTemplatesMeta?['cancel_template_id']) ??
+                  _selectedCancel.value;
+          _selectedUpdate.value =
+              _asInt(_selectedTemplatesMeta?['update_template_id']) ??
+                  _selectedUpdate.value;
           _lastSavedSelectionKey = _currentSelectionKey();
           _loading = false;
         });
@@ -156,31 +192,27 @@ class _SmsTemplatesPageState extends State<SmsTemplatesPage> {
   }
 
   List<Map<String, dynamic>> _filterByAlias(String alias) {
-    final filtered = _templates
-        .where((t) => t['alias']?.toString().toLowerCase() == alias)
-        .toList();
-    if (filtered.isNotEmpty) return filtered;
+    final filtered = _templatesByAlias[alias];
+    if (filtered != null && filtered.isNotEmpty) return filtered;
     return _templates;
   }
 
   List<Map<String, dynamic>> _filterByCategory(String category) {
-    final filtered = _templates
-        .where((t) => t['category']?.toString().toLowerCase() == category)
-        .toList();
-    if (filtered.isNotEmpty) return filtered;
+    final filtered = _templatesByCategory[category];
+    if (filtered != null && filtered.isNotEmpty) return filtered;
     return _filterByAlias(category);
   }
 
   String _templateTitle(Map<String, dynamic> tpl) {
-    final dynamic rawId = tpl['id'];
-    final int? id = rawId is int ? rawId : int.tryParse('${rawId ?? ''}');
+    final int? id = _asInt(tpl['id']);
     final title = (tpl['title'] ?? tpl['name'] ?? '').toString().trim();
     if (title.isNotEmpty) return title;
     return loc.smsTemplatesFallbackTitle(id?.toString() ?? '-');
   }
 
   String _templateContent(Map<String, dynamic> tpl) {
-    final content = (tpl['content'] ?? tpl['content_raw'] ?? '').toString().trim();
+    final content =
+        (tpl['content'] ?? tpl['content_raw'] ?? '').toString().trim();
     if (content.isNotEmpty) return content;
     return _templateTitle(tpl);
   }
@@ -191,21 +223,20 @@ class _SmsTemplatesPageState extends State<SmsTemplatesPage> {
   ) {
     if (selectedId == null) return null;
     for (final tpl in options) {
-      final id = tpl['id'];
-      if (id is int && id == selectedId) return tpl;
-      if (id != null && int.tryParse(id.toString()) == selectedId) return tpl;
+      final id = _asInt(tpl['id']);
+      if (id != null && id == selectedId) return tpl;
     }
     return null;
   }
 
   String? _currentSelectionKey() {
-    if (_selectedMain == null ||
-        _selectedReminder == null ||
-        _selectedCancel == null ||
-        _selectedUpdate == null) {
+    if (_selectedMain.value == null ||
+        _selectedReminder.value == null ||
+        _selectedCancel.value == null ||
+        _selectedUpdate.value == null) {
       return null;
     }
-    return '$_selectedMain-$_selectedReminder-$_selectedCancel-$_selectedUpdate';
+    return '${_selectedMain.value}-${_selectedReminder.value}-${_selectedCancel.value}-${_selectedUpdate.value}';
   }
 
   void _scheduleAutoSave() {
@@ -224,10 +255,10 @@ class _SmsTemplatesPageState extends State<SmsTemplatesPage> {
       if (!autoTriggered) _showSnack(loc.smsTemplatesSessionMissing);
       return;
     }
-    if (_selectedMain == null ||
-        _selectedReminder == null ||
-        _selectedCancel == null ||
-        _selectedUpdate == null) {
+    if (_selectedMain.value == null ||
+        _selectedReminder.value == null ||
+        _selectedCancel.value == null ||
+        _selectedUpdate.value == null) {
       if (!autoTriggered) _showSnack(loc.smsTemplatesSelect);
       return;
     }
@@ -245,10 +276,10 @@ class _SmsTemplatesPageState extends State<SmsTemplatesPage> {
           'Content-Type': 'application/json',
         },
         body: jsonEncode({
-          'main_template_id': _selectedMain,
-          'reminder_template_id': _selectedReminder,
-          'cancel_template_id': _selectedCancel,
-          'update_template_id': _selectedUpdate,
+          'main_template_id': _selectedMain.value,
+          'reminder_template_id': _selectedReminder.value,
+          'cancel_template_id': _selectedCancel.value,
+          'update_template_id': _selectedUpdate.value,
         }),
       );
 
@@ -380,7 +411,9 @@ class _SmsTemplatesPageState extends State<SmsTemplatesPage> {
                     ),
                   ),
                   Icon(
-                    isExpanded ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
+                    isExpanded
+                        ? Icons.keyboard_arrow_up
+                        : Icons.keyboard_arrow_down,
                     color: const Color(0xFF6B7280),
                   ),
                 ],
@@ -403,7 +436,8 @@ class _SmsTemplatesPageState extends State<SmsTemplatesPage> {
                   : Column(
                       children: options.map((tpl) {
                         final rawId = tpl['id'];
-                        final int? id = rawId is int ? rawId : int.tryParse('$rawId');
+                        final int? id =
+                            rawId is int ? rawId : int.tryParse('$rawId');
                         final isSelected = id != null && id == selectedId;
                         return Padding(
                           padding: const EdgeInsets.only(bottom: 10),
@@ -420,8 +454,9 @@ class _SmsTemplatesPageState extends State<SmsTemplatesPage> {
                                     : Colors.white,
                                 borderRadius: BorderRadius.circular(14),
                                 border: Border.all(
-                                  color:
-                                      isSelected ? _primaryColor : const Color(0xFFD1D5DB),
+                                  color: isSelected
+                                      ? _primaryColor
+                                      : const Color(0xFFD1D5DB),
                                   width: isSelected ? 1.4 : 1,
                                 ),
                               ),
@@ -430,17 +465,9 @@ class _SmsTemplatesPageState extends State<SmsTemplatesPage> {
                                 children: [
                                   Expanded(
                                     child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
                                       children: [
-                                        Text(
-                                          _templateTitle(tpl),
-                                          style: const TextStyle(
-                                            fontSize: 15,
-                                            fontWeight: FontWeight.w700,
-                                            color: Color(0xFF111827),
-                                          ),
-                                        ),
-                                        const SizedBox(height: 6),
                                         Text(
                                           _templateContent(tpl),
                                           maxLines: 3,
@@ -460,8 +487,10 @@ class _SmsTemplatesPageState extends State<SmsTemplatesPage> {
                                               vertical: 4,
                                             ),
                                             decoration: BoxDecoration(
-                                              color: _primaryColor.withValues(alpha: 0.12),
-                                              borderRadius: BorderRadius.circular(999),
+                                              color: _primaryColor.withValues(
+                                                  alpha: 0.12),
+                                              borderRadius:
+                                                  BorderRadius.circular(999),
                                             ),
                                             child: Text(
                                               loc.smsTemplatesSelected,
@@ -493,12 +522,44 @@ class _SmsTemplatesPageState extends State<SmsTemplatesPage> {
                       }).toList(),
                     ),
             ),
-            crossFadeState:
-                isExpanded ? CrossFadeState.showSecond : CrossFadeState.showFirst,
+            crossFadeState: isExpanded
+                ? CrossFadeState.showSecond
+                : CrossFadeState.showFirst,
             duration: const Duration(milliseconds: 180),
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildTemplateAccordionSection({
+    required String label,
+    required String description,
+    required String category,
+    required ValueNotifier<int?> selected,
+    required ValueNotifier<bool> expanded,
+  }) {
+    return ValueListenableBuilder<int?>(
+      valueListenable: selected,
+      builder: (context, selectedId, __) {
+        return ValueListenableBuilder<bool>(
+          valueListenable: expanded,
+          builder: (context, isExpanded, _) {
+            return _buildTemplateAccordion(
+              label: label,
+              description: description,
+              category: category,
+              selectedId: selectedId,
+              isExpanded: isExpanded,
+              onToggle: () => expanded.value = !isExpanded,
+              onChanged: (val) {
+                selected.value = val;
+                _scheduleAutoSave();
+              },
+            );
+          },
+        );
+      },
     );
   }
 
@@ -564,32 +625,52 @@ class _SmsTemplatesPageState extends State<SmsTemplatesPage> {
   }
 
   Widget _buildPreviewCard() {
-    return _sectionCard(
-      title: loc.smsTemplatesPreviewTitle,
-      child: Column(
-        children: [
-          _buildPreviewRow(
-            title: loc.smsTemplatesMain,
-            category: 'appointment',
-            selectedId: _selectedMain,
-          ),
-          _buildPreviewRow(
-            title: loc.smsTemplatesReminder,
-            category: 'reminder',
-            selectedId: _selectedReminder,
-          ),
-          _buildPreviewRow(
-            title: loc.smsTemplatesCancel,
-            category: 'cancel',
-            selectedId: _selectedCancel,
-          ),
-          _buildPreviewRow(
-            title: loc.smsTemplatesUpdate,
-            category: 'update',
-            selectedId: _selectedUpdate,
-          ),
-        ],
-      ),
+    return ValueListenableBuilder<int?>(
+      valueListenable: _selectedMain,
+      builder: (context, mainId, _) {
+        return ValueListenableBuilder<int?>(
+          valueListenable: _selectedReminder,
+          builder: (context, reminderId, __) {
+            return ValueListenableBuilder<int?>(
+              valueListenable: _selectedCancel,
+              builder: (context, cancelId, ___) {
+                return ValueListenableBuilder<int?>(
+                  valueListenable: _selectedUpdate,
+                  builder: (context, updateId, ____) {
+                    return _sectionCard(
+                      title: loc.smsTemplatesPreviewTitle,
+                      child: Column(
+                        children: [
+                          _buildPreviewRow(
+                            title: loc.smsTemplatesMain,
+                            category: 'appointment',
+                            selectedId: mainId,
+                          ),
+                          _buildPreviewRow(
+                            title: loc.smsTemplatesReminder,
+                            category: 'reminder',
+                            selectedId: reminderId,
+                          ),
+                          _buildPreviewRow(
+                            title: loc.smsTemplatesCancel,
+                            category: 'cancel',
+                            selectedId: cancelId,
+                          ),
+                          _buildPreviewRow(
+                            title: loc.smsTemplatesUpdate,
+                            category: 'update',
+                            selectedId: updateId,
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                );
+              },
+            );
+          },
+        );
+      },
     );
   }
 
@@ -648,87 +729,44 @@ class _SmsTemplatesPageState extends State<SmsTemplatesPage> {
                           title: loc.smsTemplatesCustomerTemplates,
                           subtitle: _selectedTemplatesMeta != null
                               ? loc.smsTemplatesSelectionId(
-                                  _selectedTemplatesMeta?['id']?.toString() ?? '')
+                                  _selectedTemplatesMeta?['id']?.toString() ??
+                                      '')
                               : null,
                           child: const SizedBox.shrink(),
                         ),
                         const SizedBox(height: 12),
                         _buildGuideCard(),
                         const SizedBox(height: 12),
-                        _buildTemplateAccordion(
+                        _buildTemplateAccordionSection(
                           label: loc.smsTemplatesMain,
                           description: loc.smsTemplatesMainDescription,
                           category: 'appointment',
-                          selectedId: _selectedMain,
-                          isExpanded: _mainExpanded,
-                          onToggle: () {
-                            setState(() {
-                              _mainExpanded = !_mainExpanded;
-                            });
-                          },
-                          onChanged: (val) {
-                            setState(() {
-                              _selectedMain = val;
-                            });
-                            _scheduleAutoSave();
-                          },
+                          selected: _selectedMain,
+                          expanded: _mainExpanded,
                         ),
                         const SizedBox(height: 12),
-                        _buildTemplateAccordion(
+                        _buildTemplateAccordionSection(
                           label: loc.smsTemplatesReminder,
                           description: loc.smsTemplatesReminderDescription,
                           category: 'reminder',
-                          selectedId: _selectedReminder,
-                          isExpanded: _reminderExpanded,
-                          onToggle: () {
-                            setState(() {
-                              _reminderExpanded = !_reminderExpanded;
-                            });
-                          },
-                          onChanged: (val) {
-                            setState(() {
-                              _selectedReminder = val;
-                            });
-                            _scheduleAutoSave();
-                          },
+                          selected: _selectedReminder,
+                          expanded: _reminderExpanded,
                         ),
                         const SizedBox(height: 12),
-                        _buildTemplateAccordion(
+                        _buildTemplateAccordionSection(
                           label: loc.smsTemplatesCancel,
                           description: loc.smsTemplatesCancelDescription,
                           category: 'cancel',
-                          selectedId: _selectedCancel,
-                          isExpanded: _cancelExpanded,
-                          onToggle: () {
-                            setState(() {
-                              _cancelExpanded = !_cancelExpanded;
-                            });
-                          },
-                          onChanged: (val) {
-                            setState(() {
-                              _selectedCancel = val;
-                            });
-                            _scheduleAutoSave();
-                          },
+                          selected: _selectedCancel,
+                          expanded: _cancelExpanded,
                         ),
                         const SizedBox(height: 12),
-                        _buildTemplateAccordion(
+                        _buildTemplateAccordionSection(
                           label: loc.smsTemplatesUpdate,
                           description: loc.smsTemplatesUpdateDescription,
                           category: 'update',
-                          selectedId: _selectedUpdate,
-                          isExpanded: _updateExpanded,
-                          onToggle: () {
-                            setState(() {
-                              _updateExpanded = !_updateExpanded;
-                            });
-                          },
-                          onChanged: (val) {
-                            setState(() {
-                              _selectedUpdate = val;
-                            });
-                            _scheduleAutoSave();
-                          },
+                          selected: _selectedUpdate,
+                          expanded: _updateExpanded,
                         ),
                         const SizedBox(height: 12),
                         _buildPreviewCard(),
@@ -740,7 +778,8 @@ class _SmsTemplatesPageState extends State<SmsTemplatesPage> {
                                 const SizedBox(
                                   width: 14,
                                   height: 14,
-                                  child: CircularProgressIndicator(strokeWidth: 2),
+                                  child:
+                                      CircularProgressIndicator(strokeWidth: 2),
                                 ),
                                 const SizedBox(width: 8),
                                 Text(

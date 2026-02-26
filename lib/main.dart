@@ -90,6 +90,7 @@ class SplashScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     Future.delayed(const Duration(seconds: 2), () {
+      if (!context.mounted) return;
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(
@@ -106,7 +107,7 @@ class SplashScreen extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.15),
+                color: Colors.white.withValues(alpha: 0.15),
                 borderRadius: BorderRadius.circular(16),
               ),
               child: ClipRRect(
@@ -241,8 +242,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                             padding: const EdgeInsets.symmetric(
                                 horizontal: 12, vertical: 6),
                             decoration: BoxDecoration(
-                              color:
-                                  pages[_currentPage].accent.withOpacity(0.16),
+                              color: pages[_currentPage]
+                                  .accent
+                                  .withValues(alpha: 0.16),
                               borderRadius: BorderRadius.circular(99),
                             ),
                             child: Text(
@@ -280,7 +282,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                       onPressed: _goToLogin,
                       child: Text(
                         skipLabel,
-                        style: TextStyle(
+                        style: const TextStyle(
                           color: Colors.white70,
                           decoration: TextDecoration.underline,
                         ),
@@ -306,14 +308,14 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                       child: Container(
                         padding: const EdgeInsets.fromLTRB(20, 20, 20, 18),
                         decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.06),
+                          color: Colors.white.withValues(alpha: 0.06),
                           borderRadius: BorderRadius.circular(28),
                           border: Border.all(
-                            color: Colors.white.withOpacity(0.12),
+                            color: Colors.white.withValues(alpha: 0.12),
                           ),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.black.withOpacity(0.25),
+                              color: Colors.black.withValues(alpha: 0.25),
                               blurRadius: 18,
                               offset: const Offset(0, 10),
                             ),
@@ -335,12 +337,12 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                                             height: 184,
                                             decoration: BoxDecoration(
                                               color: Colors.white
-                                                  .withOpacity(0.08),
+                                                  .withValues(alpha: 0.08),
                                               borderRadius:
                                                   BorderRadius.circular(20),
                                               border: Border.all(
                                                 color: Colors.white
-                                                    .withOpacity(0.1),
+                                                    .withValues(alpha: 0.1),
                                               ),
                                             ),
                                             clipBehavior: Clip.antiAlias,
@@ -361,7 +363,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                                                       vertical: 6),
                                               decoration: BoxDecoration(
                                                 color: Colors.black
-                                                    .withOpacity(0.45),
+                                                    .withValues(alpha: 0.45),
                                                 borderRadius:
                                                     BorderRadius.circular(99),
                                               ),
@@ -413,12 +415,13 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                                                 ),
                                                 decoration: BoxDecoration(
                                                   color: Colors.white
-                                                      .withOpacity(0.08),
+                                                      .withValues(alpha: 0.08),
                                                   borderRadius:
                                                       BorderRadius.circular(99),
                                                   border: Border.all(
                                                     color: Colors.white
-                                                        .withOpacity(0.15),
+                                                        .withValues(
+                                                            alpha: 0.15),
                                                   ),
                                                 ),
                                                 child: Text(
