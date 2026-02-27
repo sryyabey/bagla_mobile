@@ -1697,6 +1697,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get workingPrefsFirstSessionTitle => 'First appointment session count';
 
   @override
+  String get workingPrefsSessionLabel => 'Session';
+
+  @override
   String get workingPrefsSelect => 'Select';
 
   @override
@@ -1706,6 +1709,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get workingPrefsDaySubtitle => 'Working status and time ranges';
+
+  @override
+  String get workingPrefsStatusLabel => 'Status';
+
+  @override
+  String get workingPrefsTimeSlotsLabel => 'Time slots';
 
   @override
   String get workingPrefsWorking => 'Working';
@@ -2017,4 +2026,44 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get profileLanguageSaved => 'Language updated.';
+
+  @override
+  String get profileDeleteSectionTitle => 'Delete Account';
+
+  @override
+  String get profileDeleteSectionSubtitle => 'This action cannot be undone.';
+
+  @override
+  String get profileDeleteConfirmTitle => 'Delete account';
+
+  @override
+  String get profileDeleteConfirmBody =>
+      'Are you sure you want to delete your account? This action cannot be undone.';
+
+  @override
+  String get profileDeleteCancel => 'Cancel';
+
+  @override
+  String get profileDeleteAction => 'Delete account';
+
+  @override
+  String get profileDeleteProcessing => 'Processing...';
+
+  @override
+  String get profileDeleteSuccess => 'Account removed successfully.';
+
+  @override
+  String get profileDeleteFailed => 'Account deletion request failed.';
+
+  @override
+  String profileDeleteError(Object error) {
+    return 'An error occurred while deleting the account: $error';
+  }
+
+  @override
+  String get dashboardNoActivePackage =>
+      'You don\'t have an active package. Please buy a package for SMS operations.';
+
+  @override
+  String get dashboardBuyPackage => 'Buy Package';
 }

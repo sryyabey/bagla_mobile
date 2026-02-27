@@ -3128,6 +3128,12 @@ abstract class AppLocalizations {
   /// **'First appointment session count'**
   String get workingPrefsFirstSessionTitle;
 
+  /// No description provided for @workingPrefsSessionLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Session'**
+  String get workingPrefsSessionLabel;
+
   /// No description provided for @workingPrefsSelect.
   ///
   /// In en, this message translates to:
@@ -3145,6 +3151,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Working status and time ranges'**
   String get workingPrefsDaySubtitle;
+
+  /// No description provided for @workingPrefsStatusLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Status'**
+  String get workingPrefsStatusLabel;
+
+  /// No description provided for @workingPrefsTimeSlotsLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Time slots'**
+  String get workingPrefsTimeSlotsLabel;
 
   /// No description provided for @workingPrefsWorking.
   ///
@@ -3685,6 +3703,78 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Language updated.'**
   String get profileLanguageSaved;
+
+  /// No description provided for @profileDeleteSectionTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete Account'**
+  String get profileDeleteSectionTitle;
+
+  /// No description provided for @profileDeleteSectionSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'This action cannot be undone.'**
+  String get profileDeleteSectionSubtitle;
+
+  /// No description provided for @profileDeleteConfirmTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete account'**
+  String get profileDeleteConfirmTitle;
+
+  /// No description provided for @profileDeleteConfirmBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Are you sure you want to delete your account? This action cannot be undone.'**
+  String get profileDeleteConfirmBody;
+
+  /// No description provided for @profileDeleteCancel.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel'**
+  String get profileDeleteCancel;
+
+  /// No description provided for @profileDeleteAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete account'**
+  String get profileDeleteAction;
+
+  /// No description provided for @profileDeleteProcessing.
+  ///
+  /// In en, this message translates to:
+  /// **'Processing...'**
+  String get profileDeleteProcessing;
+
+  /// No description provided for @profileDeleteSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Account removed successfully.'**
+  String get profileDeleteSuccess;
+
+  /// No description provided for @profileDeleteFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Account deletion request failed.'**
+  String get profileDeleteFailed;
+
+  /// No description provided for @profileDeleteError.
+  ///
+  /// In en, this message translates to:
+  /// **'An error occurred while deleting the account: {error}'**
+  String profileDeleteError(Object error);
+
+  /// No description provided for @dashboardNoActivePackage.
+  ///
+  /// In en, this message translates to:
+  /// **'You don\'t have an active package. Please buy a package for SMS operations.'**
+  String get dashboardNoActivePackage;
+
+  /// No description provided for @dashboardBuyPackage.
+  ///
+  /// In en, this message translates to:
+  /// **'Buy Package'**
+  String get dashboardBuyPackage;
 }
 
 class _AppLocalizationsDelegate

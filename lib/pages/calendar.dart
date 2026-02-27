@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:bagla_mobile/auth.dart';
 import 'package:bagla_mobile/config.dart';
 import 'package:bagla_mobile/dashboard_page.dart';
 import 'package:bagla_mobile/pages/working_preferences.dart';
@@ -8,7 +9,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import '../utils/appointment_date_utils.dart';
 import '../widgets/main_nav.dart';
 import 'package:bagla_mobile/l10n/app_localizations.dart';
@@ -21,8 +21,59 @@ DateTime _startOfWeek(DateTime date) {
 }
 
 Future<String?> _getToken() async {
-  final prefs = await SharedPreferences.getInstance();
-  return prefs.getString('bearer_token');
+  return getAccessToken();
+}
+
+const _authRetriedKey = '__auth_retried__';
+
+Future<Dio> _buildAuthedDio({bool includeJsonContentType = false}) async {
+  final token = await _getToken();
+  if (token == null || token.isEmpty) {
+    throw const AuthRequiredException();
+  }
+
+  final headers = <String, dynamic>{
+    'Authorization': 'Bearer $token',
+    'Accept': 'application/json',
+  };
+  if (includeJsonContentType) {
+    headers['Content-Type'] = 'application/json';
+  }
+
+  final dio = Dio(
+    BaseOptions(
+      baseUrl: apiBaseUrl,
+      headers: headers,
+    ),
+  );
+
+  dio.interceptors.add(
+    InterceptorsWrapper(
+      onError: (err, handler) async {
+        final alreadyRetried = err.requestOptions.extra[_authRetriedKey] == true;
+        if (err.response?.statusCode != 401 || alreadyRetried) {
+          return handler.next(err);
+        }
+
+        final refreshed = await refreshAccessToken();
+        if (refreshed == null || refreshed.isEmpty) {
+          return handler.next(err);
+        }
+
+        final req = err.requestOptions;
+        req.extra[_authRetriedKey] = true;
+        req.headers['Authorization'] = 'Bearer $refreshed';
+        try {
+          final retryResp = await dio.fetch(req);
+          return handler.resolve(retryResp);
+        } on DioException catch (retryErr) {
+          return handler.next(retryErr);
+        }
+      },
+    ),
+  );
+
+  return dio;
 }
 
 Color _bootstrapColor(String? alias) {
@@ -278,20 +329,12 @@ class WeeklyCalendarData {
 final weeklyCalendarProvider =
     FutureProvider.autoDispose.family<WeeklyCalendarData, DateTime>(
   (ref, weekStart) async {
-    final token = await _getToken();
-    if (token == null || token.isEmpty) {
+    Dio dio;
+    try {
+      dio = await _buildAuthedDio();
+    } on AuthRequiredException {
       throw Exception('Oturum bulunamadı.');
     }
-
-    final dio = Dio(
-      BaseOptions(
-        baseUrl: apiBaseUrl,
-        headers: {
-          'Authorization': 'Bearer $token',
-          'Accept': 'application/json',
-        },
-      ),
-    );
 
     final weekStartStr =
         '${weekStart.year.toString().padLeft(4, '0')}-${weekStart.month.toString().padLeft(2, '0')}-${weekStart.day.toString().padLeft(2, '0')}';
@@ -564,18 +607,12 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
 
   Future<int?> _resolveDefaultStatusId() async {
     if (_cachedDefaultStatusId != null) return _cachedDefaultStatusId;
-    final token = await _getToken();
-    if (token == null || token.isEmpty) return null;
-
-    final dio = Dio(
-      BaseOptions(
-        baseUrl: apiBaseUrl,
-        headers: {
-          'Authorization': 'Bearer $token',
-          'Accept': 'application/json',
-        },
-      ),
-    );
+    Dio dio;
+    try {
+      dio = await _buildAuthedDio();
+    } on AuthRequiredException {
+      return null;
+    }
 
     try {
       final resp = await dio.get('/api/settings/appointment-statuses');
@@ -609,23 +646,15 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
   }
 
   Future<Map<String, dynamic>?> _showCustomerPickerSheet() async {
-    final token = await _getToken();
-    if (token == null || token.isEmpty) {
+    Dio dio;
+    try {
+      dio = await _buildAuthedDio();
+    } on AuthRequiredException {
       _showSnack(loc.calendarSessionMissing);
       return null;
     }
     if (!mounted) return null;
     final maxSheetHeight = MediaQuery.of(context).size.height * 0.9;
-
-    final dio = Dio(
-      BaseOptions(
-        baseUrl: apiBaseUrl,
-        headers: {
-          'Authorization': 'Bearer $token',
-          'Accept': 'application/json',
-        },
-      ),
-    );
 
     return showModalBottomSheet<Map<String, dynamic>>(
       context: context,
@@ -1013,26 +1042,13 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
                 return;
               }
               final date = _normalizeSlotDate(rawDate);
-              final token = await _getToken();
-              if (token == null || token.isEmpty) {
-                _showSnack(loc.calendarSessionMissing);
-                return;
-              }
               setModalState(() {
                 localLoadingSlots = true;
                 localSlotsError = null;
                 localSlots = [];
               });
-              final dio = Dio(
-                BaseOptions(
-                  baseUrl: apiBaseUrl,
-                  headers: {
-                    'Authorization': 'Bearer $token',
-                    'Accept': 'application/json',
-                  },
-                ),
-              );
               try {
+                final dio = await _buildAuthedDio();
                 final resp = await dio.get(
                   '/api/appointments/time-slots',
                   queryParameters: {'date': date},
@@ -1055,6 +1071,11 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
                     selectedTime = null;
                     timeCtrl.clear();
                   }
+                });
+              } on AuthRequiredException {
+                setModalState(() {
+                  localLoadingSlots = false;
+                  localSlotsError = loc.calendarSessionMissing;
                 });
               } catch (e) {
                 setModalState(() {
@@ -1096,18 +1117,8 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
               setModalState(() => selectedCustomer = picked);
               final customerId = _asInt(picked['id']);
               if (customerId == null) return;
-              final token = await _getToken();
-              if (token == null || token.isEmpty) return;
-              final dio = Dio(
-                BaseOptions(
-                  baseUrl: apiBaseUrl,
-                  headers: {
-                    'Authorization': 'Bearer $token',
-                    'Accept': 'application/json',
-                  },
-                ),
-              );
               try {
+                final dio = await _buildAuthedDio();
                 final resp = await dio
                     .get('/api/customers/$customerId/appointment-defaults');
                 final raw = resp.data is Map
@@ -1152,17 +1163,8 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
                 return;
               }
               setState(() => _slotActionBusy = true);
-              final dio = Dio(
-                BaseOptions(
-                  baseUrl: apiBaseUrl,
-                  headers: {
-                    'Authorization': 'Bearer $token',
-                    'Accept': 'application/json',
-                    'Content-Type': 'application/json',
-                  },
-                ),
-              );
               try {
+                final dio = await _buildAuthedDio(includeJsonContentType: true);
                 int? customerId = _asInt(selectedCustomer?['id']);
                 if (createForNewCustomer) {
                   final firstName = newNameCtrl.text.trim();
@@ -1815,29 +1817,14 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
               }
               final date = _normalizeSlotDate(rawDate);
 
-              final token = await _getToken();
-              if (token == null || token.isEmpty) {
-                _showSnack(loc.calendarSessionMissing);
-                return;
-              }
-
               setModalState(() {
                 localLoadingSlots = true;
                 localSlotsError = null;
                 localSlots = [];
               });
 
-              final dio = Dio(
-                BaseOptions(
-                  baseUrl: apiBaseUrl,
-                  headers: {
-                    'Authorization': 'Bearer $token',
-                    'Accept': 'application/json',
-                  },
-                ),
-              );
-
               try {
+                final dio = await _buildAuthedDio();
                 final resp = await dio.get(
                   '/api/appointments/time-slots',
                   queryParameters: {'date': date},
@@ -1862,6 +1849,11 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
                     localSelectedTime = null;
                     timeCtrl.clear();
                   }
+                });
+              } on AuthRequiredException {
+                setModalState(() {
+                  localLoadingSlots = false;
+                  localSlotsError = loc.calendarSessionMissing;
                 });
               } on DioException catch (e) {
                 final status = e.response?.statusCode;
@@ -1909,30 +1901,13 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
             }
 
             Future<void> loadStatuses() async {
-              final token = await _getToken();
-              if (token == null || token.isEmpty) {
-                setModalState(() {
-                  localStatusesError = loc.calendarSessionMissing;
-                });
-                return;
-              }
-
               setModalState(() {
                 localLoadingStatuses = true;
                 localStatusesError = null;
               });
 
-              final dio = Dio(
-                BaseOptions(
-                  baseUrl: apiBaseUrl,
-                  headers: {
-                    'Authorization': 'Bearer $token',
-                    'Accept': 'application/json',
-                  },
-                ),
-              );
-
               try {
+                final dio = await _buildAuthedDio();
                 final resp =
                     await dio.get('/api/settings/appointment-statuses');
                 final raw = resp.data is Map
@@ -1972,6 +1947,11 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
                   localStatusesError =
                       '${loc.calendarFetchFailedStatus(status ?? '??')}${msg != null ? ': $msg' : ''}';
                 });
+              } on AuthRequiredException {
+                setModalState(() {
+                  localLoadingStatuses = false;
+                  localStatusesError = loc.calendarSessionMissing;
+                });
               } catch (e) {
                 setModalState(() {
                   localLoadingStatuses = false;
@@ -1997,28 +1977,12 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
                 return;
               }
 
-              final token = await _getToken();
-              if (token == null || token.isEmpty) {
-                _showSnack(loc.calendarSessionMissing);
-                return;
-              }
-
               setState(() {
                 _slotActionBusy = true;
               });
 
-              final dio = Dio(
-                BaseOptions(
-                  baseUrl: apiBaseUrl,
-                  headers: {
-                    'Authorization': 'Bearer $token',
-                    'Accept': 'application/json',
-                    'Content-Type': 'application/json',
-                  },
-                ),
-              );
-
               try {
+                final dio = await _buildAuthedDio(includeJsonContentType: true);
                 final payload = {
                   'customer_id': customerId,
                   'appointment_status_id': localSelectedStatusId,

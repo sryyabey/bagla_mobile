@@ -7,7 +7,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:bagla_mobile/l10n/app_localizations.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:http/http.dart' as http;
 import 'package:share_plus/share_plus.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -44,12 +43,20 @@ class DashboardPage extends StatefulWidget {
 }
 
 class _DashboardPageState extends State<DashboardPage> {
+  static const int _maxDashboardTopLinks = 8;
+  static const int _maxDashboardAppointments = 6;
   bool get _isIosStorefront => !kIsWeb && Platform.isIOS;
   bool _loading = true;
   String? _error;
-  Map<String, dynamic>? _dashboardData;
   bool _hasDashboardLoaded = false;
   bool _noInternet = false;
+  Map<String, dynamic>? _packInfo;
+  String _totalClicks = '0';
+  String? _bioPageLink;
+  Map<String, dynamic>? _dailyClicks;
+  List<_DashboardTopLink> _topLinks = const [];
+  int _todayAppointmentCount = 0;
+  List<_DashboardAppointment> _todayAppointments = const [];
 
   @override
   void initState() {
@@ -60,16 +67,12 @@ class _DashboardPageState extends State<DashboardPage> {
   }
 
   Future<String?> _getToken() async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getString('bearer_token') ?? prefs.getString('authToken');
+    return getAccessToken();
   }
 
   Future<void> _fetchDashboard({bool force = false}) async {
     final loc = AppLocalizations.of(context);
     if (_hasDashboardLoaded && !force) {
-      setState(() {
-        _loading = false;
-      });
       return;
     }
     setState(() {
@@ -78,58 +81,130 @@ class _DashboardPageState extends State<DashboardPage> {
       _noInternet = false;
     });
 
+    String? nextError;
+    bool nextNoInternet = false;
+    Map<String, dynamic>? nextParsedData;
+
     final token = await _getToken();
     if (token == null || token.isEmpty) {
-      setState(() {
-        _loading = false;
-        _error = loc.dashboardSessionMissing;
-      });
-      return;
-    }
+      nextError = loc.dashboardSessionMissing;
+    } else {
+      try {
+        final response = await authGet(
+          Uri.parse('$apiBaseUrl/api/dashboard'),
+          headers: {
+            'Authorization': 'Bearer $token',
+            'Accept': 'application/json',
+          },
+        );
 
-    try {
-      final response = await http.get(
-        Uri.parse('$apiBaseUrl/api/dashboard'),
-        headers: {
-          'Authorization': 'Bearer $token',
-          'Accept': 'application/json',
-        },
-      );
-
-      if (response.statusCode == 200) {
-        final decoded = jsonDecode(response.body);
-        final data = decoded['data'] ?? decoded;
-        setState(() {
-          _dashboardData = Map<String, dynamic>.from(data);
-          _hasDashboardLoaded = true;
-        });
-      } else {
-        String message =
-            loc.dashboardLoadFailedWithStatus(response.statusCode.toString());
-        try {
+        if (response.statusCode == 200) {
           final decoded = jsonDecode(response.body);
-          message = decoded['message']?.toString() ?? message;
-        } catch (_) {}
-        setState(() {
-          _error = message;
-        });
-      }
-    } catch (e) {
-      setState(() {
-        _noInternet = e is SocketException ||
+          final data = decoded['data'] ?? decoded;
+          if (data is Map<String, dynamic>) {
+            nextParsedData = data;
+          } else if (data is Map) {
+            nextParsedData = Map<String, dynamic>.from(data);
+          } else {
+            nextError = loc.dashboardLoadFailed('Invalid payload');
+          }
+        } else {
+          String message =
+              loc.dashboardLoadFailedWithStatus(response.statusCode.toString());
+          try {
+            final decoded = jsonDecode(response.body);
+            message = decoded['message']?.toString() ?? message;
+          } catch (_) {}
+          nextError = message;
+        }
+      } catch (e) {
+        nextNoInternet = e is SocketException ||
             e.toString().contains('SocketException') ||
             e.toString().contains('Failed host lookup');
-        _error = _noInternet
-            ? loc.dashboardNoInternet
-            : loc.dashboardLoadFailed(e.toString());
-      });
-    } finally {
-      if (mounted) {
-        setState(() {
-          _loading = false;
-        });
+        nextError =
+            nextNoInternet ? loc.dashboardNoInternet : loc.dashboardLoadFailed(e.toString());
       }
     }
+
+    if (!mounted) return;
+    setState(() {
+      if (nextParsedData != null) {
+        _applyDashboardData(nextParsedData);
+        _hasDashboardLoaded = true;
+      }
+      _error = nextError;
+      _noInternet = nextNoInternet;
+      _loading = false;
+    });
+  }
+
+  void _applyDashboardData(Map<String, dynamic> data) {
+    _packInfo = data['pack_info'] is Map<String, dynamic>
+        ? data['pack_info'] as Map<String, dynamic>
+        : (data['pack_info'] is Map
+            ? Map<String, dynamic>.from(data['pack_info'] as Map)
+            : null);
+    _totalClicks = data['total_clicks']?.toString() ?? '0';
+    _bioPageLink = data['bio_page']?.toString();
+    _dailyClicks = data['daily_clicks'] is Map<String, dynamic>
+        ? data['daily_clicks'] as Map<String, dynamic>
+        : (data['daily_clicks'] is Map
+            ? Map<String, dynamic>.from(data['daily_clicks'] as Map)
+            : null);
+
+    final rawTopLinks = data['top_links'] as List?;
+    final parsedTopLinks = <_DashboardTopLink>[];
+    if (rawTopLinks != null) {
+      for (final item in rawTopLinks) {
+        if (item is! Map) continue;
+        final map = Map<String, dynamic>.from(item);
+        final rawClicks = map['clicks'];
+        final clicks = rawClicks is num
+            ? rawClicks.toDouble()
+            : double.tryParse(rawClicks?.toString() ?? '') ?? 0;
+        final title = map['title']?.toString().trim() ?? '';
+        parsedTopLinks.add(
+          _DashboardTopLink(
+            title: title.isNotEmpty ? title : '-',
+            clicks: clicks,
+          ),
+        );
+      }
+    }
+    _topLinks = parsedTopLinks.take(_maxDashboardTopLinks).toList(growable: false);
+
+    final apptInfo = data['appointment_info'] as Map?;
+    final todayCountRaw =
+        apptInfo?['todayAppointments'] ?? apptInfo?['today_appointments'] ?? 0;
+    _todayAppointmentCount = int.tryParse(todayCountRaw.toString()) ?? 0;
+    final parsedAppointments = <_DashboardAppointment>[];
+    final apptList = apptInfo?['appointments'] as List?;
+    if (apptList != null) {
+      for (final item in apptList) {
+        if (item is! Map) continue;
+        final map = Map<String, dynamic>.from(item);
+        final customer = map['customer'] is Map
+            ? Map<String, dynamic>.from(map['customer'] as Map)
+            : null;
+        final status = map['appointment_status'] is Map
+            ? Map<String, dynamic>.from(map['appointment_status'] as Map)
+            : null;
+        final customerName = customer?['name']?.toString().trim();
+        parsedAppointments.add(
+          _DashboardAppointment(
+            customerId: map['customer_id']?.toString() ?? '',
+            customerName: (customerName?.isNotEmpty == true) ? customerName! : null,
+            phone: customer?['phone']?.toString() ?? '',
+            date: map['date']?.toString(),
+            time: map['time']?.toString(),
+            statusName:
+                status?['name']?.toString() ?? status?['alias']?.toString() ?? '',
+          ),
+        );
+      }
+    }
+    _todayAppointments =
+        parsedAppointments.take(_maxDashboardAppointments).toList(growable: false);
   }
 
   void _navigateToPage(Widget page, String routeName) {
@@ -356,6 +431,53 @@ class _DashboardPageState extends State<DashboardPage> {
     Navigator.push(
       context,
       MaterialPageRoute(builder: (_) => page),
+    );
+  }
+
+  Widget _tabPageForIndex(int index) {
+    switch (index) {
+      case 0:
+        return const DashboardPage();
+      case 1:
+        return const AppointmentsPage();
+      case 2:
+        return const CalendarPage();
+      case 3:
+      default:
+        return const CustomersPage();
+    }
+  }
+
+  void _navigateFromDrawer({
+    int? tabIndex,
+    Widget? page,
+    String? routeName,
+  }) {
+    Navigator.pop(context); // close drawer first
+
+    if (tabIndex != null) {
+      if (widget.onTabSelected != null) {
+        widget.onTabSelected!(tabIndex);
+        return;
+      }
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (_) => _tabPageForIndex(tabIndex),
+          settings:
+              routeName != null ? RouteSettings(name: routeName) : null,
+        ),
+      );
+      return;
+    }
+
+    if (page == null) return;
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(
+        builder: (_) => page,
+        settings: routeName != null ? RouteSettings(name: routeName) : null,
+      ),
     );
   }
 
@@ -605,7 +727,7 @@ class _DashboardPageState extends State<DashboardPage> {
             Text(
               _isIosStorefront
                   ? loc.iosSmsPurchaseRestrictionMessage
-                  : 'Aktif paketiniz bulunmuyor. SMS işlemleri için paket alın.',
+                  : loc.dashboardNoActivePackage,
               style: const TextStyle(color: Colors.black87),
             ),
             if (!_isIosStorefront) ...[
@@ -620,7 +742,7 @@ class _DashboardPageState extends State<DashboardPage> {
                     );
                   },
                   icon: const Icon(Icons.shopping_cart_outlined),
-                  label: const Text('Paket Al'),
+                  label: Text(loc.dashboardBuyPackage),
                 ),
               ),
             ],
@@ -831,29 +953,22 @@ class _DashboardPageState extends State<DashboardPage> {
     );
   }
 
-  Widget _buildTopLinks(List<dynamic>? topLinks) {
+  Widget _buildTopLinks(List<_DashboardTopLink> topLinks) {
     final loc = AppLocalizations.of(context);
-    if (topLinks == null || topLinks.isEmpty) {
+    if (topLinks.isEmpty) {
       return Text(loc.dashboardNoLinkClicks);
     }
-    final maps = topLinks
-        .whereType<Map>()
-        .map((e) => Map<String, dynamic>.from(e))
-        .toList();
-    final clicks = maps.map((m) {
-      final raw = m['clicks'];
-      if (raw is num) return raw.toDouble();
-      return double.tryParse(raw?.toString() ?? '') ?? 0;
-    }).toList();
-    final maxClicks = clicks.isEmpty
+    final maxClicks = topLinks.isEmpty
         ? 1.0
-        : clicks.reduce((a, b) => a > b ? a : b).clamp(1.0, double.infinity);
+        : topLinks
+            .map((e) => e.clicks)
+            .reduce((a, b) => a > b ? a : b)
+            .clamp(1.0, double.infinity);
 
     return Column(
-      children: List.generate(maps.length, (index) {
-        final map = maps[index];
-        final title = map['title']?.toString().trim();
-        final value = clicks[index];
+      children: List.generate(topLinks.length, (index) {
+        final link = topLinks[index];
+        final value = link.clicks;
         final ratio = (value / maxClicks).clamp(0.0, 1.0);
         return Container(
           margin: const EdgeInsets.only(bottom: 10),
@@ -871,7 +986,7 @@ class _DashboardPageState extends State<DashboardPage> {
                   const SizedBox(width: 6),
                   Expanded(
                     child: Text(
-                      (title?.isNotEmpty == true) ? title! : '-',
+                      link.title,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
@@ -929,19 +1044,14 @@ class _DashboardPageState extends State<DashboardPage> {
   }
 
   Widget _buildTodayAppointments(
-      BuildContext context, Map<String, dynamic>? apptInfo) {
+    BuildContext context, {
+    required int todayCount,
+    required List<_DashboardAppointment> appointments,
+  }) {
     final loc = AppLocalizations.of(context);
-    if (apptInfo == null) {
+    if (appointments.isEmpty && todayCount == 0) {
       return Text(loc.dashboardNoAppointmentsData);
     }
-    final todayCount =
-        apptInfo['todayAppointments'] ?? apptInfo['today_appointments'] ?? 0;
-    final list = apptInfo['appointments'] is List
-        ? List<Map<String, dynamic>>.from(
-            (apptInfo['appointments'] as List)
-                .map((e) => Map<String, dynamic>.from(e)),
-          )
-        : <Map<String, dynamic>>[];
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -964,22 +1074,11 @@ class _DashboardPageState extends State<DashboardPage> {
           ),
         ),
         const SizedBox(height: 8),
-        if (list.isEmpty)
+        if (appointments.isEmpty)
           Text(loc.dashboardNoAppointments)
         else
           Column(
-            children: list.map((appt) {
-              final customer = appt['customer'] is Map
-                  ? appt['customer'] as Map<String, dynamic>
-                  : null;
-              final status = appt['appointment_status'] is Map
-                  ? appt['appointment_status'] as Map<String, dynamic>
-                  : null;
-              final statusName = status?['name']?.toString() ??
-                  status?['alias']?.toString() ??
-                  '';
-              final name = customer?['name']?.toString();
-              final phone = customer?['phone']?.toString() ?? '';
+            children: appointments.map((appt) {
               return Container(
                 margin: const EdgeInsets.only(bottom: 8),
                 padding: const EdgeInsets.all(10),
@@ -998,7 +1097,7 @@ class _DashboardPageState extends State<DashboardPage> {
                         borderRadius: BorderRadius.circular(10),
                       ),
                       child: Text(
-                        _fmtTime(appt['time']?.toString()),
+                        _fmtTime(appt.time),
                         textAlign: TextAlign.center,
                         style: const TextStyle(
                           fontWeight: FontWeight.w800,
@@ -1013,21 +1112,19 @@ class _DashboardPageState extends State<DashboardPage> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            name?.isNotEmpty == true
-                                ? name!
-                                : loc.dashboardCustomerFallback(
-                                    appt['customer_id']?.toString() ?? ''),
+                            appt.customerName ??
+                                loc.dashboardCustomerFallback(appt.customerId),
                             style: const TextStyle(
                                 fontWeight: FontWeight.w600, fontSize: 15),
                             overflow: TextOverflow.ellipsis,
                           ),
                           const SizedBox(height: 2),
                           Text(
-                            _fmtDate(appt['date']?.toString()),
+                            _fmtDate(appt.date),
                             style: const TextStyle(
                                 color: Colors.black54, fontSize: 12),
                           ),
-                          if (phone.isNotEmpty)
+                          if (appt.phone.isNotEmpty)
                             Row(
                               children: [
                                 const Icon(
@@ -1038,7 +1135,7 @@ class _DashboardPageState extends State<DashboardPage> {
                                 const SizedBox(width: 4),
                                 Expanded(
                                   child: Text(
-                                    phone,
+                                    appt.phone,
                                     style: const TextStyle(
                                         color: Colors.black87, fontSize: 12),
                                     overflow: TextOverflow.ellipsis,
@@ -1049,12 +1146,12 @@ class _DashboardPageState extends State<DashboardPage> {
                         ],
                       ),
                     ),
-                    if (statusName.isNotEmpty)
+                    if (appt.statusName.isNotEmpty)
                       Padding(
                         padding: const EdgeInsets.only(left: 8, top: 2),
                         child: Chip(
                           label: Text(
-                            statusName,
+                            appt.statusName,
                             style: const TextStyle(fontWeight: FontWeight.w600),
                           ),
                           backgroundColor: Colors.blueGrey.shade50,
@@ -1246,14 +1343,8 @@ class _DashboardPageState extends State<DashboardPage> {
 
   Widget _buildDashboardBody() {
     final loc = AppLocalizations.of(context);
-    final data = _dashboardData ?? {};
-    final packInfo = data['pack_info'] is Map<String, dynamic>
-        ? data['pack_info'] as Map<String, dynamic>
-        : null;
-    final totalClicks = data['total_clicks']?.toString() ?? '0';
-    final appointmentInfo = data['appointment_info'] is Map<String, dynamic>
-        ? data['appointment_info'] as Map<String, dynamic>
-        : null;
+    final hiddenAppointments =
+        (_todayAppointmentCount - _todayAppointments.length).clamp(0, 9999);
 
     return RefreshIndicator(
       onRefresh: () => _fetchDashboard(force: true),
@@ -1261,29 +1352,60 @@ class _DashboardPageState extends State<DashboardPage> {
         physics: const AlwaysScrollableScrollPhysics(),
         padding: const EdgeInsets.all(16),
         children: [
-          _heroSection(packInfo, totalClicks),
-          _buildBioCard(data['bio_page']?.toString()),
+          _heroSection(_packInfo, _totalClicks),
+          _buildBioCard(_bioPageLink),
           const SizedBox(height: 12),
           _buildQuickActions(),
           const SizedBox(height: 16),
-          _buildPackInfo(packInfo),
+          _buildPackInfo(_packInfo),
           const SizedBox(height: 16),
           _buildSectionCard(
             icon: Icons.event_available_outlined,
             title: loc.dashboardTodayAppointments,
-            child: _buildTodayAppointments(context, appointmentInfo),
+            child: Column(
+              children: [
+                _buildTodayAppointments(
+                  context,
+                  todayCount: _todayAppointmentCount,
+                  appointments: _todayAppointments,
+                ),
+                if (hiddenAppointments > 0)
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: TextButton.icon(
+                      onPressed: () => _openTabOrPush(1, const AppointmentsPage()),
+                      icon: const Icon(Icons.open_in_new, size: 18),
+                      label: Text('+${hiddenAppointments.toInt()}'),
+                    ),
+                  ),
+              ],
+            ),
           ),
           const SizedBox(height: 16),
           _buildSectionCard(
             icon: Icons.bar_chart_rounded,
             title: loc.dashboardDailyClicks,
-            child: _buildDailyClicks(data['daily_clicks']),
+            child: _buildDailyClicks(_dailyClicks),
           ),
           const SizedBox(height: 16),
           _buildSectionCard(
             icon: Icons.link_rounded,
             title: loc.dashboardTopLinks,
-            child: _buildTopLinks(data['top_links'] as List<dynamic>?),
+            child: Column(
+              children: [
+                _buildTopLinks(_topLinks),
+                if (_topLinks.isNotEmpty)
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: TextButton.icon(
+                      onPressed: () =>
+                          _navigateToPage(const MyLinksPage(), 'my_links'),
+                      icon: const Icon(Icons.open_in_new, size: 18),
+                      label: Text(loc.myLinks),
+                    ),
+                  ),
+              ],
+            ),
           ),
           const SizedBox(height: 8),
         ],
@@ -1372,12 +1494,7 @@ class _DashboardPageState extends State<DashboardPage> {
               leading: const Icon(Icons.home_outlined),
               title: Text(loc.dashboardHome),
               onTap: () {
-                Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const DashboardPage(),
-                  ),
-                );
+                _navigateFromDrawer(tabIndex: 0, routeName: 'dashboard');
               },
             ),
             Padding(
@@ -1395,12 +1512,9 @@ class _DashboardPageState extends State<DashboardPage> {
               leading: const Icon(Icons.person),
               title: Text(loc.profile),
               onTap: () {
-                // Profil sayfasına yönlendirme
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const ProfilePage(),
-                  ),
+                _navigateFromDrawer(
+                  page: const ProfilePage(),
+                  routeName: 'profile',
                 );
               },
             ),
@@ -1408,7 +1522,7 @@ class _DashboardPageState extends State<DashboardPage> {
               leading: const Icon(Icons.groups_outlined),
               title: Text(loc.customersTitle),
               onTap: () {
-                _navigateToPage(const CustomersPage(), 'customers');
+                _navigateFromDrawer(tabIndex: 3, routeName: 'customers');
               },
             ),
             Padding(
@@ -1426,12 +1540,9 @@ class _DashboardPageState extends State<DashboardPage> {
               leading: const Icon(Icons.link),
               title: Text(loc.myLinks),
               onTap: () {
-                // Linkler sayfasına yönlendirme
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const MyLinksPage(),
-                  ),
+                _navigateFromDrawer(
+                  page: const MyLinksPage(),
+                  routeName: 'my_links',
                 );
               },
             ),
@@ -1439,8 +1550,10 @@ class _DashboardPageState extends State<DashboardPage> {
               leading: const Icon(Icons.palette),
               title: Text(loc.themes),
               onTap: () {
-                // Temalar sayfasına yönlendirme
-                _navigateToPage(const ThemesPage(), 'themes');
+                _navigateFromDrawer(
+                  page: const ThemesPage(),
+                  routeName: 'themes',
+                );
               },
             ),
             if (!_isIosStorefront)
@@ -1448,41 +1561,49 @@ class _DashboardPageState extends State<DashboardPage> {
                 leading: const Icon(Icons.sms_outlined),
                 title: Text(loc.dashboardSmsPacks),
                 onTap: () {
-                  _navigateToPage(const SmsPacksPage(), 'sms_packs');
+                  _navigateFromDrawer(
+                    page: const SmsPacksPage(),
+                    routeName: 'sms_packs',
+                  );
                 },
               ),
             ListTile(
               leading: const Icon(Icons.receipt_long),
               title: Text(loc.dashboardOrders),
               onTap: () {
-                _navigateToPage(const OrdersPage(), 'orders');
+                _navigateFromDrawer(
+                  page: const OrdersPage(),
+                  routeName: 'orders',
+                );
               },
             ),
             ListTile(
               leading: const Icon(Icons.schedule),
               title: Text(loc.dashboardWorkingHours),
               onTap: () {
-                _navigateToPage(
-                    const WorkingPreferencesPage(), 'working_preferences');
+                _navigateFromDrawer(
+                  page: const WorkingPreferencesPage(),
+                  routeName: 'working_preferences',
+                );
               },
             ),
             ListTile(
               leading: const Icon(Icons.sms),
               title: Text(loc.dashboardSmsTemplates),
               onTap: () {
-                _navigateToPage(const SmsTemplatesPage(), 'sms_templates');
+                _navigateFromDrawer(
+                  page: const SmsTemplatesPage(),
+                  routeName: 'sms_templates',
+                );
               },
             ),
             ListTile(
               leading: const Icon(Icons.support),
               title: Text(loc.support),
               onTap: () {
-                // Destek sayfasına yönlendirme
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const SupportPage(),
-                  ),
+                _navigateFromDrawer(
+                  page: const SupportPage(),
+                  routeName: 'support',
                 );
               },
             ),
@@ -1581,4 +1702,32 @@ class _DashboardPageState extends State<DashboardPage> {
           : null,
     );
   }
+}
+
+class _DashboardTopLink {
+  const _DashboardTopLink({
+    required this.title,
+    required this.clicks,
+  });
+
+  final String title;
+  final double clicks;
+}
+
+class _DashboardAppointment {
+  const _DashboardAppointment({
+    required this.customerId,
+    required this.customerName,
+    required this.phone,
+    required this.date,
+    required this.time,
+    required this.statusName,
+  });
+
+  final String customerId;
+  final String? customerName;
+  final String phone;
+  final String? date;
+  final String? time;
+  final String statusName;
 }

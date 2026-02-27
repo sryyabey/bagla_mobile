@@ -9,15 +9,17 @@ import 'package:bagla_mobile/l10n/app_localizations.dart';
 class MainNavBar extends StatelessWidget {
   final int currentIndex;
   final ValueChanged<int>? onIndexSelected;
+  final bool allowReselectCurrent;
 
   const MainNavBar({
     super.key,
     required this.currentIndex,
     this.onIndexSelected,
+    this.allowReselectCurrent = false,
   });
 
   void _onTap(BuildContext context, int index) {
-    if (index == currentIndex) return;
+    if (index == currentIndex && !allowReselectCurrent) return;
     Feedback.forTap(context);
     if (onIndexSelected != null) {
       onIndexSelected!(index);

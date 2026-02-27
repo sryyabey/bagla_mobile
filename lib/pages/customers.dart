@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:bagla_mobile/auth.dart';
 import 'package:bagla_mobile/config.dart';
 import 'package:bagla_mobile/l10n/app_localizations.dart';
 import 'package:bagla_mobile/main_tabs_page.dart';
@@ -8,8 +9,6 @@ import 'package:bagla_mobile/pages/sms_packs.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:http/http.dart' as http;
-import 'package:shared_preferences/shared_preferences.dart';
 
 class CustomersPage extends StatefulWidget {
   const CustomersPage({super.key});
@@ -194,8 +193,7 @@ class _CustomersPageState extends State<CustomersPage> {
   }
 
   Future<String?> _getToken() async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getString('bearer_token') ?? prefs.getString('authToken');
+    return getAccessToken();
   }
 
   void _goHome() {
@@ -340,7 +338,7 @@ class _CustomersPageState extends State<CustomersPage> {
     }
 
     try {
-      final response = await http.get(
+      final response = await authGet(
         Uri.parse('$apiBaseUrl/api/customers').replace(
           queryParameters: {
             'search': _searchController.text.trim(),
@@ -408,7 +406,7 @@ class _CustomersPageState extends State<CustomersPage> {
     }
 
     try {
-      final response = await http.delete(
+      final response = await authDelete(
         Uri.parse('$apiBaseUrl/api/customers/$id'),
         headers: {
           'Authorization': 'Bearer $token',
@@ -461,7 +459,7 @@ class _CustomersPageState extends State<CustomersPage> {
 
     try {
       final response = existing == null
-          ? await http.post(
+          ? await authPost(
               Uri.parse('$apiBaseUrl/api/customers'),
               headers: {
                 'Authorization': 'Bearer $token',
@@ -470,7 +468,7 @@ class _CustomersPageState extends State<CustomersPage> {
               },
               body: jsonEncode(payload),
             )
-          : await http.put(
+          : await authPut(
               Uri.parse('$apiBaseUrl/api/customers/$customerId'),
               headers: {
                 'Authorization': 'Bearer $token',
@@ -1459,7 +1457,7 @@ class _CustomerAppointmentsSheetState
     }
 
     try {
-      final response = await http.get(
+      final response = await authGet(
         Uri.parse('$apiBaseUrl/api/appointments')
             .replace(queryParameters: {'per_page': '1'}),
         headers: {
@@ -1527,7 +1525,7 @@ class _CustomerAppointmentsSheetState
     }
 
     try {
-      final response = await http.get(
+      final response = await authGet(
         Uri.parse('$apiBaseUrl/api/customers/$customerId/appointments'),
         headers: {
           'Authorization': 'Bearer $token',
@@ -1605,7 +1603,7 @@ class _CustomerAppointmentsSheetState
               });
 
               try {
-                final response = await http.get(
+                final response = await authGet(
                   Uri.parse('$apiBaseUrl/api/appointments/time-slots')
                       .replace(queryParameters: {
                     'date': toApiDate(selectedDate),
@@ -2135,7 +2133,7 @@ class _CustomerAppointmentsSheetState
                                       }
 
                                       try {
-                                        final response = await http.post(
+                                        final response = await authPost(
                                           Uri.parse(
                                             '$apiBaseUrl/api/customers/$customerId/appointments',
                                           ),

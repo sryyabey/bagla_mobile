@@ -581,9 +581,12 @@
   "workingPrefsSaveFailed": "Could not be saved: {error}",
   "workingPrefsRetry": "Retry",
   "workingPrefsFirstSessionTitle": "First appointment session count",
+  "workingPrefsSessionLabel": "Session",
   "workingPrefsSelect": "Select",
   "workingPrefsSessionOption": "{count} Session",
   "workingPrefsDaySubtitle": "Working status and time ranges",
+  "workingPrefsStatusLabel": "Status",
+  "workingPrefsTimeSlotsLabel": "Time slots",
   "workingPrefsWorking": "Working",
   "workingPrefsAddSlot": "Add time slot",
   "workingPrefsStart": "Start",
@@ -673,5 +676,22 @@
   "profileLanguage": "App Language",
   "profileLanguageTurkish": "Turkish",
   "profileLanguageEnglish": "English",
-  "profileLanguageSaved": "Language updated."
+  "profileLanguageSaved": "Language updated.",
+  "profileDeleteSectionTitle": "Delete Account",
+  "profileDeleteSectionSubtitle": "This action cannot be undone.",
+  "profileDeleteConfirmTitle": "Delete account",
+  "profileDeleteConfirmBody": "Are you sure you want to delete your account? This action cannot be undone.",
+  "profileDeleteCancel": "Cancel",
+  "profileDeleteAction": "Delete account",
+  "profileDeleteProcessing": "Processing...",
+  "profileDeleteSuccess": "Account removed successfully.",
+  "profileDeleteFailed": "Account deletion request failed.",
+  "profileDeleteError": "An error occurred while deleting the account: {error}",
+  "@profileDeleteError": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "dashboardNoActivePackage": "You don't have an active package. Please buy a package for SMS operations.",
+  "dashboardBuyPackage": "Buy Package"
 }

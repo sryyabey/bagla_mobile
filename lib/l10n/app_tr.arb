@@ -581,9 +581,12 @@
   "workingPrefsSaveFailed": "Kaydedilemedi: {error}",
   "workingPrefsRetry": "Tekrar Dene",
   "workingPrefsFirstSessionTitle": "İlk randevu oturum sayısı",
+  "workingPrefsSessionLabel": "Oturum",
   "workingPrefsSelect": "Seçiniz",
   "workingPrefsSessionOption": "{count} Oturum",
   "workingPrefsDaySubtitle": "Çalışma durumu ve saat aralıkları",
+  "workingPrefsStatusLabel": "Durum",
+  "workingPrefsTimeSlotsLabel": "Saat aralıkları",
   "workingPrefsWorking": "Çalışıyor",
   "workingPrefsAddSlot": "Saat aralığı ekle",
   "workingPrefsStart": "Başlangıç",
@@ -673,5 +676,22 @@
   "profileLanguage": "Uygulama Dili",
   "profileLanguageTurkish": "Türkçe",
   "profileLanguageEnglish": "İngilizce",
-  "profileLanguageSaved": "Dil güncellendi."
+  "profileLanguageSaved": "Dil güncellendi.",
+  "profileDeleteSectionTitle": "Hesabı sil",
+  "profileDeleteSectionSubtitle": "Bu işlem geri alınamaz.",
+  "profileDeleteConfirmTitle": "Hesabı sil",
+  "profileDeleteConfirmBody": "Hesabınızı silmek istediğinize emin misiniz? Bu işlem geri alınamaz.",
+  "profileDeleteCancel": "Vazgeç",
+  "profileDeleteAction": "Hesabı sil",
+  "profileDeleteProcessing": "İşleniyor...",
+  "profileDeleteSuccess": "Hesap başarıyla kaldırıldı.",
+  "profileDeleteFailed": "Hesap silme isteği başarısız oldu.",
+  "profileDeleteError": "Hesap silme isteği sırasında hata oluştu: {error}",
+  "@profileDeleteError": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "dashboardNoActivePackage": "Aktif paketiniz bulunmuyor. SMS işlemleri için paket alın.",
+  "dashboardBuyPackage": "Paket Al"
 }

@@ -84,8 +84,7 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   Future<String?> _getToken() async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getString('bearer_token');
+    return getAccessToken();
   }
 
   // Profil verisini API'den çekip formu doldurur
@@ -104,7 +103,7 @@ class _ProfilePageState extends State<ProfilePage> {
     }
 
     try {
-      final response = await http.get(
+      final response = await authGet(
         Uri.parse('$apiBaseUrl/api/user/profile'),
         headers: {
           'Authorization': 'Bearer $token',
@@ -240,38 +239,38 @@ class _ProfilePageState extends State<ProfilePage> {
     });
 
     try {
-      final request = http.MultipartRequest(
-        'POST',
-        Uri.parse('$apiBaseUrl/api/user/profile'),
-      );
-
-      request.headers.addAll({
-        'Authorization': 'Bearer $token',
-        'Accept': 'application/json',
-      });
-
-      request.fields.addAll({
-        'name': _nameController.text,
-        'username': _usernameController.text,
-        'description': _descriptionController.text,
-        'footer': _footerController.text,
-        'seo_title': _seoTitleController.text,
-        'seo_description': _seoDescriptionController.text,
-        'seo_keywords': _seoKeywordsController.text,
-      });
-
-      if (_avatarBytes != null) {
-        request.files.add(
-          http.MultipartFile.fromBytes(
-            'avatar',
-            _avatarBytes!,
-            filename: _avatarFileName ?? 'avatar.jpg',
-          ),
+      final response = await authMultipart((authToken) async {
+        final request = http.MultipartRequest(
+          'POST',
+          Uri.parse('$apiBaseUrl/api/user/profile'),
         );
-      }
 
-      final streamedResponse = await request.send();
-      final response = await http.Response.fromStream(streamedResponse);
+        request.headers.addAll({
+          'Authorization': 'Bearer $authToken',
+          'Accept': 'application/json',
+        });
+
+        request.fields.addAll({
+          'name': _nameController.text,
+          'username': _usernameController.text,
+          'description': _descriptionController.text,
+          'footer': _footerController.text,
+          'seo_title': _seoTitleController.text,
+          'seo_description': _seoDescriptionController.text,
+          'seo_keywords': _seoKeywordsController.text,
+        });
+
+        if (_avatarBytes != null) {
+          request.files.add(
+            http.MultipartFile.fromBytes(
+              'avatar',
+              _avatarBytes!,
+              filename: _avatarFileName ?? 'avatar.jpg',
+            ),
+          );
+        }
+        return request;
+      });
 
       if (response.statusCode == 200) {
         _showSnack(loc.profileSaved, success: true);
@@ -326,7 +325,7 @@ class _ProfilePageState extends State<ProfilePage> {
     });
 
     try {
-      final response = await http.post(
+      final response = await authPost(
         Uri.parse('$apiBaseUrl/api/user/password'),
         headers: {
           'Authorization': 'Bearer $token',
@@ -380,14 +379,14 @@ class _ProfilePageState extends State<ProfilePage> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Hesabı sil'),
-        content: const Text(
-          'Hesabınızı silmek istediğinize emin misiniz? Bu işlem geri alınamaz.',
+        title: Text(loc.profileDeleteConfirmTitle),
+        content: Text(
+          loc.profileDeleteConfirmBody,
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Vazgeç'),
+            child: Text(loc.profileDeleteCancel),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
@@ -395,7 +394,7 @@ class _ProfilePageState extends State<ProfilePage> {
               foregroundColor: Colors.white,
             ),
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Hesabı sil'),
+            child: Text(loc.profileDeleteAction),
           ),
         ],
       ),
@@ -414,7 +413,7 @@ class _ProfilePageState extends State<ProfilePage> {
     });
 
     try {
-      final response = await http.delete(
+      final response = await authDelete(
         Uri.parse('$apiBaseUrl/api/trash-users'),
         headers: {
           'Authorization': 'Bearer $token',
@@ -423,7 +422,7 @@ class _ProfilePageState extends State<ProfilePage> {
       );
 
       if (response.statusCode == 200) {
-        _showSnack('Hesap başarıyla kaldırıldı.', success: true);
+        _showSnack(loc.profileDeleteSuccess, success: true);
         await clearTokens();
         final prefs = await SharedPreferences.getInstance();
         await prefs.remove('authToken');
@@ -439,7 +438,7 @@ class _ProfilePageState extends State<ProfilePage> {
           );
         }
       } else {
-        String message = 'Hesap silme isteği başarısız oldu.';
+        String message = loc.profileDeleteFailed;
         try {
           final decoded = jsonDecode(response.body);
           message = decoded['message']?.toString() ?? message;
@@ -447,7 +446,7 @@ class _ProfilePageState extends State<ProfilePage> {
         _showSnack('$message (${response.statusCode})');
       }
     } catch (e) {
-      _showSnack('Hesap silme isteği sırasında hata oluştu: $e');
+      _showSnack(loc.profileDeleteError(e.toString()));
     } finally {
       if (mounted) {
         setState(() {
@@ -825,8 +824,8 @@ class _ProfilePageState extends State<ProfilePage> {
 
   Widget _buildDeleteAccountSection() {
     return _sectionCard(
-      title: 'Hesabı sil',
-      subtitle: 'Bu işlem geri alınamaz.',
+      title: loc.profileDeleteSectionTitle,
+      subtitle: loc.profileDeleteSectionSubtitle,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -847,7 +846,11 @@ class _ProfilePageState extends State<ProfilePage> {
                     child: CircularProgressIndicator(strokeWidth: 2),
                   )
                 : const Icon(Icons.delete_forever),
-            label: Text(_deletingAccount ? 'İşleniyor...' : 'Hesabı sil'),
+            label: Text(
+              _deletingAccount
+                  ? loc.profileDeleteProcessing
+                  : loc.profileDeleteAction,
+            ),
           ),
         ],
       ),
@@ -954,6 +957,7 @@ class _ProfilePageState extends State<ProfilePage> {
           ? MainNavBar(
               currentIndex: 3,
               onIndexSelected: widget.onTabSelected,
+              allowReselectCurrent: true,
             )
           : null,
     );

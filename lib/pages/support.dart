@@ -1,9 +1,8 @@
 import 'dart:convert';
 
+import 'package:bagla_mobile/auth.dart';
 import 'package:bagla_mobile/config.dart';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:bagla_mobile/l10n/app_localizations.dart';
 import 'package:bagla_mobile/main_tabs_page.dart';
 
@@ -60,8 +59,7 @@ class _SupportPageState extends State<SupportPage> {
   }
 
   Future<String?> _getToken() async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getString('bearer_token');
+    return getAccessToken();
   }
 
   Future<void> _fetchTickets() async {
@@ -80,7 +78,7 @@ class _SupportPageState extends State<SupportPage> {
     }
 
     try {
-      final response = await http.get(
+      final response = await authGet(
         Uri.parse('$apiBaseUrl/api/support/tickets'),
         headers: {
           'Authorization': 'Bearer $token',
@@ -134,7 +132,7 @@ class _SupportPageState extends State<SupportPage> {
     });
 
     try {
-      final response = await http.post(
+      final response = await authPost(
         Uri.parse('$apiBaseUrl/api/support/tickets'),
         headers: {
           'Authorization': 'Bearer $token',
@@ -568,7 +566,7 @@ class _TicketDetailSheetState extends State<_TicketDetailSheet> {
     }
 
     try {
-      final response = await http.get(
+      final response = await authGet(
         Uri.parse('$apiBaseUrl/api/support/tickets/${widget.ticketId}'),
         headers: {
           'Authorization': 'Bearer $token',
@@ -621,7 +619,7 @@ class _TicketDetailSheetState extends State<_TicketDetailSheet> {
     });
 
     try {
-      final response = await http.post(
+      final response = await authPost(
         Uri.parse(
             '$apiBaseUrl/api/support/tickets/${widget.ticketId}/reply'),
         headers: {
@@ -671,7 +669,7 @@ class _TicketDetailSheetState extends State<_TicketDetailSheet> {
     });
 
     try {
-      final response = await http.post(
+      final response = await authPost(
         Uri.parse(
             '$apiBaseUrl/api/support/tickets/${widget.ticketId}/close'),
         headers: {

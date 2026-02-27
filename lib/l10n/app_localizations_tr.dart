@@ -1700,6 +1700,9 @@ class AppLocalizationsTr extends AppLocalizations {
   String get workingPrefsFirstSessionTitle => 'İlk randevu oturum sayısı';
 
   @override
+  String get workingPrefsSessionLabel => 'Oturum';
+
+  @override
   String get workingPrefsSelect => 'Seçiniz';
 
   @override
@@ -1709,6 +1712,12 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get workingPrefsDaySubtitle => 'Çalışma durumu ve saat aralıkları';
+
+  @override
+  String get workingPrefsStatusLabel => 'Durum';
+
+  @override
+  String get workingPrefsTimeSlotsLabel => 'Saat aralıkları';
 
   @override
   String get workingPrefsWorking => 'Çalışıyor';
@@ -2021,4 +2030,44 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get profileLanguageSaved => 'Dil güncellendi.';
+
+  @override
+  String get profileDeleteSectionTitle => 'Hesabı sil';
+
+  @override
+  String get profileDeleteSectionSubtitle => 'Bu işlem geri alınamaz.';
+
+  @override
+  String get profileDeleteConfirmTitle => 'Hesabı sil';
+
+  @override
+  String get profileDeleteConfirmBody =>
+      'Hesabınızı silmek istediğinize emin misiniz? Bu işlem geri alınamaz.';
+
+  @override
+  String get profileDeleteCancel => 'Vazgeç';
+
+  @override
+  String get profileDeleteAction => 'Hesabı sil';
+
+  @override
+  String get profileDeleteProcessing => 'İşleniyor...';
+
+  @override
+  String get profileDeleteSuccess => 'Hesap başarıyla kaldırıldı.';
+
+  @override
+  String get profileDeleteFailed => 'Hesap silme isteği başarısız oldu.';
+
+  @override
+  String profileDeleteError(Object error) {
+    return 'Hesap silme isteği sırasında hata oluştu: $error';
+  }
+
+  @override
+  String get dashboardNoActivePackage =>
+      'Aktif paketiniz bulunmuyor. SMS işlemleri için paket alın.';
+
+  @override
+  String get dashboardBuyPackage => 'Paket Al';
 }

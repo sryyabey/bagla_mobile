@@ -1,9 +1,8 @@
 import 'dart:convert';
 
+import 'package:bagla_mobile/auth.dart';
 import 'package:bagla_mobile/config.dart';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import 'package:bagla_mobile/l10n/app_localizations.dart';
 import 'package:bagla_mobile/main_tabs_page.dart';
@@ -56,8 +55,7 @@ class _ThemesPageState extends State<ThemesPage> {
   }
 
   Future<String?> _getToken() async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getString('bearer_token');
+    return getAccessToken();
   }
 
   int? _parseInt(dynamic value) {
@@ -107,14 +105,14 @@ class _ThemesPageState extends State<ThemesPage> {
 
     try {
       final responses = await Future.wait([
-        http.get(
+        authGet(
           Uri.parse('$apiBaseUrl/api/settings/themes'),
           headers: {
             'Authorization': 'Bearer $token',
             'Accept': 'application/json',
           },
         ),
-        http.get(
+        authGet(
           Uri.parse('$apiBaseUrl/api/user/profile'),
           headers: {
             'Authorization': 'Bearer $token',
@@ -288,7 +286,7 @@ class _ThemesPageState extends State<ThemesPage> {
     });
 
     try {
-      final response = await http.post(
+      final response = await authPost(
         Uri.parse('$apiBaseUrl/api/settings/user-theme'),
         headers: {
           'Authorization': 'Bearer $token',

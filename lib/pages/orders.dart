@@ -1,9 +1,7 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 import '../config.dart';
 import '../login_page.dart';
@@ -26,7 +24,6 @@ class _OrdersPageState extends State<OrdersPage> {
   int _page = 0;
   final int _pageSize = 10;
   String _statusFilter = 'all';
-  bool _retrying = false;
 
   void _goHome() {
     Navigator.of(context).pushAndRemoveUntil(
@@ -52,15 +49,8 @@ class _OrdersPageState extends State<OrdersPage> {
     _loadOrders();
   }
 
-  Future<String?> _getToken() async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getString('bearer_token') ?? prefs.getString('authToken');
-  }
-
   Future<void> _handleUnauthorized() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.remove('bearer_token');
-    await prefs.remove('authToken');
+    await clearTokens();
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -82,28 +72,13 @@ class _OrdersPageState extends State<OrdersPage> {
       _error = null;
     });
 
-    final token = await _getToken();
-    if (token == null || token.isEmpty) {
-      setState(() {
-        _loading = false;
-        _error = loc.ordersSessionMissing;
-      });
-      return;
-    }
-
     try {
-      final response = await _getWithRefresh(
-        token,
-        (authToken) => http.get(
-          Uri.parse('$apiBaseUrl/api/packs/orders'),
-          headers: {
-            'Authorization': 'Bearer $authToken',
-            'Accept': 'application/json',
-          },
-        ),
+      final response = await authGet(
+        Uri.parse('$apiBaseUrl/api/packs/orders'),
+        headers: {
+          'Accept': 'application/json',
+        },
       );
-
-      if (response == null) return;
 
       if (response.statusCode == 200) {
         final decoded = jsonDecode(response.body);
@@ -117,10 +92,16 @@ class _OrdersPageState extends State<OrdersPage> {
           _page = 0;
         });
       } else {
+        if (response.statusCode == 401) {
+          await _handleUnauthorized();
+          return;
+        }
         setState(() {
           _error = loc.ordersFetchFailedStatus(response.statusCode);
         });
       }
+    } on AuthRequiredException {
+      await _handleUnauthorized();
     } catch (e) {
       setState(() {
         _error = loc.ordersFetchFailed(e.toString());
@@ -132,31 +113,6 @@ class _OrdersPageState extends State<OrdersPage> {
         });
       }
     }
-  }
-
-  Future<http.Response?> _getWithRefresh(
-      String? token, Future<http.Response> Function(String token) request) async {
-    if (token == null || token.isEmpty) {
-      await _handleUnauthorized();
-      return null;
-    }
-
-    var res = await request(token);
-    if (res.statusCode != 401) return res;
-
-    if (_retrying) {
-      await _handleUnauthorized();
-      return null;
-    }
-    _retrying = true;
-    final refreshed = await refreshAccessToken();
-    _retrying = false;
-    if (refreshed != null) {
-      res = await request(refreshed);
-      if (res.statusCode != 401) return res;
-    }
-    await _handleUnauthorized();
-    return null;
   }
 
   Color _statusColor(String status) {

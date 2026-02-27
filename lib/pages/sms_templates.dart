@@ -1,10 +1,9 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:bagla_mobile/auth.dart';
 import 'package:bagla_mobile/config.dart';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:bagla_mobile/l10n/app_localizations.dart';
 import 'package:bagla_mobile/main_tabs_page.dart';
 
@@ -103,8 +102,7 @@ class _SmsTemplatesPageState extends State<SmsTemplatesPage> {
   }
 
   Future<String?> _getToken() async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getString('bearer_token');
+    return getAccessToken();
   }
 
   Future<void> _fetchTemplates() async {
@@ -123,7 +121,7 @@ class _SmsTemplatesPageState extends State<SmsTemplatesPage> {
     }
 
     try {
-      final response = await http.get(
+      final response = await authGet(
         Uri.parse('$apiBaseUrl/api/settings/sms-templates'),
         headers: {
           'Authorization': 'Bearer $token',
@@ -268,7 +266,7 @@ class _SmsTemplatesPageState extends State<SmsTemplatesPage> {
     });
 
     try {
-      final response = await http.post(
+      final response = await authPost(
         Uri.parse('$apiBaseUrl/api/settings/user-message-template'),
         headers: {
           'Authorization': 'Bearer $token',
@@ -470,8 +468,10 @@ class _SmsTemplatesPageState extends State<SmsTemplatesPage> {
                                       children: [
                                         Text(
                                           _templateContent(tpl),
-                                          maxLines: 3,
-                                          overflow: TextOverflow.ellipsis,
+                                          maxLines: isSelected ? null : 3,
+                                          overflow: isSelected
+                                              ? TextOverflow.visible
+                                              : TextOverflow.ellipsis,
                                           style: const TextStyle(
                                             fontSize: 14,
                                             height: 1.35,

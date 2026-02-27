@@ -4,8 +4,6 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:http/http.dart' as http;
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import 'package:flutter_html/flutter_html.dart';
 
@@ -75,7 +73,6 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
   final List<Map<String, String>> _paymentOptions = const [
     {'value': 'credit_card', 'label': 'credit_card'},
   ];
-  String? _authToken;
   bool _loggingOut = false;
   static const int _phoneDigitsMax = 10;
 
@@ -121,59 +118,26 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
 
     if (mounted) {
       setState(() {
-        _authToken = token;
       });
     }
 
     // Ardışık yerine paralel başlat; token hazır
     await Future.wait([
-      _loadPacks(skipToken: true),
-      _loadCountries(skipToken: true),
-      _loadAddresses(skipToken: true),
+      _loadPacks(),
+      _loadCountries(),
+      _loadAddresses(),
     ]);
   }
 
   Future<String?> _getToken() async {
-    if (_authToken != null) return _authToken;
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getString('bearer_token') ?? prefs.getString('authToken');
-  }
-
-  Future<http.Response?> _withAuth(
-    Future<http.Response> Function(String token) fn,
-  ) async {
-    final token = await _getToken();
-    if (token == null || token.isEmpty) {
-      await _handleUnauthorized();
-      return null;
-    }
-
-    var res = await fn(token);
-    if (res.statusCode != 401) {
-      _authToken = token;
-      return res;
-    }
-
-    if (_loggingOut) return null;
-
-    final refreshed = await refreshAccessToken();
-    if (refreshed != null) {
-      _authToken = refreshed;
-      res = await fn(refreshed);
-      if (res.statusCode != 401) return res;
-    }
-
-    await _handleUnauthorized();
-    return null;
+    return getAccessToken();
   }
 
   Future<void> _handleUnauthorized() async {
     if (_loggingOut) return;
     _loggingOut = true;
     _paymentTimer?.cancel();
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.remove('bearer_token');
-    await prefs.remove('authToken');
+    await clearTokens();
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -187,24 +151,19 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
     );
   }
 
-  Future<void> _loadPacks({bool skipToken = false}) async {
+  Future<void> _loadPacks() async {
     setState(() {
       _loading = true;
       _error = null;
     });
 
     try {
-      final response = await _withAuth((token) {
-        return http.get(
-          Uri.parse('$apiBaseUrl/api/packs'),
-          headers: {
-            'Authorization': 'Bearer $token',
-            'Accept': 'application/json',
-          },
-        );
-      });
-
-      if (response == null) return;
+      final response = await authGet(
+        Uri.parse('$apiBaseUrl/api/packs'),
+        headers: {
+          'Accept': 'application/json',
+        },
+      );
 
       if (response.statusCode == 200) {
         final decoded = jsonDecode(response.body);
@@ -269,10 +228,16 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
           _contractDescriptionHtml = contractDesc;
         });
       } else {
+        if (response.statusCode == 401) {
+          await _handleUnauthorized();
+          return;
+        }
         setState(() {
           _error = loc.smsPacksLoadFailedStatus(response.statusCode);
         });
       }
+    } on AuthRequiredException {
+      await _handleUnauthorized();
     } catch (e) {
       setState(() {
         _error = loc.smsPacksLoadFailed(e.toString());
@@ -286,24 +251,19 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
     }
   }
 
-  Future<void> _loadCountries({bool skipToken = false}) async {
+  Future<void> _loadCountries() async {
     setState(() {
       _loadingCountries = true;
       _countriesError = null;
     });
 
     try {
-      final response = await _withAuth((token) {
-        return http.get(
-          Uri.parse('$apiBaseUrl/api/settings/countries'),
-          headers: {
-            'Authorization': 'Bearer $token',
-            'Accept': 'application/json',
-          },
-        );
-      });
-
-      if (response == null) return;
+      final response = await authGet(
+        Uri.parse('$apiBaseUrl/api/settings/countries'),
+        headers: {
+          'Accept': 'application/json',
+        },
+      );
 
       if (response.statusCode == 200) {
         final decoded = jsonDecode(response.body);
@@ -334,11 +294,17 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
           });
         }
       } else {
+        if (response.statusCode == 401) {
+          await _handleUnauthorized();
+          return;
+        }
         setState(() {
           _countriesError =
               loc.smsPacksCountriesFailedStatus(response.statusCode);
         });
       }
+    } on AuthRequiredException {
+      await _handleUnauthorized();
     } catch (e) {
       setState(() {
         _countriesError = loc.smsPacksCountriesFailed(e.toString());
@@ -377,19 +343,14 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
     }
 
     try {
-      final response = await _withAuth((token) {
-        return http.get(
-          Uri.parse(
-            '$apiBaseUrl/api/settings/cities?country_id=$targetCountryId',
-          ),
-          headers: {
-            'Authorization': 'Bearer $token',
-            'Accept': 'application/json',
-          },
-        );
-      });
-
-      if (response == null) return;
+      final response = await authGet(
+        Uri.parse(
+          '$apiBaseUrl/api/settings/cities?country_id=$targetCountryId',
+        ),
+        headers: {
+          'Accept': 'application/json',
+        },
+      );
 
       if (response.statusCode == 200) {
         final decoded = jsonDecode(response.body);
@@ -426,10 +387,16 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
           });
         }
       } else {
+        if (response.statusCode == 401) {
+          await _handleUnauthorized();
+          return;
+        }
         setState(() {
           _citiesError = loc.smsPacksCitiesFailedStatus(response.statusCode);
         });
       }
+    } on AuthRequiredException {
+      await _handleUnauthorized();
     } catch (e) {
       setState(() {
         _citiesError = loc.smsPacksCitiesFailed(e.toString());
@@ -463,19 +430,14 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
     }
 
     try {
-      final response = await _withAuth((token) {
-        return http.get(
-          Uri.parse(
-            '$apiBaseUrl/api/settings/districts?city_id=$targetCityId',
-          ),
-          headers: {
-            'Authorization': 'Bearer $token',
-            'Accept': 'application/json',
-          },
-        );
-      });
-
-      if (response == null) return;
+      final response = await authGet(
+        Uri.parse(
+          '$apiBaseUrl/api/settings/districts?city_id=$targetCityId',
+        ),
+        headers: {
+          'Accept': 'application/json',
+        },
+      );
 
       if (response.statusCode == 200) {
         final decoded = jsonDecode(response.body);
@@ -499,11 +461,17 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
           _selectedDistrictId = districtToSelect;
         });
       } else {
+        if (response.statusCode == 401) {
+          await _handleUnauthorized();
+          return;
+        }
         setState(() {
           _districtsError =
               loc.smsPacksDistrictsFailedStatus(response.statusCode);
         });
       }
+    } on AuthRequiredException {
+      await _handleUnauthorized();
     } catch (e) {
       setState(() {
         _districtsError = loc.smsPacksDistrictsFailed(e.toString());
@@ -517,24 +485,19 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
     }
   }
 
-  Future<void> _loadAddresses({bool skipToken = false}) async {
+  Future<void> _loadAddresses() async {
     setState(() {
       _loadingAddresses = true;
       _addressesError = null;
     });
 
     try {
-      final response = await _withAuth((token) {
-        return http.get(
-          Uri.parse('$apiBaseUrl/api/packs/user-addresses'),
-          headers: {
-            'Authorization': 'Bearer $token',
-            'Accept': 'application/json',
-          },
-        );
-      });
-
-      if (response == null) return;
+      final response = await authGet(
+        Uri.parse('$apiBaseUrl/api/packs/user-addresses'),
+        headers: {
+          'Accept': 'application/json',
+        },
+      );
 
       if (response.statusCode == 200) {
         final decoded = jsonDecode(response.body);
@@ -550,11 +513,17 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
           _addresses = parsed;
         });
       } else {
+        if (response.statusCode == 401) {
+          await _handleUnauthorized();
+          return;
+        }
         setState(() {
           _addressesError =
               loc.smsPacksAddressesFailedStatus(response.statusCode);
         });
       }
+    } on AuthRequiredException {
+      await _handleUnauthorized();
     } catch (e) {
       setState(() {
         _addressesError = loc.smsPacksAddressesFailed(e.toString());
@@ -616,7 +585,7 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
                 ),
                 const SizedBox(height: 12),
                 Text(
-                  _contractTitle ?? 'Sözleşme',
+                  _contractTitle ?? loc.smsPacksContract,
                   style: const TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.w700,
@@ -632,7 +601,7 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
                   alignment: Alignment.centerRight,
                   child: TextButton(
                     onPressed: () => Navigator.of(context).pop(),
-                    child: const Text('Kapat'),
+                    child: Text(loc.smsPacksClose),
                   ),
                 ),
               ],
@@ -930,12 +899,6 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
       _showSnack(loc.smsPacksSelectPack);
       return;
     }
-    final token = await _getToken();
-    if (token == null || token.isEmpty) {
-      _showSnack(loc.smsPacksSessionMissing);
-      return;
-    }
-
     setState(() {
       _purchasing = true;
     });
@@ -970,10 +933,9 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
         'terms_agreement': true,
       };
 
-      final response = await http.post(
+      final response = await authPost(
         Uri.parse('$apiBaseUrl/api/packs/orders'),
         headers: {
-          'Authorization': 'Bearer $token',
           'Accept': 'application/json',
           'Content-Type': 'application/json',
         },
@@ -1005,7 +967,7 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
         } catch (_) {}
         _showSnack(message, success: true);
         if (transactionId != null && transactionId.isNotEmpty) {
-          await _startPaytrPayment(token, transactionId);
+          await _startPaytrPayment(transactionId);
         }
       } else {
         String message = loc.smsPacksPurchaseFailedStatus(response.statusCode);
@@ -1015,6 +977,8 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
         } catch (_) {}
         _showSnack(message);
       }
+    } on AuthRequiredException {
+      await _handleUnauthorized();
     } catch (e) {
       _showSnack(loc.smsPacksPurchaseError(e.toString()));
     } finally {
@@ -1026,12 +990,11 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
     }
   }
 
-  Future<void> _startPaytrPayment(String token, String transactionId) async {
+  Future<void> _startPaytrPayment(String transactionId) async {
     try {
-      final res = await http.post(
+      final res = await authPost(
         Uri.parse('$apiBaseUrl/api/payment/paytr/token'),
         headers: {
-          'Authorization': 'Bearer $token',
           'Accept': 'application/json',
           'Content-Type': 'application/json',
         },
@@ -1062,6 +1025,8 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
       } else {
         _showSnack(loc.smsPacksPaymentStartFailedStatus(res.statusCode));
       }
+    } on AuthRequiredException {
+      await _handleUnauthorized();
     } catch (e) {
       _showSnack(loc.smsPacksPaymentStartError(e.toString()));
     }
@@ -1091,7 +1056,7 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
 
   Future<void> _checkOrderStatus(String transactionId) async {
     try {
-      final res = await http.get(
+      final res = await authGet(
         Uri.parse(
           '$apiBaseUrl/payment/success/paytr?transaction_id=$transactionId',
         ),

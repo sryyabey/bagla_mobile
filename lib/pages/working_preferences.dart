@@ -1,9 +1,8 @@
 import 'dart:convert';
 
+import 'package:bagla_mobile/auth.dart';
 import 'package:bagla_mobile/config.dart';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:bagla_mobile/l10n/app_localizations.dart';
 import 'package:bagla_mobile/main_tabs_page.dart';
 
@@ -86,8 +85,7 @@ class _WorkingPreferencesPageState extends State<WorkingPreferencesPage> {
   }
 
   Future<String?> _getToken() async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getString('bearer_token');
+    return getAccessToken();
   }
 
   Future<void> _loadPreferences() async {
@@ -106,7 +104,7 @@ class _WorkingPreferencesPageState extends State<WorkingPreferencesPage> {
     }
 
     try {
-      final response = await http.get(
+      final response = await authGet(
         Uri.parse('$apiBaseUrl/api/working-preferences'),
         headers: {
           'Authorization': 'Bearer $token',
@@ -193,7 +191,7 @@ class _WorkingPreferencesPageState extends State<WorkingPreferencesPage> {
     };
 
     try {
-      final response = await http.post(
+      final response = await authPost(
         Uri.parse('$apiBaseUrl/api/working-preferences'),
         headers: {
           'Authorization': 'Bearer $token',
@@ -609,7 +607,7 @@ class _WorkingPreferencesPageState extends State<WorkingPreferencesPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const _SectionLabel(text: 'SESSION'),
+                  _SectionLabel(text: loc.workingPrefsSessionLabel),
                   const SizedBox(height: 8),
                   DropdownButtonFormField<int>(
                     initialValue: _firstAppointmentSessionCount,
@@ -663,7 +661,7 @@ class _WorkingPreferencesPageState extends State<WorkingPreferencesPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const _SectionLabel(text: 'STATUS'),
+          _SectionLabel(text: loc.workingPrefsStatusLabel),
           const SizedBox(height: 8),
           Row(
             children: [
@@ -686,7 +684,7 @@ class _WorkingPreferencesPageState extends State<WorkingPreferencesPage> {
             ],
           ),
           const SizedBox(height: 8),
-          const _SectionLabel(text: 'TIME SLOTS'),
+          _SectionLabel(text: loc.workingPrefsTimeSlotsLabel),
           const SizedBox(height: 8),
           Column(
             children: pref.timeSlots

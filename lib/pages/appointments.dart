@@ -1,11 +1,10 @@
 import 'dart:convert';
 
+import 'package:bagla_mobile/auth.dart';
 import 'package:bagla_mobile/config.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:http/http.dart' as http;
-import 'package:shared_preferences/shared_preferences.dart';
 import '../utils/appointment_date_utils.dart';
 import '../dashboard_page.dart';
 import 'sms_packs.dart';
@@ -583,8 +582,7 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
   }
 
   Future<String?> _getToken() async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getString('bearer_token');
+    return getAccessToken();
   }
 
   Future<void> _fetchAppointments({Map<String, String>? filters}) async {
@@ -607,7 +605,7 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
           queryParameters: (filters ?? _activeFilters).isNotEmpty
               ? (filters ?? _activeFilters)
               : null);
-      final response = await http.get(
+      final response = await authGet(
         uri,
         headers: {
           'Authorization': 'Bearer $token',
@@ -679,7 +677,7 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
     }
 
     try {
-      final response = await http.get(
+      final response = await authGet(
         Uri.parse('$apiBaseUrl/api/settings/countries'),
         headers: {
           'Authorization': 'Bearer $token',
@@ -735,7 +733,7 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
     }
 
     try {
-      final response = await http.get(
+      final response = await authGet(
         Uri.parse('$apiBaseUrl/api/settings/appointment-statuses'),
         headers: {
           'Authorization': 'Bearer $token',
@@ -882,7 +880,7 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
     });
 
     try {
-      final response = await http.post(
+      final response = await authPost(
         Uri.parse('$apiBaseUrl/api/appointments/quick_appointment'),
         headers: {
           'Authorization': 'Bearer $token',
@@ -1059,7 +1057,7 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
     });
 
     try {
-      final response = await http.get(
+      final response = await authGet(
         Uri.parse(
             '$apiBaseUrl/api/appointments/time-slots?date=$formattedDate'),
         headers: {
@@ -1173,7 +1171,7 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
     });
 
     try {
-      final response = await http.put(
+      final response = await authPut(
         Uri.parse('$apiBaseUrl/api/appointments/$appointmentId'),
         headers: {
           'Authorization': 'Bearer $token',
@@ -1255,7 +1253,7 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
     });
 
     try {
-      final response = await http.post(
+      final response = await authPost(
         Uri.parse('$apiBaseUrl/api/appointments'),
         headers: {
           'Authorization': 'Bearer $token',
@@ -1388,7 +1386,7 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
               });
 
               try {
-                final response = await http.get(
+                final response = await authGet(
                   Uri.parse(
                       '$apiBaseUrl/api/appointments/time-slots?date=$formattedDate'),
                   headers: {
@@ -1726,7 +1724,7 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
       });
 
       try {
-        final response = await http.post(
+        final response = await authPost(
           Uri.parse('$apiBaseUrl/api/appointments/customer-info'),
           headers: {
             'Authorization': 'Bearer $token',
@@ -2035,7 +2033,7 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
               });
 
               try {
-                final response = await http.get(
+                final response = await authGet(
                   Uri.parse(
                       '$apiBaseUrl/api/appointments/time-slots?date=$formattedDate'),
                   headers: {

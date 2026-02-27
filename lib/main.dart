@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart'; // Added import for SharedPreferences
+import 'auth.dart';
 import 'login_page.dart';
 import 'package:bagla_mobile/l10n/app_localizations.dart';
 import 'main_tabs_page.dart';
@@ -41,9 +42,7 @@ class BaglaAppState extends State<BaglaApp> {
   }
 
   void _checkLoginStatus() async {
-    final prefs = await SharedPreferences.getInstance();
-    final token =
-        prefs.getString('bearer_token') ?? prefs.getString('authToken');
+    final token = await getAccessToken();
     if (token != null && token.isNotEmpty) {
       setState(() {
         _isLoggedIn = true;

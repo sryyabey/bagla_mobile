@@ -1,8 +1,8 @@
 import 'dart:convert';
-import 'package:flutter/material.dart';
+import 'package:bagla_mobile/auth.dart';
 import 'package:bagla_mobile/config.dart';
+import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:bagla_mobile/l10n/app_localizations.dart';
 import 'package:bagla_mobile/main_tabs_page.dart';
 
@@ -15,7 +15,6 @@ class _T {
 
   // Borders
   static const border = Color(0xFFE8EAF0);
-  static const borderStrong = Color(0xFFD1D5E0);
 
   // Accent
   static const accent = Color(0xFF5B5FD9);
@@ -109,8 +108,7 @@ class _MyLinksPageState extends State<MyLinksPage>
   // ── Token ─────────────────────────────────────────────────────────────────
 
   Future<String?> _getToken() async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getString('bearer_token');
+    return getAccessToken();
   }
 
   // ── Fetch ─────────────────────────────────────────────────────────────────
@@ -122,7 +120,7 @@ class _MyLinksPageState extends State<MyLinksPage>
       return;
     }
 
-    final response = await http.get(
+    final response = await authGet(
       Uri.parse('$apiBaseUrl/api/user/profile'),
       headers: {'Authorization': 'Bearer $token', 'Accept': 'application/json'},
     );
@@ -150,9 +148,9 @@ class _MyLinksPageState extends State<MyLinksPage>
 
     try {
       final responses = await Future.wait([
-        http.get(Uri.parse('$apiBaseUrl/api/settings/link-types'),
+        authGet(Uri.parse('$apiBaseUrl/api/settings/link-types'),
             headers: {'Authorization': 'Bearer $token', 'Accept': 'application/json'}),
-        http.get(Uri.parse('$apiBaseUrl/api/settings/colors'),
+        authGet(Uri.parse('$apiBaseUrl/api/settings/colors'),
             headers: {'Authorization': 'Bearer $token', 'Accept': 'application/json'}),
       ]);
 
@@ -274,7 +272,7 @@ class _MyLinksPageState extends State<MyLinksPage>
 
     setState(() => isSubmitting = true);
     try {
-      final r = await http.post(
+      final r = await authPost(
         Uri.parse('$apiBaseUrl/api/links'),
         headers: {
           'Authorization': 'Bearer $token',
@@ -318,7 +316,7 @@ class _MyLinksPageState extends State<MyLinksPage>
 
     setState(() => deletingIds.add(id));
     try {
-      final r = await http.delete(
+      final r = await authDelete(
         Uri.parse('$apiBaseUrl/api/links/$id'),
         headers: {'Authorization': 'Bearer $token', 'Accept': 'application/json'},
       );
@@ -351,7 +349,7 @@ class _MyLinksPageState extends State<MyLinksPage>
       return;
     }
 
-    final r = await http.put(
+    final r = await authPut(
       Uri.parse('$apiBaseUrl/api/links/$id'),
       headers: {
         'Authorization': 'Bearer $token',
@@ -379,7 +377,7 @@ class _MyLinksPageState extends State<MyLinksPage>
         for (int i = 0; i < links.length; i++)
           if (links[i]['id'] != null) {'id': links[i]['id'], 'order': i}
       ];
-      await http.post(
+      await authPost(
         Uri.parse('$apiBaseUrl/api/links/reorder'),
         headers: {
           'Authorization': 'Bearer $token',
