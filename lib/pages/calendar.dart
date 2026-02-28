@@ -1356,13 +1356,17 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
           ),
         );
 
+    if (!mounted) {
+      return;
+    }
+    final viewportHeight = MediaQuery.sizeOf(context).height;
     await showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       useSafeArea: true,
       backgroundColor: bg,
       constraints: BoxConstraints(
-        maxHeight: MediaQuery.of(context).size.height * 0.96,
+        maxHeight: viewportHeight * 0.96,
       ),
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
@@ -1946,7 +1950,7 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
                       ),
                       const SizedBox(height: 10),
                       DropdownButtonFormField<int>(
-                        value: localCountries.any((c) =>
+                        initialValue: localCountries.any((c) =>
                                 _asInt(c['id']) == localSelectedCountryId)
                             ? localSelectedCountryId
                             : null,
@@ -2368,13 +2372,17 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
           ),
         );
 
+    if (!mounted) {
+      return;
+    }
+    final viewportHeight = MediaQuery.sizeOf(context).height;
     await showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       useSafeArea: true,
       backgroundColor: bg,
       constraints: BoxConstraints(
-        maxHeight: MediaQuery.of(context).size.height * 0.96,
+        maxHeight: viewportHeight * 0.96,
       ),
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
@@ -3731,6 +3739,7 @@ class _CalendarDaySection extends StatelessWidget {
         ],
       ),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           InkWell(
             borderRadius: BorderRadius.circular(14),
@@ -3842,6 +3851,7 @@ class _CalendarDaySection extends StatelessWidget {
                               padding:
                                   const EdgeInsets.fromLTRB(12, 10, 12, 12),
                               child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.stretch,
                                 children: slots.map((slot) {
                                   return Padding(
                                     padding: const EdgeInsets.only(bottom: 8),

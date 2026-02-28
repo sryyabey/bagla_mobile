@@ -14,6 +14,168 @@ import 'working_preferences.dart';
 import '../widgets/main_nav.dart';
 import 'package:bagla_mobile/l10n/app_localizations.dart';
 
+// ─────────────────────────────────────────────
+// Design tokens
+// ─────────────────────────────────────────────
+class _T {
+  // Background layers
+  static const bg       = Color(0xFFF7F8FA);
+  static const surface  = Color(0xFFFFFFFF);
+  static const surfaceAlt = Color(0xFFF2F4F7);
+
+  // Brand
+  static const primary  = Color(0xFF4F6EF7);
+  static const primarySoft = Color(0xFFEEF1FE);
+
+  // Semantic
+  static const success  = Color(0xFF22C55E);
+  static const danger   = Color(0xFFEF4444);
+  static const dangerSoft  = Color(0xFFFEF2F2);
+  static const warning  = Color(0xFFF59E0B);
+  static const warningSoft = Color(0xFFFFFBEB);
+
+  // Ink
+  static const ink      = Color(0xFF111827);
+  static const inkSecondary = Color(0xFF6B7280);
+  static const inkDisabled  = Color(0xFFB0B7C3);
+
+  // Stroke
+  static const border   = Color(0xFFE5E7EB);
+  static const borderFocus = Color(0xFF4F6EF7);
+
+  // Radii
+  static const r4  = 4.0;
+  static const r8  = 8.0;
+  static const r12 = 12.0;
+  static const r16 = 16.0;
+  static const r10 = 10.0;
+  static const r14 = 14.0;
+
+  // Elevation shadow
+  static List<BoxShadow> shadow1 = [
+    BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 8, offset: const Offset(0, 2)),
+  ];
+}
+
+// ─────────────────────────────────────────────
+// Shared Input Decoration helper
+// ─────────────────────────────────────────────
+InputDecoration _fieldDecor({
+  required String label,
+  String? hint,
+  Widget? prefix,
+  String? error,
+}) {
+  return InputDecoration(
+    labelText: label,
+    hintText: hint,
+    errorText: error,
+    prefixIcon: prefix,
+    labelStyle: const TextStyle(fontSize: 13, color: _T.inkSecondary, fontWeight: FontWeight.w500),
+    hintStyle: const TextStyle(fontSize: 13, color: _T.inkDisabled),
+    errorStyle: const TextStyle(fontSize: 12, color: _T.danger),
+    filled: true,
+    fillColor: _T.surface,
+    contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
+    border: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(_T.r12),
+      borderSide: const BorderSide(color: _T.border),
+    ),
+    enabledBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(_T.r12),
+      borderSide: const BorderSide(color: _T.border),
+    ),
+    focusedBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(_T.r12),
+      borderSide: const BorderSide(color: _T.borderFocus, width: 1.5),
+    ),
+    errorBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(_T.r12),
+      borderSide: const BorderSide(color: _T.danger),
+    ),
+    focusedErrorBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(_T.r12),
+      borderSide: const BorderSide(color: _T.danger, width: 1.5),
+    ),
+  );
+}
+
+// ─────────────────────────────────────────────
+// Phone mask formatter (unchanged)
+// ─────────────────────────────────────────────
+class _PhoneMaskFormatter extends TextInputFormatter {
+  static final RegExp _digitsOnly = RegExp(r'\D');
+
+  String _mask(String raw) {
+    final digits = raw.replaceAll(_digitsOnly, '');
+    final limited = digits.length > 10 ? digits.substring(0, 10) : digits;
+    final b = StringBuffer();
+    if (limited.isNotEmpty) {
+      b.write('(');
+      b.write(limited.substring(0, limited.length.clamp(0, 3)));
+      if (limited.length >= 3) b.write(')');
+    }
+    if (limited.length > 3) { b.write(' '); b.write(limited.substring(3, limited.length.clamp(3, 6))); }
+    if (limited.length > 6) { b.write(' '); b.write(limited.substring(6, limited.length.clamp(6, 8))); }
+    if (limited.length > 8) { b.write(' '); b.write(limited.substring(8, limited.length.clamp(8, 10))); }
+    return b.toString();
+  }
+
+  int _digitCount(String text, int endOffset) {
+    final left = text.substring(0, endOffset.clamp(0, text.length));
+    return left.replaceAll(_digitsOnly, '').length;
+  }
+
+  int _offsetForDigits(String masked, int digits) {
+    if (digits <= 0) return 0;
+    int seen = 0;
+    for (int i = 0; i < masked.length; i++) {
+      final c = masked.codeUnitAt(i);
+      if (c >= 48 && c <= 57) { seen++; if (seen == digits) return i + 1; }
+    }
+    return masked.length;
+  }
+
+  @override
+  TextEditingValue formatEditUpdate(TextEditingValue oldValue, TextEditingValue newValue) {
+    final masked = _mask(newValue.text);
+    final digitsBefore = _digitCount(newValue.text, newValue.selection.end);
+    final target = _offsetForDigits(masked, digitsBefore);
+    return TextEditingValue(text: masked, selection: TextSelection.collapsed(offset: target), composing: TextRange.empty);
+  }
+}
+
+// ─────────────────────────────────────────────
+// API envelope (unchanged)
+// ─────────────────────────────────────────────
+class _ApiEnvelope {
+  final int statusCode;
+  final Map<String, dynamic> payload;
+  final String? code;
+  final String? message;
+  final String? type;
+  final dynamic data;
+  final Map<String, dynamic>? meta;
+  final Map<String, dynamic>? errors;
+
+  const _ApiEnvelope({
+    required this.statusCode, required this.payload, required this.code,
+    required this.message, required this.type, required this.data,
+    required this.meta, required this.errors,
+  });
+
+  bool get isSuccessType => (type ?? '').toLowerCase() == 'success';
+  bool get isSuccess {
+    if (isSuccessType) return true;
+    final upper = (code ?? '').toUpperCase();
+    if (upper == 'OK' || upper == 'CREATED' || upper == 'UPDATED') return true;
+    return statusCode >= 200 && statusCode < 300;
+  }
+}
+
+// ─────────────────────────────────────────────
+// Widget
+// ─────────────────────────────────────────────
 class AppointmentsPage extends StatefulWidget {
   final String? initialQuickDate;
   final String? initialQuickTime;
@@ -34,2307 +196,1307 @@ class AppointmentsPage extends StatefulWidget {
   State<AppointmentsPage> createState() => _AppointmentsPageState();
 }
 
-class _PhoneMaskFormatter extends TextInputFormatter {
-  static final RegExp _digitsOnly = RegExp(r'\D');
+class _AppointmentsPageState extends State<AppointmentsPage> {
+  AppLocalizations get loc => AppLocalizations.of(context);
+  bool get _isIosPaymentRestricted => !kIsWeb && defaultTargetPlatform == TargetPlatform.iOS;
 
-  String _mask(String raw) {
-    final digits = raw.replaceAll(_digitsOnly, '');
-    final limited = digits.length > 10 ? digits.substring(0, 10) : digits;
-    final b = StringBuffer();
+  // Controllers
+  final _quickNameCtrl        = TextEditingController();
+  final _quickLastNameCtrl    = TextEditingController();
+  final _quickCountryIdCtrl   = TextEditingController();
+  final _quickPhoneCtrl       = TextEditingController();
+  final _quickEmailCtrl       = TextEditingController();
+  final _quickDateCtrl        = TextEditingController();
+  final _quickTimeCtrl        = TextEditingController();
+  final _quickNoteCtrl        = TextEditingController();
+  final _filterNameCtrl       = TextEditingController();
+  final _filterLastNameCtrl   = TextEditingController();
+  final _filterPhoneCtrl      = TextEditingController();
+  final _filterDateFromCtrl   = TextEditingController();
+  final _filterDateToCtrl     = TextEditingController();
+  final _filterTimeFromCtrl   = TextEditingController();
+  final _filterTimeToCtrl     = TextEditingController();
+  final _phoneMaskFormatter   = _PhoneMaskFormatter();
 
-    if (limited.isNotEmpty) {
-      b.write('(');
-      b.write(limited.substring(0, limited.length.clamp(0, 3)));
-      if (limited.length >= 3) b.write(')');
-    }
-    if (limited.length > 3) {
-      b.write(' ');
-      b.write(limited.substring(3, limited.length.clamp(3, 6)));
-    }
-    if (limited.length > 6) {
-      b.write(' ');
-      b.write(limited.substring(6, limited.length.clamp(6, 8)));
-    }
-    if (limited.length > 8) {
-      b.write(' ');
-      b.write(limited.substring(8, limited.length.clamp(8, 10)));
-    }
-    return b.toString();
-  }
+  // State
+  List<Map<String, dynamic>> _appointments   = [];
+  List<Map<String, dynamic>> _countries      = [];
+  List<Map<String, dynamic>> _appointmentStatuses = [];
+  List<Map<String, dynamic>> _timeSlots      = [];
+  Map<String, String> _activeFilters         = {};
 
-  int _digitCount(String text, int endOffset) {
-    final left = text.substring(0, endOffset.clamp(0, text.length));
-    return left.replaceAll(_digitsOnly, '').length;
-  }
+  bool _loadingList      = true;
+  bool _savingAppointment= false;
+  bool _savingQuick      = false;
+  bool _creatingRebook   = false;
+  bool _loadingCustomerInfo = false;
+  bool _quickIsFirstAppointment = false;
+  bool _quickNoSms       = false;
+  bool _quickNoReminder  = false;
+  bool _showQuickForm    = false;
+  bool _loadingSlots     = false;
+  bool _slotsRequested   = false;
+  bool _loadingCountries = false;
+  bool _loadingStatuses  = false;
+  bool _showFilters      = false;
+  bool _hasUserPack      = true;
 
-  int _offsetForDigits(String masked, int digits) {
-    if (digits <= 0) return 0;
-    int seen = 0;
-    for (int i = 0; i < masked.length; i++) {
-      final c = masked.codeUnitAt(i);
-      if (c >= 48 && c <= 57) {
-        seen++;
-        if (seen == digits) return i + 1;
-      }
-    }
-    return masked.length;
+  String? _error;
+  String? _slotsError;
+  String? _countriesError;
+  String? _statusesError;
+  String? _selectedSlotTime;
+  int?    _selectedCountryId;
+
+  final List<String> _timeOptions = List.generate(
+    24 * 12,
+    (i) => '${(i ~/ 12).toString().padLeft(2, '0')}:${((i % 12) * 5).toString().padLeft(2, '0')}',
+  );
+
+  // ── lifecycle ──────────────────────────────
+  @override
+  void initState() {
+    super.initState();
+    if (widget.initialQuickDate != null) _quickDateCtrl.text = _normalizeSlotDate(widget.initialQuickDate!);
+    if (widget.initialQuickTime != null) { _quickTimeCtrl.text = widget.initialQuickTime!; _selectedSlotTime = widget.initialQuickTime; }
+    if (widget.autoShowQuick || widget.initialQuickDate != null || widget.initialQuickTime != null) _showQuickForm = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _fetchAppointments();
+      _fetchCountries();
+      _fetchStatuses();
+      if (_showQuickForm && _quickDateCtrl.text.trim().isNotEmpty) _fetchTimeSlots();
+    });
   }
 
   @override
-  TextEditingValue formatEditUpdate(
-    TextEditingValue oldValue,
-    TextEditingValue newValue,
-  ) {
-    final masked = _mask(newValue.text);
-    final digitsBefore = _digitCount(newValue.text, newValue.selection.end);
-    final target = _offsetForDigits(masked, digitsBefore);
-    return TextEditingValue(
-      text: masked,
-      selection: TextSelection.collapsed(offset: target),
-      composing: TextRange.empty,
-    );
-  }
-}
-
-class _ApiEnvelope {
-  final int statusCode;
-  final Map<String, dynamic> payload;
-  final String? code;
-  final String? message;
-  final String? type;
-  final dynamic data;
-  final Map<String, dynamic>? meta;
-  final Map<String, dynamic>? errors;
-
-  const _ApiEnvelope({
-    required this.statusCode,
-    required this.payload,
-    required this.code,
-    required this.message,
-    required this.type,
-    required this.data,
-    required this.meta,
-    required this.errors,
-  });
-
-  bool get isSuccessType => (type ?? '').toLowerCase() == 'success';
-  bool get isSuccess {
-    if (isSuccessType) return true;
-    final upper = (code ?? '').toUpperCase();
-    if (upper == 'OK' || upper == 'CREATED' || upper == 'UPDATED') return true;
-    return statusCode >= 200 && statusCode < 300;
-  }
-}
-
-class _AppointmentsPageState extends State<AppointmentsPage> {
-  AppLocalizations get loc => AppLocalizations.of(context);
-  bool get _isIosPaymentRestricted =>
-      !kIsWeb && defaultTargetPlatform == TargetPlatform.iOS;
-  // Palette for consistent look
-  static const Color primaryColor = Color(0xFF6366F1);
-  static const Color secondaryColor = Color(0xFF8B5CF6);
-  static const Color accentColor = Color(0xFF10B981);
-  static const Color backgroundColor = Color(0xFFF8FAFC);
-
-  final TextEditingController _quickNameController = TextEditingController();
-  final TextEditingController _quickLastNameController =
-      TextEditingController();
-  final TextEditingController _quickCountryIdController =
-      TextEditingController();
-  final TextEditingController _quickPhoneController = TextEditingController();
-  final TextEditingController _quickEmailController = TextEditingController();
-  final TextEditingController _quickDateController = TextEditingController();
-  final TextEditingController _quickTimeController = TextEditingController();
-  final TextEditingController _quickNoteController = TextEditingController();
-
-  List<Map<String, dynamic>> _appointments = [];
-  bool _loadingList = true;
-  bool _savingAppointment = false;
-  bool _savingQuick = false;
-  bool _creatingRebook = false;
-  bool _loadingCustomerInfo = false;
-  String? _error;
-  bool _quickIsFirstAppointment = false;
-  bool _quickNoSms = false;
-  bool _quickNoReminder = false;
-  bool _showQuickForm = false;
-  bool _loadingSlots = false;
-  bool _slotsRequested = false;
-  String? _slotsError;
-  List<Map<String, dynamic>> _timeSlots = [];
-  String? _selectedSlotTime;
-  List<Map<String, dynamic>> _countries = [];
-  bool _loadingCountries = false;
-  String? _countriesError;
-  int? _selectedCountryId;
-  final _phoneMaskFormatter = _PhoneMaskFormatter();
-  List<Map<String, dynamic>> _appointmentStatuses = [];
-  bool _loadingStatuses = false;
-  String? _statusesError;
-  // Filters
-  final TextEditingController _filterNameController = TextEditingController();
-  final TextEditingController _filterLastNameController =
-      TextEditingController();
-  final TextEditingController _filterPhoneController = TextEditingController();
-  final TextEditingController _filterDateFromController =
-      TextEditingController();
-  final TextEditingController _filterDateToController = TextEditingController();
-  final TextEditingController _filterTimeFromController =
-      TextEditingController();
-  final TextEditingController _filterTimeToController = TextEditingController();
-  Map<String, String> _activeFilters = {};
-  bool _showFilters = false;
-  final List<String> _timeOptions = List.generate(
-      24 * 12,
-      (i) =>
-          '${(i ~/ 12).toString().padLeft(2, '0')}:${((i % 12) * 5).toString().padLeft(2, '0')}');
-  bool _hasUserPack = true;
-
-  ButtonStyle _mainButtonStyle() => ElevatedButton.styleFrom(
-        backgroundColor: primaryColor,
-        foregroundColor: Colors.white,
-        elevation: 0,
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      );
-
-  bool _asBool(dynamic value) {
-    if (value == null) return false;
-    if (value is bool) return value;
-    if (value is num) return value != 0;
-    final str = value.toString().trim().toLowerCase();
-    return str == '1' || str == 'true' || str == 'yes';
+  void dispose() {
+    for (final c in [
+      _quickNameCtrl, _quickLastNameCtrl, _quickCountryIdCtrl, _quickPhoneCtrl,
+      _quickEmailCtrl, _quickDateCtrl, _quickTimeCtrl, _quickNoteCtrl,
+      _filterNameCtrl, _filterLastNameCtrl, _filterPhoneCtrl,
+      _filterDateFromCtrl, _filterDateToCtrl, _filterTimeFromCtrl, _filterTimeToCtrl,
+    ]) { c.dispose(); }
+    super.dispose();
   }
 
-  _ApiEnvelope _parseEnvelope(http.Response response) {
-    Map<String, dynamic> payload = <String, dynamic>{};
+  // ── helpers (unchanged logic) ───────────────
+  bool _asBool(dynamic v) {
+    if (v == null) return false;
+    if (v is bool) return v;
+    if (v is num) return v != 0;
+    final s = v.toString().trim().toLowerCase();
+    return s == '1' || s == 'true' || s == 'yes';
+  }
+
+  _ApiEnvelope _parseEnvelope(http.Response r) {
+    Map<String, dynamic> payload = {};
     try {
-      final decoded = jsonDecode(response.body);
-      if (decoded is Map) {
-        payload = Map<String, dynamic>.from(decoded);
-      } else {
-        payload = <String, dynamic>{'data': decoded};
-      }
-    } catch (_) {
-      payload = <String, dynamic>{'message': response.body};
-    }
-
-    final dynamic rawErrors = payload['errors'];
-    final dynamic rawMeta = payload['meta'];
+      final d = jsonDecode(r.body);
+      payload = d is Map ? Map<String, dynamic>.from(d) : {'data': d};
+    } catch (_) { payload = {'message': r.body}; }
+    final rawErrors = payload['errors'];
+    final rawMeta   = payload['meta'];
     return _ApiEnvelope(
-      statusCode: response.statusCode,
-      payload: payload,
-      code: payload['code']?.toString(),
-      message: payload['message']?.toString(),
+      statusCode: r.statusCode, payload: payload,
+      code: payload['code']?.toString(), message: payload['message']?.toString(),
       type: payload['type']?.toString(),
       data: payload.containsKey('data') ? payload['data'] : payload,
-      meta: rawMeta is Map ? Map<String, dynamic>.from(rawMeta) : null,
+      meta:   rawMeta   is Map ? Map<String, dynamic>.from(rawMeta)   : null,
       errors: rawErrors is Map ? Map<String, dynamic>.from(rawErrors) : null,
     );
   }
 
-  String? _firstFieldError(Map<String, dynamic>? errors) {
-    if (errors == null || errors.isEmpty) return null;
-    final first = errors.values.first;
-    if (first is List && first.isNotEmpty) {
-      return first.first?.toString();
-    }
-    return first?.toString();
+  String? _firstFieldError(Map<String, dynamic>? e) {
+    if (e == null || e.isEmpty) return null;
+    final first = e.values.first;
+    return (first is List && first.isNotEmpty) ? first.first?.toString() : first?.toString();
   }
 
-  String _holidayWarningMessage(_ApiEnvelope envelope) {
-    final holiday = envelope.meta?['holiday'] ??
-        (envelope.data is Map ? envelope.data['holiday'] : null) ??
-        envelope.payload['holiday'];
-    if (holiday is Map) {
-      final msg = holiday['message']?.toString();
+  String _holidayWarningMessage(_ApiEnvelope env) {
+    final h = env.meta?['holiday'] ?? (env.data is Map ? env.data['holiday'] : null) ?? env.payload['holiday'];
+    if (h is Map) {
+      final msg = h['message']?.toString();
       if (msg != null && msg.trim().isNotEmpty) return msg;
-      final name = holiday['name']?.toString() ?? '';
-      final date = holiday['date']?.toString() ?? '';
-      final joined = [name, date].where((e) => e.isNotEmpty).join(' - ');
+      final joined = [h['name']?.toString() ?? '', h['date']?.toString() ?? ''].where((e) => e.isNotEmpty).join(' - ');
       if (joined.isNotEmpty) return joined;
-    } else if (holiday != null && holiday.toString().trim().isNotEmpty) {
-      return holiday.toString();
+    } else if (h != null && h.toString().trim().isNotEmpty) {
+      return h.toString();
     }
-    return envelope.message?.trim().isNotEmpty == true
-        ? envelope.message!
-        : loc.commonHolidayDateUnavailable;
+    return env.message?.trim().isNotEmpty == true ? env.message! : loc.commonHolidayDateUnavailable;
   }
 
   Future<void> _redirectToLogin() async {
     await clearTokens();
     if (!mounted) return;
     Navigator.of(context).pushAndRemoveUntil(
-      MaterialPageRoute(
-        builder: (_) => LoginPage(onLocaleChange: (_) {}),
-      ),
-      (_) => false,
+      MaterialPageRoute(builder: (_) => LoginPage(onLocaleChange: (_) {})), (_) => false,
     );
   }
 
-  Future<bool> _handleIssueByCode(
-    _ApiEnvelope envelope, {
-    bool allowPackageNavigation = true,
-    bool firstAppointmentFlow = false,
-  }) async {
-    final code = _normalizedIssueCode(envelope);
-    if (code.isEmpty &&
-        envelope.statusCode >= 200 &&
-        envelope.statusCode < 300) {
-      return false;
-    }
-    switch (code) {
-      case 'NO_PACKAGE':
-        _hasUserPack = false;
-        _showSnack(
-          _isIosPaymentRestricted
-              ? loc.iosSmsPurchaseRestrictionMessage
-              : loc.appointmentsPackageRequired,
-        );
-        if (!_isIosPaymentRestricted && allowPackageNavigation && mounted) {
-          await Navigator.push(
-            context,
-            MaterialPageRoute(builder: (_) => const SmsPacksPage()),
-          );
-        }
-        return true;
-      case 'HOLIDAY':
-        _showSnack(_holidayWarningMessage(envelope));
-        return true;
-      case 'SLOT_BUSY':
-        _selectedSlotTime = null;
-        _quickTimeController.clear();
-        final message = envelope.message?.trim();
-        _showSnack(
-          message != null && message.isNotEmpty
-              ? message
-              : (firstAppointmentFlow
-                  ? loc.appointmentsConsecutiveSlotsUnavailable
-                  : loc.calendarSlotBusy),
-        );
-        return true;
-      case 'VALIDATION_ERROR':
-        _showSnack(
-          _firstFieldError(envelope.errors) ??
-              envelope.message ??
-              loc.appointmentsRequiredFields,
-        );
-        return true;
-      case 'UNAUTHORIZED':
-        _showSnack(loc.appointmentsSessionMissingLogin);
-        await _redirectToLogin();
-        return true;
-      case 'FORBIDDEN':
-        _showSnack(loc.commonForbiddenAction);
-        return true;
-      default:
-        if (envelope.statusCode == 401) {
-          _showSnack(loc.appointmentsSessionMissingLogin);
-          await _redirectToLogin();
-          return true;
-        }
-        if (envelope.statusCode == 403) {
-          _showSnack(loc.commonForbiddenAction);
-          return true;
-        }
-        return false;
-    }
-  }
-
-  String _normalizedIssueCode(_ApiEnvelope envelope) {
-    final rawCode = (envelope.code ?? '').toUpperCase().trim();
-    if (rawCode.isNotEmpty) return rawCode;
-
-    if (envelope.statusCode == 409) return 'SLOT_BUSY';
-    if (envelope.statusCode == 422) return 'VALIDATION_ERROR';
-    if (envelope.statusCode == 401) return 'UNAUTHORIZED';
-    if (envelope.statusCode == 403) {
-      final msg = (envelope.message ?? '').toLowerCase();
-      if (msg.contains('package')) return 'NO_PACKAGE';
-      return 'FORBIDDEN';
-    }
+  String _normalizedIssueCode(_ApiEnvelope env) {
+    final raw = (env.code ?? '').toUpperCase().trim();
+    if (raw.isNotEmpty) return raw;
+    if (env.statusCode == 409) return 'SLOT_BUSY';
+    if (env.statusCode == 422) return 'VALIDATION_ERROR';
+    if (env.statusCode == 401) return 'UNAUTHORIZED';
+    if (env.statusCode == 403) return (env.message ?? '').toLowerCase().contains('package') ? 'NO_PACKAGE' : 'FORBIDDEN';
     return '';
   }
 
-  dynamic _dataOrPayload(_ApiEnvelope envelope) {
-    return envelope.data ?? envelope.payload;
+  Future<bool> _handleIssueByCode(_ApiEnvelope env, {bool allowPackageNavigation = true, bool firstAppointmentFlow = false}) async {
+    final code = _normalizedIssueCode(env);
+    if (code.isEmpty && env.statusCode >= 200 && env.statusCode < 300) return false;
+    switch (code) {
+      case 'NO_PACKAGE':
+        _hasUserPack = false;
+        _showSnack(_isIosPaymentRestricted ? loc.iosSmsPurchaseRestrictionMessage : loc.appointmentsPackageRequired);
+        if (!_isIosPaymentRestricted && allowPackageNavigation && mounted) await Navigator.push(context, MaterialPageRoute(builder: (_) => const SmsPacksPage()));
+        return true;
+      case 'HOLIDAY':
+        _showSnack(_holidayWarningMessage(env)); return true;
+      case 'SLOT_BUSY':
+        _selectedSlotTime = null; _quickTimeCtrl.clear();
+        final msg = env.message?.trim();
+        _showSnack(msg != null && msg.isNotEmpty ? msg : (firstAppointmentFlow ? loc.appointmentsConsecutiveSlotsUnavailable : loc.calendarSlotBusy));
+        return true;
+      case 'VALIDATION_ERROR':
+        _showSnack(_firstFieldError(env.errors) ?? env.message ?? loc.appointmentsRequiredFields); return true;
+      case 'UNAUTHORIZED':
+        _showSnack(loc.appointmentsSessionMissingLogin); await _redirectToLogin(); return true;
+      case 'FORBIDDEN':
+        _showSnack(loc.commonForbiddenAction); return true;
+      default:
+        if (env.statusCode == 401) { _showSnack(loc.appointmentsSessionMissingLogin); await _redirectToLogin(); return true; }
+        if (env.statusCode == 403) { _showSnack(loc.commonForbiddenAction); return true; }
+        return false;
+    }
   }
+
+  dynamic _dataOrPayload(_ApiEnvelope env) => env.data ?? env.payload;
 
   int _countToday() {
     final today = DateTime.now();
-    return _appointments.where((appt) {
-      final dateStr = appt['date']?.toString();
-      if (dateStr == null) return false;
-      try {
-        final d = DateTime.parse(dateStr);
-        return d.year == today.year &&
-            d.month == today.month &&
-            d.day == today.day;
-      } catch (_) {
-        return false;
-      }
+    return _appointments.where((a) {
+      try { final d = DateTime.parse(a['date']?.toString() ?? ''); return d.year == today.year && d.month == today.month && d.day == today.day; }
+      catch (_) { return false; }
     }).length;
   }
 
-  Widget _sectionCard({
-    required Widget child,
-    String? title,
-    String? subtitle,
-    IconData? leadingIcon,
-    List<Widget>? actions,
-    EdgeInsetsGeometry padding = const EdgeInsets.all(16),
-  }) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: Colors.grey.shade200),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.03),
-            blurRadius: 10,
-            offset: const Offset(0, 6),
-          ),
-        ],
-      ),
-      child: Padding(
-        padding: padding,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            if (title != null ||
-                subtitle != null ||
-                (actions != null && actions.isNotEmpty))
-              Padding(
-                padding: const EdgeInsets.only(bottom: 12),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          if (title != null)
-                            Row(
-                              children: [
-                                if (leadingIcon != null) ...[
-                                  Container(
-                                    padding: const EdgeInsets.all(6),
-                                    decoration: BoxDecoration(
-                                      color:
-                                          primaryColor.withValues(alpha: 0.1),
-                                      borderRadius: BorderRadius.circular(8),
-                                    ),
-                                    child: Icon(
-                                      leadingIcon,
-                                      size: 16,
-                                      color: primaryColor,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 8),
-                                ],
-                                Expanded(
-                                  child: Text(
-                                    title,
-                                    style: const TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w700,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          if (title == null && leadingIcon != null)
-                            Padding(
-                              padding: const EdgeInsets.only(bottom: 2),
-                              child: Icon(
-                                leadingIcon,
-                                size: 16,
-                                color: primaryColor,
-                              ),
-                            ),
-                          if (subtitle != null)
-                            Padding(
-                              padding: const EdgeInsets.only(top: 4),
-                              child: Text(
-                                subtitle,
-                                style: const TextStyle(
-                                  color: Colors.black54,
-                                ),
-                              ),
-                            ),
-                        ],
-                      ),
-                    ),
-                    if (actions != null && actions.isNotEmpty) ...actions,
-                  ],
-                ),
-              ),
-            child,
-          ],
-        ),
-      ),
-    );
+  Future<String?> _getToken() => getAccessToken();
+
+  String _normalizeSlotDate(String raw) => AppointmentDateUtils.normalizeSlotDate(raw);
+  DateTime _parseInputDateOrNow(String v) => AppointmentDateUtils.parseInputDateOrNow(v);
+  String? _normalizeDateToApi(String i) => AppointmentDateUtils.normalizeDateToApi(i);
+  String _formatDateDisplay(DateTime d) => AppointmentDateUtils.formatDateDisplay(d);
+
+  bool _isValidTime(String i) => RegExp(r'^([01]\d|2[0-3]):[0-5]\d$').hasMatch(i.trim());
+
+  String? _normalizeTimeToApi(String i) {
+    final m = RegExp(r'^([01]\d|2[0-3]):([0-5]\d)(?::[0-5]\d)?$').firstMatch(i.trim());
+    return m == null ? null : '${m.group(1)}:${m.group(2)}';
   }
 
-  Widget _statPill(String label, String value, IconData icon, Color color) {
-    final bool isLight = color.computeLuminance() > 0.7;
-    final Color iconColor = isLight ? primaryColor : color;
-    final Color bgColor = isLight
-        ? Colors.white.withValues(alpha: 0.16)
-        : color.withValues(alpha: 0.08);
-    final Color borderColor = isLight
-        ? Colors.white.withValues(alpha: 0.3)
-        : color.withValues(alpha: 0.2);
-    final Color labelColor = isLight ? Colors.white70 : Colors.black54;
-    final Color valueColor = isLight ? Colors.white : Colors.black87;
-    return Expanded(
-      child: Container(
-        padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(
-          color: bgColor,
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: borderColor),
-        ),
-        child: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.05),
-                    blurRadius: 10,
-                    offset: const Offset(0, 6),
-                  ),
-                ],
-              ),
-              child: Icon(icon, color: iconColor),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    label,
-                    style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                      color: labelColor,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    value,
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w800,
-                      color: valueColor,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
+  DateTime _clampDate(DateTime d, DateTime mn, DateTime mx) => d.isBefore(mn) ? mn : d.isAfter(mx) ? mx : d;
+
+  String _formatDate(String? date) {
+    if (date == null || date.isEmpty) return '';
+    try { final p = DateTime.parse(date); return '${p.day.toString().padLeft(2,'0')}.${p.month.toString().padLeft(2,'0')}.${p.year}'; }
+    catch (_) { return date; }
   }
 
-  Widget _buildHeaderHero() {
-    final todayCount = _countToday();
-    final totalCount = _appointments.length;
-    final loc = AppLocalizations.of(context);
-    final buttonStyleOnLight = ElevatedButton.styleFrom(
-      backgroundColor: Colors.white,
-      foregroundColor: primaryColor,
-      elevation: 0,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-    );
-
-    return Container(
-      margin: const EdgeInsets.only(bottom: 14),
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.08),
-            blurRadius: 18,
-            offset: const Offset(0, 10),
-          )
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      loc.appointmentManagement,
-                      style: const TextStyle(
-                        fontSize: 22,
-                        fontWeight: FontWeight.w800,
-                        color: Colors.white,
-                      ),
-                    ),
-                    const SizedBox(height: 6),
-                    Text(
-                      loc.appointmentSubtitle,
-                      style: const TextStyle(color: Colors.white70),
-                    ),
-                  ],
-                ),
-              ),
-              IconButton(
-                onPressed: _fetchAppointments,
-                tooltip: loc.refresh,
-                icon: const Icon(Icons.refresh, color: Colors.white),
-              ),
-            ],
-          ),
-          const SizedBox(height: 14),
-          Row(
-            children: [
-              _statPill(loc.today, '$todayCount', Icons.event_available,
-                  Colors.white70.withValues(alpha: 0.95)),
-              const SizedBox(width: 12),
-              _statPill(loc.total, '$totalCount', Icons.calendar_today,
-                  Colors.white70),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Wrap(
-            spacing: 10,
-            runSpacing: 10,
-            children: [
-              ElevatedButton.icon(
-                onPressed: () {
-                  if (!_hasUserPack) {
-                    _showSnack(
-                      _isIosPaymentRestricted
-                          ? loc.iosSmsPurchaseRestrictionMessage
-                          : loc.appointmentsPackageRequired,
-                    );
-                    if (!_isIosPaymentRestricted) {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (_) => const SmsPacksPage()),
-                      );
-                    }
-                    return;
-                  }
-                  setState(() {
-                    _showQuickForm = true;
-                  });
-                },
-                style: buttonStyleOnLight,
-                icon: const Icon(Icons.add_circle_outline),
-                label: Text(loc.quickAppointment),
-              ),
-              OutlinedButton.icon(
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: Colors.white,
-                  side: const BorderSide(color: Colors.white54),
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-                onPressed: () {
-                  setState(() {
-                    _showFilters = !_showFilters;
-                  });
-                },
-                icon: Icon(
-                  _showFilters ? Icons.filter_alt_off : Icons.filter_alt,
-                  color: Colors.white,
-                ),
-                label: Text(
-                  _showFilters ? loc.hideFilter : loc.showFilter,
-                  style: const TextStyle(color: Colors.white),
-                ),
-              ),
-              OutlinedButton.icon(
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: Colors.white,
-                  side: const BorderSide(color: Colors.white54),
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-                onPressed: _fetchAppointments,
-                icon: const Icon(Icons.sync, color: Colors.white),
-                label: Text(
-                  loc.refreshList,
-                  style: const TextStyle(color: Colors.white),
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Map<String, String> _buildValidFilters() {
-    final Map<String, String> params = {};
-    final dateFrom = _normalizeDateToApi(_filterDateFromController.text);
-    final dateTo = _normalizeDateToApi(_filterDateToController.text);
-    final timeFrom = _filterTimeFromController.text.trim();
-    final timeTo = _filterTimeToController.text.trim();
-
-    if (_filterNameController.text.trim().isNotEmpty) {
-      params['customer_name'] = _filterNameController.text.trim();
-    }
-    if (_filterLastNameController.text.trim().isNotEmpty) {
-      params['customer_lastname'] = _filterLastNameController.text.trim();
-    }
-    if (_filterPhoneController.text.trim().isNotEmpty) {
-      params['customer_phone'] = _filterPhoneController.text.trim();
-    }
-    if (dateFrom != null) params['date_from'] = dateFrom;
-    if (dateTo != null) params['date_to'] = dateTo;
-    if (timeFrom.isNotEmpty && _isValidTime(timeFrom)) {
-      params['time_from'] = timeFrom;
-    }
-    if (timeTo.isNotEmpty && _isValidTime(timeTo)) {
-      params['time_to'] = timeTo;
-    }
-    return params;
-  }
-
-  @override
-  void initState() {
-    super.initState();
-    if (widget.initialQuickDate != null) {
-      _quickDateController.text = _normalizeSlotDate(widget.initialQuickDate!);
-    }
-    if (widget.initialQuickTime != null) {
-      _quickTimeController.text = widget.initialQuickTime!;
-      _selectedSlotTime = widget.initialQuickTime;
-    }
-    if (widget.autoShowQuick ||
-        widget.initialQuickDate != null ||
-        widget.initialQuickTime != null) {
-      _showQuickForm = true;
-    }
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _fetchAppointments();
-      _fetchCountries();
-      _fetchStatuses();
-      if (_showQuickForm && _quickDateController.text.trim().isNotEmpty) {
-        _fetchTimeSlots();
-      }
-    });
-  }
-
-  @override
-  void dispose() {
-    _quickNameController.dispose();
-    _quickLastNameController.dispose();
-    _quickCountryIdController.dispose();
-    _quickPhoneController.dispose();
-    _quickEmailController.dispose();
-    _quickDateController.dispose();
-    _quickTimeController.dispose();
-    _quickNoteController.dispose();
-    _filterNameController.dispose();
-    _filterLastNameController.dispose();
-    _filterPhoneController.dispose();
-    _filterDateFromController.dispose();
-    _filterDateToController.dispose();
-    _filterTimeFromController.dispose();
-    _filterTimeToController.dispose();
-    super.dispose();
-  }
-
-  Future<String?> _getToken() async {
-    return getAccessToken();
-  }
-
-  Future<void> _fetchAppointments({Map<String, String>? filters}) async {
-    setState(() {
-      _loadingList = true;
-      _error = null;
-    });
-
-    final token = await _getToken();
-    if (token == null || token.isEmpty) {
-      setState(() {
-        _loadingList = false;
-        _error = loc.appointmentsSessionMissingLogin;
-      });
-      return;
-    }
-
-    try {
-      final uri = Uri.parse('$apiBaseUrl/api/appointments').replace(
-          queryParameters: (filters ?? _activeFilters).isNotEmpty
-              ? (filters ?? _activeFilters)
-              : null);
-      final response = await authGet(
-        uri,
-        headers: {
-          'Authorization': 'Bearer $token',
-          'Accept': 'application/json',
-        },
-      );
-      final envelope = _parseEnvelope(response);
-      final handled = await _handleIssueByCode(envelope);
-      if (handled) {
-        if (!mounted) return;
-        setState(() {
-          _loadingList = false;
-          _error = envelope.message ?? loc.appointmentsPackageRequired;
-        });
-        return;
-      }
-
-      if (envelope.isSuccess) {
-        final rawData = _dataOrPayload(envelope);
-        bool? extractedUserPack;
-        final topCandidate =
-            envelope.payload['user_pack'] ?? envelope.payload['userPack'];
-        if (topCandidate != null) extractedUserPack = _asBool(topCandidate);
-        if (rawData is Map) {
-          final nestedCandidate = rawData['user_pack'] ?? rawData['userPack'];
-          if (nestedCandidate != null)
-            extractedUserPack = _asBool(nestedCandidate);
-        }
-        final hasUserPack = extractedUserPack ?? true;
-        List<Map<String, dynamic>> list = [];
-        if (rawData is List) {
-          list = List<Map<String, dynamic>>.from(
-            rawData.map((e) => Map<String, dynamic>.from(e)),
-          );
-        } else if (rawData is Map && rawData['data'] is List) {
-          list = List<Map<String, dynamic>>.from(
-            (rawData['data'] as List).map((e) => Map<String, dynamic>.from(e)),
-          );
-        }
-
-        if (!mounted) return;
-        setState(() {
-          _appointments = list;
-          _loadingList = false;
-          _hasUserPack = hasUserPack;
-          if (!_hasUserPack) {
-            _showQuickForm = false;
-          }
-        });
-      } else {
-        setState(() {
-          _error = envelope.message ??
-              loc.appointmentsFetchFailedStatus(response.statusCode.toString());
-          _loadingList = false;
-        });
-      }
-    } catch (e) {
-      setState(() {
-        _error = loc.appointmentsFetchFailed(e.toString());
-        _loadingList = false;
-      });
-    }
-  }
-
-  Future<void> _fetchCountries() async {
-    setState(() {
-      _loadingCountries = true;
-      _countriesError = null;
-    });
-
-    final token = await _getToken();
-    if (token == null || token.isEmpty) {
-      setState(() {
-        _loadingCountries = false;
-        _countriesError = loc.calendarSessionMissing;
-      });
-      return;
-    }
-
-    try {
-      final response = await authGet(
-        Uri.parse('$apiBaseUrl/api/settings/countries'),
-        headers: {
-          'Authorization': 'Bearer $token',
-          'Accept': 'application/json',
-        },
-      );
-      final envelope = _parseEnvelope(response);
-      final handled = await _handleIssueByCode(envelope);
-      if (handled) {
-        if (!mounted) return;
-        setState(() {
-          _loadingCountries = false;
-          _countriesError = envelope.message ??
-              loc.appointmentsCountriesFetchFailedStatus(
-                  response.statusCode.toString());
-        });
-        return;
-      }
-      if (envelope.isSuccess) {
-        final data = _dataOrPayload(envelope);
-        List<Map<String, dynamic>> list = [];
-        if (data is List) {
-          list = List<Map<String, dynamic>>.from(
-              data.map((e) => Map<String, dynamic>.from(e)));
-        }
-        if (!mounted) return;
-        setState(() {
-          _countries = list;
-          if (_selectedCountryId == null && _countries.isNotEmpty) {
-            _selectedCountryId = _countries.first['id'] as int?;
-            _quickCountryIdController.text =
-                _selectedCountryId != null ? '$_selectedCountryId' : '';
-          }
-          _loadingCountries = false;
-        });
-      } else {
-        setState(() {
-          _loadingCountries = false;
-          _countriesError = envelope.message ??
-              loc.appointmentsCountriesFetchFailedStatus(
-                  response.statusCode.toString());
-        });
-      }
-    } catch (e) {
-      setState(() {
-        _loadingCountries = false;
-        _countriesError = loc.appointmentsCountriesFetchFailed(e.toString());
-      });
-    }
-  }
-
-  Future<void> _fetchStatuses() async {
-    setState(() {
-      _loadingStatuses = true;
-      _statusesError = null;
-    });
-
-    final token = await _getToken();
-    if (token == null || token.isEmpty) {
-      setState(() {
-        _loadingStatuses = false;
-        _statusesError = loc.calendarSessionMissing;
-      });
-      return;
-    }
-
-    try {
-      final response = await authGet(
-        Uri.parse('$apiBaseUrl/api/settings/appointment-statuses'),
-        headers: {
-          'Authorization': 'Bearer $token',
-          'Accept': 'application/json',
-        },
-      );
-      final envelope = _parseEnvelope(response);
-      final handled = await _handleIssueByCode(envelope);
-      if (handled) {
-        if (!mounted) return;
-        setState(() {
-          _loadingStatuses = false;
-          _statusesError = envelope.message ??
-              loc.appointmentsStatusesFetchFailedStatus(
-                  response.statusCode.toString());
-        });
-        return;
-      }
-      if (envelope.isSuccess) {
-        final data = _dataOrPayload(envelope);
-        List<Map<String, dynamic>> list = [];
-        if (data is List) {
-          list = List<Map<String, dynamic>>.from(
-              data.map((e) => Map<String, dynamic>.from(e)));
-        }
-        if (!mounted) return;
-        setState(() {
-          _appointmentStatuses = list;
-          _loadingStatuses = false;
-        });
-      } else {
-        setState(() {
-          _loadingStatuses = false;
-          _statusesError = envelope.message ??
-              loc.appointmentsStatusesFetchFailedStatus(
-                  response.statusCode.toString());
-        });
-      }
-    } catch (e) {
-      setState(() {
-        _loadingStatuses = false;
-        _statusesError = loc.appointmentsStatusesFetchFailed(e.toString());
-      });
-    }
-  }
-
-  int? _defaultStatusId() {
-    if (_appointmentStatuses.isEmpty) return null;
-    try {
-      final pending = _appointmentStatuses.firstWhere(
-        (s) => (s['alias'] ?? '').toString().toLowerCase() == 'pending',
-      );
-      return pending['id'] as int?;
-    } catch (_) {
-      return _appointmentStatuses.first['id'] as int?;
-    }
-  }
-
-  void _resetQuickForm() {
-    setState(() {
-      _quickNameController.clear();
-      _quickLastNameController.clear();
-      _quickCountryIdController.clear();
-      _quickPhoneController.clear();
-      _quickEmailController.clear();
-      _quickDateController.clear();
-      _quickTimeController.clear();
-      _quickNoteController.clear();
-      _selectedSlotTime = null;
-      _timeSlots = [];
-      _slotsError = null;
-      _quickIsFirstAppointment = false;
-      _quickNoSms = false;
-      _quickNoReminder = false;
-      _showQuickForm = false;
-    });
-  }
-
-  Future<void> _applyFilters() async {
-    final filters = _buildValidFilters();
-    if (_filterTimeFromController.text.trim().isNotEmpty &&
-        !_isValidTime(_filterTimeFromController.text.trim())) {
-      _showSnack(loc.appointmentsInvalidStartTime);
-      return;
-    }
-    if (_filterTimeToController.text.trim().isNotEmpty &&
-        !_isValidTime(_filterTimeToController.text.trim())) {
-      _showSnack(loc.appointmentsInvalidEndTime);
-      return;
-    }
-    setState(() {
-      _activeFilters = filters;
-    });
-    await _fetchAppointments(filters: filters);
-  }
-
-  void _clearFilters() {
-    setState(() {
-      _filterNameController.clear();
-      _filterLastNameController.clear();
-      _filterPhoneController.clear();
-      _filterDateFromController.clear();
-      _filterDateToController.clear();
-      _filterTimeFromController.clear();
-      _filterTimeToController.clear();
-      _activeFilters = {};
-    });
-    _fetchAppointments(filters: {});
-  }
-
-  Future<void> _submitQuickAppointment() async {
-    if (_savingQuick) return;
-    if (!_hasUserPack) {
-      _showSnack(
-        _isIosPaymentRestricted
-            ? loc.iosSmsPurchaseRestrictionMessage
-            : loc.appointmentsPackageRequired,
-      );
-      return;
-    }
-
-    final firstName = _quickNameController.text.trim();
-    final lastName = _quickLastNameController.text.trim();
-    final countryId = _selectedCountryId ??
-        int.tryParse(_quickCountryIdController.text.trim());
-    final phone = _quickPhoneController.text.trim();
-    final email = _quickEmailController.text.trim();
-    final date = _quickDateController.text.trim();
-    final normalizedDate = _normalizeSlotDate(date);
-    final time = (_selectedSlotTime ?? _quickTimeController.text).trim();
-    final note = _quickNoteController.text.trim();
-
-    if (firstName.isEmpty ||
-        lastName.isEmpty ||
-        countryId == null ||
-        phone.isEmpty ||
-        normalizedDate.isEmpty ||
-        time.isEmpty) {
-      _showSnack(loc.appointmentsRequiredFields);
-      return;
-    }
-    if (_timeSlots.isNotEmpty && time.isEmpty) {
-      _showSnack(loc.appointmentsSelectAvailableTime);
-      return;
-    }
-
-    final token = await _getToken();
-    if (token == null || token.isEmpty) {
-      _showSnack(loc.appointmentsSessionMissingLogin);
-      return;
-    }
-
-    setState(() {
-      _savingQuick = true;
-    });
-
-    try {
-      final response = await authPost(
-        Uri.parse('$apiBaseUrl/api/appointments/quick_appointment'),
-        headers: {
-          'Authorization': 'Bearer $token',
-          'Accept': 'application/json',
-          'Content-Type': 'application/json',
-        },
-        body: jsonEncode({
-          'customer_name': firstName,
-          'customer_lastname': lastName,
-          'country_id': countryId,
-          'phone': phone,
-          'email': email.isEmpty ? null : email,
-          'date': normalizedDate,
-          'time': time,
-          'note': note,
-          'is_first_appointment': _quickIsFirstAppointment,
-          'no_sms': _quickNoSms,
-          'no_reminder': _quickNoReminder,
-        }),
-      );
-      final envelope = _parseEnvelope(response);
-      if (envelope.isSuccess) {
-        _showSnack(loc.appointmentsCreateSuccess, success: true);
-        await _fetchAppointments();
-        _resetQuickForm();
-      } else {
-        final handled = await _handleIssueByCode(
-          envelope,
-          firstAppointmentFlow: _quickIsFirstAppointment,
-        );
-        if (!handled) {
-          _showSnack(
-            envelope.message ??
-                loc.appointmentsCreateFailedStatus(
-                    response.statusCode.toString()),
-          );
-        }
-      }
-    } catch (e) {
-      _showSnack(loc.appointmentsCreateFailed(e.toString()));
-    } finally {
-      if (mounted) {
-        setState(() {
-          _savingQuick = false;
-        });
-      }
-    }
+  String _formatTime(dynamic t) {
+    if (t == null) return '';
+    final s = t.toString();
+    if (s.contains(':')) { final p = s.split(':'); if (p.length >= 2) return '${p[0].padLeft(2,'0')}:${p[1].padLeft(2,'0')}'; }
+    return s;
   }
 
   Color _statusColor(String? hex) {
     if (hex == null) return Colors.blueGrey;
     final cleaned = hex.replaceAll('#', '');
-    final buffer = StringBuffer();
-    if (cleaned.length == 6) buffer.write('ff');
-    buffer.write(cleaned);
-    try {
-      return Color(int.parse(buffer.toString(), radix: 16));
-    } catch (_) {
-      return Colors.blueGrey;
-    }
+    final buf = StringBuffer();
+    if (cleaned.length == 6) buf.write('ff');
+    buf.write(cleaned);
+    try { return Color(int.parse(buf.toString(), radix: 16)); } catch (_) { return Colors.blueGrey; }
   }
 
-  String _formatDate(String? date) {
-    if (date == null || date.isEmpty) return '';
-    try {
-      final parsed = DateTime.parse(date);
-      return '${parsed.day.toString().padLeft(2, '0')}.${parsed.month.toString().padLeft(2, '0')}.${parsed.year}';
-    } catch (_) {
-      return date;
-    }
-  }
-
-  String _localizedStatusLabel(Map<String, dynamic> status) {
-    final alias = status['alias']?.toString();
-    final loc = AppLocalizations.of(context);
-    final trMap = {
-      'pending': loc.statusPending,
-      'confirmed': loc.statusConfirmed,
-      'rescheduled': loc.statusRescheduled,
-      'completed': loc.statusCompleted,
-      'cancelled': loc.statusCancelled,
-      'no_show': loc.statusNoShow,
+  String _localizedStatusLabel(Map<String, dynamic> s) {
+    final alias = s['alias']?.toString();
+    final map = {
+      'pending': loc.statusPending, 'confirmed': loc.statusConfirmed,
+      'rescheduled': loc.statusRescheduled, 'completed': loc.statusCompleted,
+      'cancelled': loc.statusCancelled, 'no_show': loc.statusNoShow,
     };
-    if (alias != null && trMap.containsKey(alias)) {
-      return trMap[alias]!;
-    }
-    return status['name']?.toString() ?? (alias ?? loc.status);
+    return (alias != null && map.containsKey(alias)) ? map[alias]! : s['name']?.toString() ?? (alias ?? loc.status);
   }
 
-  String _formatTime(dynamic time) {
-    if (time == null) return '';
-    final str = time.toString();
-    if (str.contains(':')) {
-      final parts = str.split(':');
-      if (parts.length >= 2) {
-        return '${parts[0].padLeft(2, '0')}:${parts[1].padLeft(2, '0')}';
+  int? _defaultStatusId() {
+    if (_appointmentStatuses.isEmpty) return null;
+    try { return _appointmentStatuses.firstWhere((s) => (s['alias'] ?? '').toString().toLowerCase() == 'pending')['id'] as int?; }
+    catch (_) { return _appointmentStatuses.first['id'] as int?; }
+  }
+
+  Map<String, String> _buildValidFilters() {
+    final p = <String, String>{};
+    final df = _normalizeDateToApi(_filterDateFromCtrl.text);
+    final dt = _normalizeDateToApi(_filterDateToCtrl.text);
+    final tf = _filterTimeFromCtrl.text.trim();
+    final tt = _filterTimeToCtrl.text.trim();
+    if (_filterNameCtrl.text.trim().isNotEmpty) p['customer_name'] = _filterNameCtrl.text.trim();
+    if (_filterLastNameCtrl.text.trim().isNotEmpty) p['customer_lastname'] = _filterLastNameCtrl.text.trim();
+    if (_filterPhoneCtrl.text.trim().isNotEmpty) p['customer_phone'] = _filterPhoneCtrl.text.trim();
+    if (df != null) p['date_from'] = df;
+    if (dt != null) p['date_to'] = dt;
+    if (tf.isNotEmpty && _isValidTime(tf)) p['time_from'] = tf;
+    if (tt.isNotEmpty && _isValidTime(tt)) p['time_to'] = tt;
+    return p;
+  }
+
+  void _showSnack(String msg, {bool success = false}) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Row(children: [
+        Icon(success ? Icons.check_circle_outline : Icons.error_outline, color: Colors.white, size: 18),
+        const SizedBox(width: 10),
+        Expanded(child: Text(msg, style: const TextStyle(fontSize: 13))),
+      ]),
+      backgroundColor: success ? _T.success : _T.danger,
+      behavior: SnackBarBehavior.floating,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(_T.r12)),
+      margin: const EdgeInsets.all(16),
+    ));
+  }
+
+  void _navigateToDashboard() {
+    Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (_) => const DashboardPage()));
+  }
+
+  // ── API calls ───────────────────────────────
+  Future<void> _fetchAppointments({Map<String, String>? filters}) async {
+    setState(() { _loadingList = true; _error = null; });
+    final token = await _getToken();
+    if (token == null || token.isEmpty) { setState(() { _loadingList = false; _error = loc.appointmentsSessionMissingLogin; }); return; }
+    try {
+      final uri = Uri.parse('$apiBaseUrl/api/appointments').replace(
+        queryParameters: (filters ?? _activeFilters).isNotEmpty ? (filters ?? _activeFilters) : null);
+      final resp = await authGet(uri, headers: {'Authorization': 'Bearer $token', 'Accept': 'application/json'});
+      final env  = _parseEnvelope(resp);
+      final handled = await _handleIssueByCode(env);
+      if (handled) { if (!mounted) return; setState(() { _loadingList = false; _error = env.message ?? loc.appointmentsPackageRequired; }); return; }
+      if (env.isSuccess) {
+        final raw  = _dataOrPayload(env);
+        bool? pack;
+        final topC = env.payload['user_pack'] ?? env.payload['userPack'];
+        if (topC != null) pack = _asBool(topC);
+        if (raw is Map) { final nc = raw['user_pack'] ?? raw['userPack']; if (nc != null) pack = _asBool(nc); }
+        List<Map<String, dynamic>> list = [];
+        if (raw is List) {
+          list = List<Map<String, dynamic>>.from(raw.map((e) => Map<String, dynamic>.from(e)));
+        } else if (raw is Map && raw['data'] is List) {
+          list = List<Map<String, dynamic>>.from((raw['data'] as List).map((e) => Map<String, dynamic>.from(e)));
+        }
+        if (!mounted) return;
+        setState(() { _appointments = list; _loadingList = false; _hasUserPack = pack ?? true; if (!_hasUserPack) _showQuickForm = false; });
+      } else {
+        setState(() { _error = env.message ?? loc.appointmentsFetchFailedStatus(resp.statusCode.toString()); _loadingList = false; });
       }
-    }
-    return str;
+    } catch (e) { setState(() { _error = loc.appointmentsFetchFailed(e.toString()); _loadingList = false; }); }
   }
 
-  String _normalizeSlotDate(String rawDate) {
-    return AppointmentDateUtils.normalizeSlotDate(rawDate);
+  Future<void> _fetchCountries() async {
+    setState(() { _loadingCountries = true; _countriesError = null; });
+    final token = await _getToken();
+    if (token == null || token.isEmpty) { setState(() { _loadingCountries = false; _countriesError = loc.calendarSessionMissing; }); return; }
+    try {
+      final resp = await authGet(Uri.parse('$apiBaseUrl/api/settings/countries'), headers: {'Authorization': 'Bearer $token', 'Accept': 'application/json'});
+      final env  = _parseEnvelope(resp);
+      if (await _handleIssueByCode(env)) { if (!mounted) return; setState(() { _loadingCountries = false; _countriesError = env.message ?? loc.appointmentsCountriesFetchFailedStatus(resp.statusCode.toString()); }); return; }
+      if (env.isSuccess) {
+        final data = _dataOrPayload(env);
+        final list = data is List ? List<Map<String, dynamic>>.from(data.map((e) => Map<String, dynamic>.from(e))) : <Map<String, dynamic>>[];
+        if (!mounted) return;
+        setState(() {
+          _countries = list;
+          if (_selectedCountryId == null && _countries.isNotEmpty) {
+            _selectedCountryId = _countries.first['id'] as int?;
+            _quickCountryIdCtrl.text = _selectedCountryId != null ? '$_selectedCountryId' : '';
+          }
+          _loadingCountries = false;
+        });
+      } else { setState(() { _loadingCountries = false; _countriesError = env.message ?? loc.appointmentsCountriesFetchFailedStatus(resp.statusCode.toString()); }); }
+    } catch (e) { setState(() { _loadingCountries = false; _countriesError = loc.appointmentsCountriesFetchFailed(e.toString()); }); }
   }
 
-  DateTime _parseInputDateOrNow(String value) {
-    return AppointmentDateUtils.parseInputDateOrNow(value);
+  Future<void> _fetchStatuses() async {
+    setState(() { _loadingStatuses = true; _statusesError = null; });
+    final token = await _getToken();
+    if (token == null || token.isEmpty) { setState(() { _loadingStatuses = false; _statusesError = loc.calendarSessionMissing; }); return; }
+    try {
+      final resp = await authGet(Uri.parse('$apiBaseUrl/api/settings/appointment-statuses'), headers: {'Authorization': 'Bearer $token', 'Accept': 'application/json'});
+      final env  = _parseEnvelope(resp);
+      if (await _handleIssueByCode(env)) { if (!mounted) return; setState(() { _loadingStatuses = false; _statusesError = env.message ?? loc.appointmentsStatusesFetchFailedStatus(resp.statusCode.toString()); }); return; }
+      if (env.isSuccess) {
+        final data = _dataOrPayload(env);
+        final list = data is List ? List<Map<String, dynamic>>.from(data.map((e) => Map<String, dynamic>.from(e))) : <Map<String, dynamic>>[];
+        if (!mounted) return;
+        setState(() { _appointmentStatuses = list; _loadingStatuses = false; });
+      } else { setState(() { _loadingStatuses = false; _statusesError = env.message ?? loc.appointmentsStatusesFetchFailedStatus(resp.statusCode.toString()); }); }
+    } catch (e) { setState(() { _loadingStatuses = false; _statusesError = loc.appointmentsStatusesFetchFailed(e.toString()); }); }
   }
 
-  String? _normalizeDateToApi(String input) {
-    return AppointmentDateUtils.normalizeDateToApi(input);
+  void _resetQuickForm() {
+    setState(() {
+      for (final c in [_quickNameCtrl, _quickLastNameCtrl, _quickCountryIdCtrl, _quickPhoneCtrl, _quickEmailCtrl, _quickDateCtrl, _quickTimeCtrl, _quickNoteCtrl]) {
+        c.clear();
+      }
+      _selectedSlotTime = null; _timeSlots = []; _slotsError = null;
+      _quickIsFirstAppointment = false; _quickNoSms = false; _quickNoReminder = false; _showQuickForm = false;
+    });
   }
 
-  bool _isValidTime(String input) {
-    final trimmed = input.trim();
-    if (trimmed.isEmpty) return false;
-    final reg = RegExp(r'^([01]\d|2[0-3]):[0-5]\d$');
-    return reg.hasMatch(trimmed);
+  Future<void> _applyFilters() async {
+    if (_filterTimeFromCtrl.text.trim().isNotEmpty && !_isValidTime(_filterTimeFromCtrl.text.trim())) { _showSnack(loc.appointmentsInvalidStartTime); return; }
+    if (_filterTimeToCtrl.text.trim().isNotEmpty   && !_isValidTime(_filterTimeToCtrl.text.trim()))   { _showSnack(loc.appointmentsInvalidEndTime);   return; }
+    final filters = _buildValidFilters();
+    setState(() { _activeFilters = filters; });
+    await _fetchAppointments(filters: filters);
   }
 
-  String? _normalizeTimeToApi(String input) {
-    final trimmed = input.trim();
-    if (trimmed.isEmpty) return null;
-    final reg = RegExp(r'^([01]\d|2[0-3]):([0-5]\d)(?::[0-5]\d)?$');
-    final match = reg.firstMatch(trimmed);
-    if (match == null) return null;
-    final hh = match.group(1)!;
-    final mm = match.group(2)!;
-    return '$hh:$mm';
-  }
-
-  DateTime _clampDate(DateTime date, DateTime min, DateTime max) {
-    if (date.isBefore(min)) return min;
-    if (date.isAfter(max)) return max;
-    return date;
-  }
-
-  String _formatDateDisplay(DateTime date) {
-    return AppointmentDateUtils.formatDateDisplay(date);
+  void _clearFilters() {
+    setState(() {
+      for (final c in [_filterNameCtrl, _filterLastNameCtrl, _filterPhoneCtrl, _filterDateFromCtrl, _filterDateToCtrl, _filterTimeFromCtrl, _filterTimeToCtrl]) {
+        c.clear();
+      }
+      _activeFilters = {};
+    });
+    _fetchAppointments(filters: {});
   }
 
   Future<void> _pickQuickDate() async {
-    final today = DateTime.now();
+    final today   = DateTime.now();
     final minDate = DateTime(today.year, today.month, today.day);
     final maxDate = DateTime(today.year + 5, 12, 31);
-    final initial = _clampDate(
-      _parseInputDateOrNow(_quickDateController.text),
-      minDate,
-      maxDate,
-    );
-    final picked = await showDatePicker(
-      context: context,
-      initialDate: initial,
-      firstDate: minDate,
-      lastDate: maxDate,
-    );
+    final initial = _clampDate(_parseInputDateOrNow(_quickDateCtrl.text), minDate, maxDate);
+    final picked  = await showDatePicker(context: context, initialDate: initial, firstDate: minDate, lastDate: maxDate);
     if (picked != null) {
-      setState(() {
-        _quickDateController.text = _formatDateDisplay(picked);
-        _selectedSlotTime = null;
-        _quickTimeController.clear();
-        _timeSlots = [];
-      });
+      setState(() { _quickDateCtrl.text = _formatDateDisplay(picked); _selectedSlotTime = null; _quickTimeCtrl.clear(); _timeSlots = []; });
       await _fetchTimeSlots();
     }
   }
 
   Future<void> _fetchTimeSlots() async {
-    final dateInput = _quickDateController.text.trim();
-    if (dateInput.isEmpty) {
-      _showSnack(loc.appointmentsEnterDateFirst);
-      return;
-    }
-    final formattedDate = _normalizeSlotDate(dateInput);
-
+    final dateInput = _quickDateCtrl.text.trim();
+    if (dateInput.isEmpty) { _showSnack(loc.appointmentsEnterDateFirst); return; }
     final token = await _getToken();
-    if (token == null || token.isEmpty) {
-      _showSnack(loc.appointmentsSessionMissingLogin);
-      return;
-    }
-
-    setState(() {
-      _loadingSlots = true;
-      _slotsRequested = true;
-      _slotsError = null;
-      _timeSlots = [];
-      _selectedSlotTime = null;
-      _quickTimeController.clear();
-    });
-
+    if (token == null || token.isEmpty) { _showSnack(loc.appointmentsSessionMissingLogin); return; }
+    setState(() { _loadingSlots = true; _slotsRequested = true; _slotsError = null; _timeSlots = []; _selectedSlotTime = null; _quickTimeCtrl.clear(); });
     try {
-      final response = await authGet(
-        Uri.parse(
-            '$apiBaseUrl/api/appointments/time-slots?date=$formattedDate'),
-        headers: {
-          'Authorization': 'Bearer $token',
-          'Accept': 'application/json',
-        },
-      );
-      final envelope = _parseEnvelope(response);
-      final handled = await _handleIssueByCode(envelope);
-      if (handled) {
+      final resp = await authGet(Uri.parse('$apiBaseUrl/api/appointments/time-slots?date=${_normalizeSlotDate(dateInput)}'), headers: {'Authorization': 'Bearer $token', 'Accept': 'application/json'});
+      final env  = _parseEnvelope(resp);
+      if (await _handleIssueByCode(env)) { if (!mounted) return; setState(() { _slotsError = env.message ?? loc.appointmentsSlotsFetchFailedStatus(resp.statusCode.toString()); _loadingSlots = false; }); return; }
+      if (env.isSuccess) {
+        final data = _dataOrPayload(env);
         if (!mounted) return;
-        setState(() {
-          _slotsError = envelope.message ??
-              loc.appointmentsSlotsFetchFailedStatus(
-                  response.statusCode.toString());
-          _loadingSlots = false;
-        });
-        return;
-      }
-
-      if (envelope.isSuccess) {
-        final data = _dataOrPayload(envelope);
-        if (!mounted) return;
-        setState(() {
-          _timeSlots = data is List
-              ? List<Map<String, dynamic>>.from(
-                  data.map((e) => Map<String, dynamic>.from(e)))
-              : <Map<String, dynamic>>[];
-          _loadingSlots = false;
-        });
-      } else {
-        setState(() {
-          _slotsError = envelope.message ??
-              loc.appointmentsSlotsFetchFailedStatus(
-                  response.statusCode.toString());
-          _loadingSlots = false;
-        });
-      }
-    } catch (e) {
-      setState(() {
-        _slotsError = loc.appointmentsSlotsFetchFailed(e.toString());
-        _loadingSlots = false;
-      });
-    }
+        setState(() { _timeSlots = data is List ? List<Map<String, dynamic>>.from(data.map((e) => Map<String, dynamic>.from(e))) : []; _loadingSlots = false; });
+      } else { setState(() { _slotsError = env.message ?? loc.appointmentsSlotsFetchFailedStatus(resp.statusCode.toString()); _loadingSlots = false; }); }
+    } catch (e) { setState(() { _slotsError = loc.appointmentsSlotsFetchFailed(e.toString()); _loadingSlots = false; }); }
   }
 
-  Widget _buildWorkingPrefCallout() {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Colors.blue.shade50,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.blue.shade100),
-      ),
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          final compact = constraints.maxWidth < 420;
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  const Icon(Icons.info_outline, color: Colors.blue),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: Text(
-                      loc.calendarWorkingHoursPrompt,
-                      maxLines: compact ? 3 : 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(fontWeight: FontWeight.w600),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 10),
-              Align(
-                alignment: Alignment.centerRight,
-                child: ElevatedButton(
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => const WorkingPreferencesPage(),
-                      ),
-                    );
-                  },
-                  child: Text(loc.setWorkingHours),
-                ),
-              ),
-            ],
-          );
-        },
-      ),
-    );
+  Future<void> _submitQuickAppointment() async {
+    if (_savingQuick) return;
+    if (!_hasUserPack) { _showSnack(_isIosPaymentRestricted ? loc.iosSmsPurchaseRestrictionMessage : loc.appointmentsPackageRequired); return; }
+    final firstName = _quickNameCtrl.text.trim();
+    final lastName  = _quickLastNameCtrl.text.trim();
+    final countryId = _selectedCountryId ?? int.tryParse(_quickCountryIdCtrl.text.trim());
+    final phone     = _quickPhoneCtrl.text.trim();
+    final email     = _quickEmailCtrl.text.trim();
+    final date      = _quickDateCtrl.text.trim();
+    final normDate  = _normalizeSlotDate(date);
+    final time      = (_selectedSlotTime ?? _quickTimeCtrl.text).trim();
+    final note      = _quickNoteCtrl.text.trim();
+    if (firstName.isEmpty || lastName.isEmpty || countryId == null || phone.isEmpty || normDate.isEmpty || time.isEmpty) { _showSnack(loc.appointmentsRequiredFields); return; }
+    if (_timeSlots.isNotEmpty && time.isEmpty) { _showSnack(loc.appointmentsSelectAvailableTime); return; }
+    final token = await _getToken();
+    if (token == null || token.isEmpty) { _showSnack(loc.appointmentsSessionMissingLogin); return; }
+    setState(() { _savingQuick = true; });
+    try {
+      final resp = await authPost(Uri.parse('$apiBaseUrl/api/appointments/quick_appointment'),
+        headers: {'Authorization': 'Bearer $token', 'Accept': 'application/json', 'Content-Type': 'application/json'},
+        body: jsonEncode({'customer_name': firstName, 'customer_lastname': lastName, 'country_id': countryId, 'phone': phone,
+          'email': email.isEmpty ? null : email, 'date': normDate, 'time': time, 'note': note,
+          'is_first_appointment': _quickIsFirstAppointment, 'no_sms': _quickNoSms, 'no_reminder': _quickNoReminder}));
+      final env = _parseEnvelope(resp);
+      if (env.isSuccess) { _showSnack(loc.appointmentsCreateSuccess, success: true); await _fetchAppointments(); _resetQuickForm(); }
+      else { final h = await _handleIssueByCode(env, firstAppointmentFlow: _quickIsFirstAppointment); if (!h) _showSnack(env.message ?? loc.appointmentsCreateFailedStatus(resp.statusCode.toString())); }
+    } catch (e) { _showSnack(loc.appointmentsCreateFailed(e.toString())); }
+    finally { if (mounted) setState(() { _savingQuick = false; }); }
   }
 
   Future<void> _updateAppointment({
-    required int appointmentId,
-    required int customerId,
-    required int statusId,
-    required String date,
-    required String time,
-    required String notes,
-    required bool noSms,
-    required bool noReminder,
-    String? originalDate,
-    String? originalTime,
-    bool includeScheduleFields = true,
+    required int appointmentId, required int customerId, required int statusId,
+    required String date, required String time, required String notes,
+    required bool noSms, required bool noReminder,
+    String? originalDate, String? originalTime, bool includeScheduleFields = true,
   }) async {
     if (_savingAppointment) return;
-    final normalizedDate =
-        _normalizeDateToApi(date) ?? _normalizeSlotDate(date);
-    final normalizedTime = _normalizeTimeToApi(time) ?? time.trim();
-
-    if (normalizedDate.isEmpty || normalizedTime.isEmpty) {
-      _showSnack(loc.appointmentsDateTimeRequired);
-      return;
-    }
-
+    final normDate = _normalizeDateToApi(date) ?? _normalizeSlotDate(date);
+    final normTime = _normalizeTimeToApi(time) ?? time.trim();
+    if (normDate.isEmpty || normTime.isEmpty) { _showSnack(loc.appointmentsDateTimeRequired); return; }
     final token = await _getToken();
-    if (token == null || token.isEmpty) {
-      _showSnack(loc.appointmentsSessionMissingLogin);
-      return;
-    }
-
-    setState(() {
-      _savingAppointment = true;
-    });
-
+    if (token == null || token.isEmpty) { _showSnack(loc.appointmentsSessionMissingLogin); return; }
+    setState(() { _savingAppointment = true; });
     try {
-      final originalDateNormalized = originalDate == null
-          ? null
-          : (_normalizeDateToApi(originalDate) ??
-              _normalizeSlotDate(originalDate));
-      final originalTimeNormalized = originalTime == null
-          ? null
-          : (_normalizeTimeToApi(originalTime) ?? originalTime.trim());
-      final scheduleChanged = originalDateNormalized == null ||
-          originalTimeNormalized == null ||
-          originalDateNormalized != normalizedDate ||
-          originalTimeNormalized != normalizedTime;
-      final shouldValidateSlot = includeScheduleFields && scheduleChanged;
-
-      if (shouldValidateSlot) {
-        final validateResponse = await authPost(
-          Uri.parse('$apiBaseUrl/api/appointments/validate'),
-          headers: {
-            'Authorization': 'Bearer $token',
-            'Accept': 'application/json',
-            'Content-Type': 'application/json',
-          },
-          body: jsonEncode({
-            'customer_id': customerId,
-            'date': normalizedDate,
-            'time': normalizedTime,
-          }),
-        );
-        final validateEnvelope = _parseEnvelope(validateResponse);
-        if (!validateEnvelope.isSuccess) {
-          final handled = await _handleIssueByCode(validateEnvelope);
-          if (!handled) {
-            _showSnack(validateEnvelope.message ?? loc.calendarSlotBusy);
-          }
-          return;
-        }
+      final origDateNorm = originalDate == null ? null : (_normalizeDateToApi(originalDate) ?? _normalizeSlotDate(originalDate));
+      final origTimeNorm = originalTime == null ? null : (_normalizeTimeToApi(originalTime) ?? originalTime.trim());
+      final schedChanged = origDateNorm == null || origTimeNorm == null || origDateNorm != normDate || origTimeNorm != normTime;
+      if (includeScheduleFields && schedChanged) {
+        final vr = await authPost(Uri.parse('$apiBaseUrl/api/appointments/validate'),
+          headers: {'Authorization': 'Bearer $token', 'Accept': 'application/json', 'Content-Type': 'application/json'},
+          body: jsonEncode({'customer_id': customerId, 'date': normDate, 'time': normTime}));
+        final ve = _parseEnvelope(vr);
+        if (!ve.isSuccess) { final h = await _handleIssueByCode(ve); if (!h) _showSnack(ve.message ?? loc.calendarSlotBusy); return; }
       }
-
-      final response = await authPut(
-        Uri.parse('$apiBaseUrl/api/appointments/$appointmentId'),
-        headers: {
-          'Authorization': 'Bearer $token',
-          'Accept': 'application/json',
-          'Content-Type': 'application/json',
-        },
-        body: jsonEncode({
-          'customer_id': customerId,
-          'appointment_status_id': statusId,
-          if (includeScheduleFields) 'date': normalizedDate,
-          if (includeScheduleFields) 'time': normalizedTime,
-          'notes': notes,
-          'no_sms': noSms,
-          'no_reminder': noReminder,
-        }),
-      );
-      final envelope = _parseEnvelope(response);
-      if (envelope.isSuccess) {
-        _showSnack(loc.appointmentsUpdateSuccess, success: true);
-        await _fetchAppointments();
-      } else {
-        final handled = await _handleIssueByCode(envelope);
-        if (!handled) {
-          _showSnack(
-            envelope.message ??
-                loc.appointmentsUpdateFailedStatus(
-                    response.statusCode.toString()),
-          );
-        }
-      }
-    } catch (e) {
-      _showSnack(loc.appointmentsUpdateFailed(e.toString()));
-    } finally {
-      if (mounted) {
-        setState(() {
-          _savingAppointment = false;
-        });
-      }
-    }
+      final resp = await authPut(Uri.parse('$apiBaseUrl/api/appointments/$appointmentId'),
+        headers: {'Authorization': 'Bearer $token', 'Accept': 'application/json', 'Content-Type': 'application/json'},
+        body: jsonEncode({'customer_id': customerId, 'appointment_status_id': statusId,
+          if (includeScheduleFields) 'date': normDate, if (includeScheduleFields) 'time': normTime,
+          'notes': notes, 'no_sms': noSms, 'no_reminder': noReminder}));
+      final env = _parseEnvelope(resp);
+      if (env.isSuccess) { _showSnack(loc.appointmentsUpdateSuccess, success: true); await _fetchAppointments(); }
+      else { final h = await _handleIssueByCode(env); if (!h) _showSnack(env.message ?? loc.appointmentsUpdateFailedStatus(resp.statusCode.toString())); }
+    } catch (e) { _showSnack(loc.appointmentsUpdateFailed(e.toString())); }
+    finally { if (mounted) setState(() { _savingAppointment = false; }); }
   }
 
   Future<void> _createAppointmentForCustomer({
-    required int customerId,
-    required String date,
-    required String time,
-    required String notes,
-    required bool noSms,
-    required bool noReminder,
-    int? appointmentStatusId,
+    required int customerId, required String date, required String time,
+    required String notes, required bool noSms, required bool noReminder, int? appointmentStatusId,
   }) async {
     if (_creatingRebook) return;
-    if (!_hasUserPack) {
-      _showSnack(
-        _isIosPaymentRestricted
-            ? loc.iosSmsPurchaseRestrictionMessage
-            : loc.appointmentsPackageRequired,
-      );
-      return;
-    }
-
-    final normalizedDate =
-        _normalizeDateToApi(date) ?? _normalizeSlotDate(date);
-    final normalizedTime = _normalizeTimeToApi(time) ?? time.trim();
-
-    if (normalizedDate.isEmpty || normalizedTime.isEmpty) {
-      _showSnack(loc.appointmentsDateTimeRequired);
-      return;
-    }
-
+    if (!_hasUserPack) { _showSnack(_isIosPaymentRestricted ? loc.iosSmsPurchaseRestrictionMessage : loc.appointmentsPackageRequired); return; }
+    final normDate = _normalizeDateToApi(date) ?? _normalizeSlotDate(date);
+    final normTime = _normalizeTimeToApi(time) ?? time.trim();
+    if (normDate.isEmpty || normTime.isEmpty) { _showSnack(loc.appointmentsDateTimeRequired); return; }
     final statusId = appointmentStatusId ?? _defaultStatusId();
-    if (statusId == null) {
-      _showSnack(loc.appointmentsStatusMissing);
-      return;
-    }
-
+    if (statusId == null) { _showSnack(loc.appointmentsStatusMissing); return; }
     final token = await _getToken();
-    if (token == null || token.isEmpty) {
-      _showSnack(loc.appointmentsSessionMissingLogin);
-      return;
-    }
-
-    setState(() {
-      _creatingRebook = true;
-    });
-
+    if (token == null || token.isEmpty) { _showSnack(loc.appointmentsSessionMissingLogin); return; }
+    setState(() { _creatingRebook = true; });
     try {
-      final validateResponse = await authPost(
-        Uri.parse('$apiBaseUrl/api/appointments/validate'),
-        headers: {
-          'Authorization': 'Bearer $token',
-          'Accept': 'application/json',
-          'Content-Type': 'application/json',
-        },
-        body: jsonEncode({
-          'customer_id': customerId,
-          'date': normalizedDate,
-          'time': normalizedTime,
-        }),
-      );
-      final validateEnvelope = _parseEnvelope(validateResponse);
-      if (!validateEnvelope.isSuccess) {
-        final handled = await _handleIssueByCode(validateEnvelope);
-        if (!handled) {
-          _showSnack(validateEnvelope.message ?? loc.calendarSlotBusy);
-        }
-        return;
-      }
-
-      final response = await authPost(
-        Uri.parse('$apiBaseUrl/api/appointments'),
-        headers: {
-          'Authorization': 'Bearer $token',
-          'Accept': 'application/json',
-          'Content-Type': 'application/json',
-        },
-        body: jsonEncode({
-          'customer_id': customerId,
-          'appointment_status_id': statusId,
-          'date': normalizedDate,
-          'time': normalizedTime,
-          'notes': notes,
-          'no_sms': noSms,
-          'no_reminder': noReminder,
-        }),
-      );
-      final envelope = _parseEnvelope(response);
-      if (envelope.isSuccess) {
-        _showSnack(loc.appointmentsRebookSuccess, success: true);
-        await _fetchAppointments();
-      } else {
-        final handled = await _handleIssueByCode(envelope);
-        if (!handled) {
-          _showSnack(
-            envelope.message ??
-                loc.appointmentsCreateFailedStatus(
-                    response.statusCode.toString()),
-          );
-        }
-      }
-    } catch (e) {
-      _showSnack(loc.appointmentsCreateFailed(e.toString()));
-    } finally {
-      if (mounted) {
-        setState(() {
-          _creatingRebook = false;
-        });
-      }
-    }
+      final vr = await authPost(Uri.parse('$apiBaseUrl/api/appointments/validate'),
+        headers: {'Authorization': 'Bearer $token', 'Accept': 'application/json', 'Content-Type': 'application/json'},
+        body: jsonEncode({'customer_id': customerId, 'date': normDate, 'time': normTime}));
+      final ve = _parseEnvelope(vr);
+      if (!ve.isSuccess) { final h = await _handleIssueByCode(ve); if (!h) _showSnack(ve.message ?? loc.calendarSlotBusy); return; }
+      final resp = await authPost(Uri.parse('$apiBaseUrl/api/appointments'),
+        headers: {'Authorization': 'Bearer $token', 'Accept': 'application/json', 'Content-Type': 'application/json'},
+        body: jsonEncode({'customer_id': customerId, 'appointment_status_id': statusId,
+          'date': normDate, 'time': normTime, 'notes': notes, 'no_sms': noSms, 'no_reminder': noReminder}));
+      final env = _parseEnvelope(resp);
+      if (env.isSuccess) { _showSnack(loc.appointmentsRebookSuccess, success: true); await _fetchAppointments(); }
+      else { final h = await _handleIssueByCode(env); if (!h) _showSnack(env.message ?? loc.appointmentsCreateFailedStatus(resp.statusCode.toString())); }
+    } catch (e) { _showSnack(loc.appointmentsCreateFailed(e.toString())); }
+    finally { if (mounted) setState(() { _creatingRebook = false; }); }
   }
 
-  void _showSnack(String message, {bool success = false}) {
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: success ? Colors.green : Colors.red,
+  // ═══════════════════════════════════════════
+  // UI BUILDER METHODS
+  // ═══════════════════════════════════════════
+
+  // ── Section card ───────────────────────────
+  Widget _card({required Widget child, EdgeInsetsGeometry padding = const EdgeInsets.all(20)}) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      decoration: BoxDecoration(color: _T.surface, borderRadius: BorderRadius.circular(_T.r16), border: Border.all(color: _T.border), boxShadow: _T.shadow1),
+      child: Padding(padding: padding, child: child),
+    );
+  }
+
+  // ── Section header inside card ─────────────
+  Widget _sectionHeader(String title, {String? subtitle, IconData? icon, List<Widget>? trailing}) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (icon != null) ...[
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(color: _T.primarySoft, borderRadius: BorderRadius.circular(_T.r8)),
+              child: Icon(icon, size: 16, color: _T.primary),
+            ),
+            const SizedBox(width: 12),
+          ],
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(title, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: _T.ink, letterSpacing: -0.2)),
+                if (subtitle != null) ...[
+                  const SizedBox(height: 2),
+                  Text(subtitle, style: const TextStyle(fontSize: 12, color: _T.inkSecondary)),
+                ],
+              ],
+            ),
+          ),
+          if (trailing != null) ...trailing,
+        ],
       ),
     );
   }
 
-  void _navigateToDashboard() {
-    Navigator.of(context).pushReplacement(
-      MaterialPageRoute(builder: (_) => const DashboardPage()),
+  // ── Stat chips in header ───────────────────
+  Widget _statChip(String label, String value, IconData icon) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.18),
+        borderRadius: BorderRadius.circular(_T.r12),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.25)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 15, color: Colors.white.withValues(alpha: 0.85)),
+          const SizedBox(width: 8),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(label, style: TextStyle(fontSize: 10, color: Colors.white.withValues(alpha: 0.7), fontWeight: FontWeight.w600, letterSpacing: 0.4)),
+              Text(value, style: const TextStyle(fontSize: 17, color: Colors.white, fontWeight: FontWeight.w800, height: 1.1)),
+            ],
+          ),
+        ],
+      ),
     );
   }
 
-  void _showEditSheet(Map<String, dynamic> appt) {
-    final int? appointmentId = appt['id'] is int
-        ? appt['id'] as int
-        : int.tryParse(appt['id']?.toString() ?? '');
-    final int? customerId = appt['customer_id'] is int
-        ? appt['customer_id'] as int
-        : int.tryParse(appt['customer_id']?.toString() ?? '');
-    final int? statusId = appt['appointment_status_id'] is int
-        ? appt['appointment_status_id'] as int
-        : int.tryParse(appt['appointment_status_id']?.toString() ?? '');
-
-    final rawDate = appt['date']?.toString() ?? '';
-    final TextEditingController dateCtrl = TextEditingController(
-      text: rawDate.trim().isEmpty
-          ? ''
-          : _formatDateDisplay(_parseInputDateOrNow(rawDate)),
-    );
-    final TextEditingController timeCtrl =
-        TextEditingController(text: _formatTime(appt['time']));
-    final TextEditingController notesCtrl =
-        TextEditingController(text: appt['notes']?.toString() ?? '');
-    final String customerName = (appt['customer']?['name'] ?? '')
-            .toString()
-            .isNotEmpty
-        ? appt['customer']['name'].toString()
-        : loc.dashboardCustomerFallback(appt["customer_id"]?.toString() ?? '');
-
-    bool localNoSms = _asBool(appt['no_sms']);
-    bool localNoReminder = _asBool(appt['no_reminder']);
-    bool localScheduleChanged = false;
-    final originalFormattedTime = _formatTime(appt['time']);
-
-    List<Map<String, dynamic>> localSlots = [];
-    String? localSlotsError;
-    bool localLoadingSlots = false;
-    String? localSelectedTime =
-        timeCtrl.text.trim().isNotEmpty ? timeCtrl.text.trim() : null;
-    int? localSelectedStatusId = statusId;
-
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      useSafeArea: true,
-      constraints: BoxConstraints(
-        maxHeight: MediaQuery.of(context).size.height * 0.96,
+  // ── Header ─────────────────────────────────
+  Widget _buildHeaderHero() {
+    final todayCount = _countToday();
+    final totalCount = _appointments.length;
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: _T.primary,
+        borderRadius: BorderRadius.circular(_T.r16),
+        boxShadow: [BoxShadow(color: _T.primary.withValues(alpha: 0.28), blurRadius: 20, offset: const Offset(0, 8))],
       ),
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (ctx) {
-        return StatefulBuilder(
-          builder: (ctx, setModalState) {
-            final int? effectiveStatusId =
-                localSelectedStatusId ?? statusId ?? _defaultStatusId();
-
-            Future<void> loadSlots() async {
-              final dateInput = dateCtrl.text.trim();
-              if (dateInput.isEmpty) {
-                _showSnack(loc.appointmentsEnterDateFirst);
-                return;
-              }
-
-              final token = await _getToken();
-              if (token == null || token.isEmpty) {
-                _showSnack(loc.appointmentsSessionMissingLogin);
-                return;
-              }
-
-              final formattedDate = _normalizeSlotDate(dateInput);
-              setModalState(() {
-                localLoadingSlots = true;
-                localSlotsError = null;
-                localSlots = [];
-                localSelectedTime = null;
-                timeCtrl.clear();
-              });
-
-              try {
-                final response = await authGet(
-                  Uri.parse(
-                      '$apiBaseUrl/api/appointments/time-slots?date=$formattedDate'),
-                  headers: {
-                    'Authorization': 'Bearer $token',
-                    'Accept': 'application/json',
-                  },
-                );
-                final envelope = _parseEnvelope(response);
-                final handled = await _handleIssueByCode(envelope);
-                if (handled) {
-                  setModalState(() {
-                    localSlotsError = envelope.message ??
-                        loc.appointmentsSlotsFetchFailedStatus(
-                            response.statusCode.toString());
-                    localLoadingSlots = false;
-                  });
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(loc.appointmentManagement, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w800, color: Colors.white, letterSpacing: -0.4)),
+                    const SizedBox(height: 4),
+                    Text(loc.appointmentSubtitle, style: TextStyle(fontSize: 13, color: Colors.white.withValues(alpha: 0.72))),
+                  ],
+                ),
+              ),
+              _iconBtn(Icons.refresh, onTap: _fetchAppointments, light: true),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              _statChip(loc.today, '$todayCount', Icons.today_outlined),
+              const SizedBox(width: 10),
+              _statChip(loc.total, '$totalCount', Icons.calendar_month_outlined),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Wrap(spacing: 8, runSpacing: 8, children: [
+            _headerBtn(
+              label: loc.quickAppointment,
+              icon: Icons.add,
+              filled: true,
+              onTap: () {
+                if (!_hasUserPack) {
+                  _showSnack(_isIosPaymentRestricted ? loc.iosSmsPurchaseRestrictionMessage : loc.appointmentsPackageRequired);
+                  if (!_isIosPaymentRestricted) Navigator.push(context, MaterialPageRoute(builder: (_) => const SmsPacksPage()));
                   return;
                 }
-                if (envelope.isSuccess) {
-                  final data = _dataOrPayload(envelope);
-                  final slots = data is List
-                      ? List<Map<String, dynamic>>.from(
-                          data.map((e) => Map<String, dynamic>.from(e)))
-                      : <Map<String, dynamic>>[];
-                  setModalState(() {
-                    localSlots = slots;
-                    localSlotsError = null;
-                    localLoadingSlots = false;
-                  });
-                } else {
-                  setModalState(() {
-                    localSlotsError = envelope.message ??
-                        loc.appointmentsSlotsFetchFailedStatus(
-                            response.statusCode.toString());
-                    localLoadingSlots = false;
-                  });
-                }
-              } catch (e) {
-                setModalState(() {
-                  localSlotsError =
-                      loc.appointmentsSlotsFetchFailed(e.toString());
-                  localLoadingSlots = false;
-                });
-              }
-            }
+                setState(() { _showQuickForm = true; });
+              },
+            ),
+            _headerBtn(
+              label: _showFilters ? loc.hideFilter : loc.showFilter,
+              icon: _showFilters ? Icons.filter_alt_off_outlined : Icons.filter_alt_outlined,
+              onTap: () => setState(() { _showFilters = !_showFilters; }),
+            ),
+            _headerBtn(
+              label: loc.refreshList,
+              icon: Icons.sync,
+              onTap: _fetchAppointments,
+            ),
+          ]),
+        ],
+      ),
+    );
+  }
 
-            Future<void> pickDate() async {
-              final today = DateTime.now();
-              final minDate = DateTime(today.year, today.month, today.day);
-              final maxDate = DateTime(today.year + 5, 12, 31);
-              DateTime initial = _clampDate(
-                _parseInputDateOrNow(dateCtrl.text),
-                minDate,
-                maxDate,
-              );
-              final picked = await showDatePicker(
-                context: ctx,
-                initialDate: initial,
-                firstDate: minDate,
-                lastDate: maxDate,
-              );
-              if (picked != null) {
-                setModalState(() {
-                  dateCtrl.text = _formatDateDisplay(picked);
-                  localSelectedTime = null;
-                  timeCtrl.clear();
-                  localSlots = [];
-                  localSlotsError = null;
-                  localScheduleChanged = true;
-                });
-                await loadSlots();
-              }
-            }
+  Widget _headerBtn({required String label, required IconData icon, bool filled = false, required VoidCallback onTap}) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
+        decoration: BoxDecoration(
+          color: filled ? Colors.white : Colors.white.withValues(alpha: 0.15),
+          borderRadius: BorderRadius.circular(_T.r10),
+          border: Border.all(color: filled ? Colors.transparent : Colors.white.withValues(alpha: 0.3)),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 15, color: filled ? _T.primary : Colors.white),
+            const SizedBox(width: 6),
+            Text(label, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: filled ? _T.primary : Colors.white)),
+          ],
+        ),
+      ),
+    );
+  }
 
-            final media = MediaQuery.of(ctx);
-            final bottomInset =
-                media.viewInsets.bottom + media.viewPadding.bottom + 16;
+  Widget _iconBtn(IconData icon, {required VoidCallback onTap, bool light = false}) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(8),
+        decoration: BoxDecoration(
+          color: light ? Colors.white.withValues(alpha: 0.15) : _T.surfaceAlt,
+          borderRadius: BorderRadius.circular(_T.r8),
+          border: Border.all(color: light ? Colors.white.withValues(alpha: 0.25) : _T.border),
+        ),
+        child: Icon(icon, size: 18, color: light ? Colors.white : _T.inkSecondary),
+      ),
+    );
+  }
 
-            return SafeArea(
-              top: false,
-              child: Padding(
-                padding: EdgeInsets.only(
-                  bottom: bottomInset,
-                  left: 16,
-                  right: 16,
-                  top: 16,
+  // ── Appointment card ───────────────────────
+  Widget _buildAppointmentCard(Map<String, dynamic> appt) {
+    final customer   = appt['customer'] is Map ? appt['customer'] : null;
+    final status     = appt['appointment_status'] is Map ? appt['appointment_status'] : null;
+    final rawName    = customer?['name']?.toString() ?? '';
+    final name       = rawName.isNotEmpty ? rawName : loc.dashboardCustomerFallback(appt['customer_id']?.toString() ?? '');
+    final statusName = status == null ? '' : _localizedStatusLabel(Map<String, dynamic>.from(status));
+    final statusColor= _statusColor(status?['color']?.toString());
+    final phone      = (customer?['phone'] ?? customer?['formatted_phone'] ?? appt['phone'])?.toString();
+    final notes      = (appt['notes'] ?? '').toString();
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      decoration: BoxDecoration(color: _T.surface, borderRadius: BorderRadius.circular(_T.r14), border: Border.all(color: _T.border), boxShadow: _T.shadow1),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(_T.r14),
+          onTap: () => _showEditSheet(appt),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    // Avatar with status color accent
+                    Container(
+                      width: 40, height: 40,
+                      decoration: BoxDecoration(
+                        color: statusColor.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(_T.r10),
+                      ),
+                      child: Icon(Icons.person_outline, color: statusColor, size: 20),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(name, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: _T.ink)),
+                          if (statusName.isNotEmpty) ...[
+                            const SizedBox(height: 3),
+                            _statusBadge(statusName, statusColor),
+                          ],
+                        ],
+                      ),
+                    ),
+                    // Action buttons
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        _cardActionBtn(Icons.person_search_outlined, _T.primary, loc.appointmentsCustomerPreviewTooltip, () => _showCustomerInfo(appt)),
+                        const SizedBox(width: 6),
+                        _cardActionBtn(Icons.event_repeat_outlined, const Color(0xFF7C3AED), loc.appointmentsRebookTooltip, () => _showRebookSheet(appt)),
+                        const SizedBox(width: 6),
+                        _cardActionBtn(Icons.edit_outlined, _T.inkSecondary, loc.appointmentsEditTooltip, () => _showEditSheet(appt)),
+                      ],
+                    ),
+                  ],
                 ),
-                child: SingleChildScrollView(
-                  keyboardDismissBehavior:
-                      ScrollViewKeyboardDismissBehavior.onDrag,
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                const SizedBox(height: 12),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  decoration: BoxDecoration(color: _T.surfaceAlt, borderRadius: BorderRadius.circular(_T.r8)),
+                  child: Row(
                     children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                loc.editAppointment,
-                                style: const TextStyle(
-                                    fontSize: 16, fontWeight: FontWeight.bold),
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                customerName,
-                                style: const TextStyle(
-                                  fontSize: 14,
-                                  color: Colors.grey,
-                                ),
-                              ),
-                            ],
-                          ),
-                          IconButton(
-                            icon: const Icon(Icons.close),
-                            onPressed: () => Navigator.of(ctx).pop(),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 8),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: TextField(
-                              controller: dateCtrl,
-                              readOnly: true,
-                              decoration: InputDecoration(
-                                labelText: loc.date,
-                                hintText: loc.calendarDateHint,
-                              ),
-                              onTap: pickDate,
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: TextField(
-                              controller: timeCtrl,
-                              readOnly: true,
-                              decoration: InputDecoration(
-                                labelText: loc.timeSelect,
-                                hintText: loc.calendarTimeSlotHint,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 8),
-                      Row(
-                        children: [
-                          ElevatedButton.icon(
-                            onPressed: localLoadingSlots ? null : loadSlots,
-                            icon: localLoadingSlots
-                                ? const SizedBox(
-                                    width: 16,
-                                    height: 16,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                      valueColor:
-                                          AlwaysStoppedAnimation(Colors.white),
-                                    ),
-                                  )
-                                : const Icon(Icons.schedule),
-                            label: Text(loc.getAvailableTimes),
-                          ),
-                          const SizedBox(width: 12),
-                          if (localSlotsError != null)
-                            Expanded(
-                              child: Text(
-                                localSlotsError!,
-                                style: const TextStyle(color: Colors.red),
-                              ),
-                            ),
-                        ],
-                      ),
-                      const SizedBox(height: 8),
-                      if (localLoadingSlots)
-                        const LinearProgressIndicator(minHeight: 2),
-                      DropdownButtonFormField<int>(
-                        initialValue: effectiveStatusId,
-                        isExpanded: true,
-                        decoration: InputDecoration(
-                          labelText: loc.status,
-                          hintText: _loadingStatuses
-                              ? loc.calendarLoading
-                              : loc.appointmentsStatusSelectHint,
-                          errorText: _statusesError,
-                        ),
-                        items: _appointmentStatuses
-                            .map(
-                              (s) => DropdownMenuItem<int>(
-                                value: s['id'] as int?,
-                                child: Text(_localizedStatusLabel(s)),
-                              ),
-                            )
-                            .toList(),
-                        onChanged: _loadingStatuses
-                            ? null
-                            : (val) {
-                                setModalState(() {
-                                  localSelectedStatusId = val;
-                                  _statusesError = null;
-                                });
-                              },
-                      ),
-                      const SizedBox(height: 8),
-                      if (localSlots.isNotEmpty)
-                        Wrap(
-                          spacing: 8,
-                          runSpacing: 8,
-                          children: localSlots.map((slot) {
-                            final time = slot['time']?.toString() ?? '';
-                            final booked =
-                                slot['booked'] == true || slot['booked'] == 1;
-                            final canUseBooked = time == originalFormattedTime;
-                            final disabled = booked && !canUseBooked;
-                            final selected = localSelectedTime == time;
-                            return ChoiceChip(
-                              label: Text(time),
-                              selected: selected,
-                              onSelected: disabled
-                                  ? null
-                                  : (val) {
-                                      if (val) {
-                                        setModalState(() {
-                                          localSelectedTime = time;
-                                          timeCtrl.text = time;
-                                          localSlotsError = null;
-                                          localScheduleChanged =
-                                              time != originalFormattedTime;
-                                        });
-                                      }
-                                    },
-                              disabledColor: Colors.grey.shade300,
-                              selectedColor: Colors.green.shade200,
-                              labelStyle: TextStyle(
-                                color: disabled
-                                    ? Colors.grey
-                                    : (selected
-                                        ? Colors.black
-                                        : Colors.black87),
-                              ),
-                            );
-                          }).toList(),
-                        ),
-                      const SizedBox(height: 8),
-                      TextField(
-                        controller: notesCtrl,
-                        maxLines: 2,
-                        decoration: InputDecoration(labelText: loc.note),
-                      ),
-                      const SizedBox(height: 8),
-                      SwitchListTile(
-                        title: Text(loc.doNotSendSms),
-                        value: localNoSms,
-                        onChanged: (val) {
-                          setModalState(() {
-                            localNoSms = val;
-                          });
-                        },
-                        contentPadding: EdgeInsets.zero,
-                      ),
-                      SwitchListTile(
-                        title: Text(loc.doNotSendReminder),
-                        value: localNoReminder,
-                        onChanged: (val) {
-                          setModalState(() {
-                            localNoReminder = val;
-                          });
-                        },
-                        contentPadding: EdgeInsets.zero,
-                      ),
-                      const SizedBox(height: 12),
-                      SizedBox(
-                        width: double.infinity,
-                        child: ElevatedButton.icon(
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.green.shade600,
-                            foregroundColor: Colors.white,
-                          ),
-                          onPressed: (appointmentId == null ||
-                                  customerId == null ||
-                                  effectiveStatusId == null ||
-                                  _savingAppointment)
-                              ? null
-                              : () async {
-                                  final selectedDate = dateCtrl.text.trim();
-                                  final selectedTime =
-                                      (localSelectedTime ?? timeCtrl.text)
-                                          .trim();
-                                  final scheduleChanged = localScheduleChanged;
-                                  Navigator.of(ctx).pop();
-                                  await _updateAppointment(
-                                    appointmentId: appointmentId,
-                                    customerId: customerId,
-                                    statusId: effectiveStatusId,
-                                    date: selectedDate,
-                                    time: selectedTime,
-                                    notes: notesCtrl.text.trim(),
-                                    noSms: localNoSms,
-                                    noReminder: localNoReminder,
-                                    originalDate: rawDate,
-                                    originalTime: originalFormattedTime,
-                                    includeScheduleFields: scheduleChanged,
-                                  );
-                                },
-                          icon: _savingAppointment
-                              ? const SizedBox(
-                                  width: 16,
-                                  height: 16,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                    valueColor:
-                                        AlwaysStoppedAnimation(Colors.white),
-                                  ),
-                                )
-                              : const Icon(Icons.save),
-                          label: Text(loc.save),
-                        ),
-                      ),
-                      const SizedBox(height: 12),
+                      _metaItem(Icons.calendar_today_outlined, _formatDate(appt['date'])),
+                      const SizedBox(width: 16),
+                      _metaItem(Icons.access_time_outlined, _formatTime(appt['time'])),
+                      if (phone != null && phone.isNotEmpty) ...[
+                        const SizedBox(width: 16),
+                        _metaItem(Icons.phone_outlined, phone),
+                      ],
                     ],
                   ),
                 ),
+                if (notes.isNotEmpty) ...[
+                  const SizedBox(height: 10),
+                  Text(notes, maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 13, color: _T.inkSecondary, height: 1.4)),
+                ],
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _statusBadge(String label, Color color) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      decoration: BoxDecoration(color: color.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(_T.r4), border: Border.all(color: color.withValues(alpha: 0.25))),
+      child: Text(label.toUpperCase(), style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: color, letterSpacing: 0.4)),
+    );
+  }
+
+  Widget _metaItem(IconData icon, String text) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(icon, size: 13, color: _T.inkSecondary),
+        const SizedBox(width: 4),
+        Text(text, style: const TextStyle(fontSize: 12, color: _T.inkSecondary, fontWeight: FontWeight.w500)),
+      ],
+    );
+  }
+
+  Widget _cardActionBtn(IconData icon, Color color, String tooltip, VoidCallback onTap) {
+    return Tooltip(
+      message: tooltip,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(_T.r8),
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.all(7),
+          decoration: BoxDecoration(color: color.withValues(alpha: 0.08), borderRadius: BorderRadius.circular(_T.r8)),
+          child: Icon(icon, size: 16, color: color),
+        ),
+      ),
+    );
+  }
+
+  // ── Appointment list ───────────────────────
+  Widget _buildAppointmentList() {
+    if (_loadingList) {
+      return const Padding(
+        padding: EdgeInsets.symmetric(vertical: 48),
+        child: Center(child: CircularProgressIndicator(color: _T.primary, strokeWidth: 2)),
+      );
+    }
+    if (_error != null) {
+      return _card(child: Column(
+        children: [
+          _sectionHeader(loc.appointmentsTitle, icon: Icons.calendar_today_outlined),
+          Container(
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(color: _T.dangerSoft, borderRadius: BorderRadius.circular(_T.r8), border: Border.all(color: _T.danger.withValues(alpha: 0.2))),
+            child: Row(children: [
+              const Icon(Icons.error_outline, color: _T.danger, size: 16),
+              const SizedBox(width: 10),
+              Expanded(child: Text(_error!, style: const TextStyle(fontSize: 13, color: _T.danger))),
+            ]),
+          ),
+        ],
+      ));
+    }
+    if (_appointments.isEmpty) {
+      return _card(child: Column(
+        children: [
+          _sectionHeader(loc.appointmentsTitle, icon: Icons.calendar_today_outlined),
+          Container(
+            padding: const EdgeInsets.symmetric(vertical: 28),
+            alignment: Alignment.center,
+            child: Column(children: [
+              const Icon(Icons.event_busy_outlined, size: 40, color: _T.inkDisabled),
+              const SizedBox(height: 10),
+              Text(loc.appointmentsEmpty, style: const TextStyle(fontSize: 13, color: _T.inkSecondary)),
+            ]),
+          ),
+        ],
+      ));
+    }
+    return _card(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _sectionHeader(loc.appointmentsTitle, subtitle: loc.appointmentsCountLabel(_appointments.length.toString()), icon: Icons.event_note_outlined),
+          ..._appointments.map(_buildAppointmentCard),
+        ],
+      ),
+    );
+  }
+
+  // ── Filter form ────────────────────────────
+  Widget _buildFilterForm() {
+    if (!_showFilters) return const SizedBox.shrink();
+    return _card(child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _sectionHeader(loc.showFilter, subtitle: loc.appointmentsFilterSubtitle, icon: Icons.tune_outlined,
+          trailing: [IconButton(icon: const Icon(Icons.close, size: 18), onPressed: () => setState(() { _showFilters = false; }), color: _T.inkSecondary, padding: EdgeInsets.zero, constraints: const BoxConstraints())]),
+        Row(children: [
+          Expanded(child: TextField(controller: _filterNameCtrl, decoration: _fieldDecor(label: loc.appointmentsFieldName, hint: loc.appointmentsFieldNameFilterHint))),
+          const SizedBox(width: 10),
+          Expanded(child: TextField(controller: _filterLastNameCtrl, decoration: _fieldDecor(label: loc.appointmentsFieldLastName, hint: loc.appointmentsFieldLastNameFilterHint))),
+        ]),
+        const SizedBox(height: 10),
+        TextField(controller: _filterPhoneCtrl, decoration: _fieldDecor(label: loc.appointmentsFieldPhone, prefix: const Icon(Icons.phone_outlined, size: 18))),
+        const SizedBox(height: 10),
+        Row(children: [
+          Expanded(child: TextField(
+            controller: _filterDateFromCtrl, readOnly: true,
+            decoration: _fieldDecor(label: loc.appointmentsStartDate, hint: loc.calendarDateHint, prefix: const Icon(Icons.calendar_today_outlined, size: 17)),
+            onTap: () async {
+              final today = DateTime.now();
+              final min = DateTime(today.year - 1, 1, 1); final max = DateTime(today.year + 5, 12, 31);
+              final p = await showDatePicker(context: context, initialDate: _clampDate(_parseInputDateOrNow(_filterDateFromCtrl.text), min, max), firstDate: min, lastDate: max);
+              if (p != null) setState(() { _filterDateFromCtrl.text = _formatDateDisplay(p); });
+            },
+          )),
+          const SizedBox(width: 10),
+          Expanded(child: TextField(
+            controller: _filterDateToCtrl, readOnly: true,
+            decoration: _fieldDecor(label: loc.appointmentsEndDate, hint: loc.calendarDateHint, prefix: const Icon(Icons.calendar_today_outlined, size: 17)),
+            onTap: () async {
+              final today = DateTime.now();
+              final min = DateTime(today.year - 1, 1, 1); final max = DateTime(today.year + 5, 12, 31);
+              final p = await showDatePicker(context: context, initialDate: _clampDate(_parseInputDateOrNow(_filterDateToCtrl.text), min, max), firstDate: min, lastDate: max);
+              if (p != null) setState(() { _filterDateToCtrl.text = _formatDateDisplay(p); });
+            },
+          )),
+        ]),
+        const SizedBox(height: 10),
+        Row(children: [
+          Expanded(child: DropdownButtonFormField<String>(
+            initialValue: _filterTimeFromCtrl.text.isNotEmpty ? _filterTimeFromCtrl.text : null,
+            decoration: _fieldDecor(label: loc.appointmentsStartTime, hint: 'HH:MM'),
+            items: _timeOptions.map((t) => DropdownMenuItem(value: t, child: Text(t, style: const TextStyle(fontSize: 13)))).toList(),
+            onChanged: (v) => setState(() { _filterTimeFromCtrl.text = v ?? ''; }),
+          )),
+          const SizedBox(width: 10),
+          Expanded(child: DropdownButtonFormField<String>(
+            initialValue: _filterTimeToCtrl.text.isNotEmpty ? _filterTimeToCtrl.text : null,
+            decoration: _fieldDecor(label: loc.appointmentsEndTime, hint: 'HH:MM'),
+            items: _timeOptions.map((t) => DropdownMenuItem(value: t, child: Text(t, style: const TextStyle(fontSize: 13)))).toList(),
+            onChanged: (v) => setState(() { _filterTimeToCtrl.text = v ?? ''; }),
+          )),
+        ]),
+        const SizedBox(height: 16),
+        Row(children: [
+          Expanded(child: _primaryBtn(label: loc.showFilter, icon: Icons.search, onTap: _applyFilters)),
+          const SizedBox(width: 10),
+          _outlineBtn(label: loc.appointmentsClear, onTap: _clearFilters),
+        ]),
+      ],
+    ));
+  }
+
+  // ── Quick appointment form ─────────────────
+  Widget _buildQuickForm() {
+    if (!_hasUserPack) {
+      return _card(child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _sectionHeader(loc.quickAppointmentTitle, icon: Icons.add_circle_outline,
+            trailing: _isIosPaymentRestricted ? null : [TextButton(onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SmsPacksPage())), child: Text(loc.appointmentsBuyPackage))]),
+          Container(
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(color: _T.warningSoft, borderRadius: BorderRadius.circular(_T.r8), border: Border.all(color: _T.warning.withValues(alpha: 0.3))),
+            child: Row(children: [
+              const Icon(Icons.info_outline, color: _T.warning, size: 16),
+              const SizedBox(width: 10),
+              Expanded(child: Text(_isIosPaymentRestricted ? loc.iosSmsPurchaseRestrictionMessage : loc.appointmentsPackageRequired, style: const TextStyle(fontSize: 13, color: _T.ink))),
+            ]),
+          ),
+        ],
+      ));
+    }
+    if (!_showQuickForm) return const SizedBox.shrink();
+
+    return _card(child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _sectionHeader(loc.quickAppointmentTitle, subtitle: loc.quickAppointmentSubtitle, icon: Icons.add_circle_outline,
+          trailing: [IconButton(icon: const Icon(Icons.close, size: 18), onPressed: () => setState(() { _showQuickForm = false; }), color: _T.inkSecondary, padding: EdgeInsets.zero, constraints: const BoxConstraints())]),
+
+        // Customer info group
+        _groupLabel(loc.customerInfo),
+        const SizedBox(height: 8),
+        Row(children: [
+          Expanded(child: TextField(controller: _quickNameCtrl, decoration: _fieldDecor(label: loc.appointmentsFieldName, hint: loc.appointmentsFieldNameHint))),
+          const SizedBox(width: 10),
+          Expanded(child: TextField(controller: _quickLastNameCtrl, decoration: _fieldDecor(label: loc.appointmentsFieldLastName, hint: loc.appointmentsFieldLastNameHint))),
+        ]),
+        const SizedBox(height: 10),
+        DropdownButtonFormField<int>(
+          initialValue: _selectedCountryId,
+          isExpanded: true,
+          decoration: _fieldDecor(label: loc.appointmentsCountry, hint: _loadingCountries ? loc.calendarLoading : loc.appointmentsSelectCountry, error: _countriesError),
+          items: _countries.map((c) => DropdownMenuItem<int>(value: c['id'] as int?, child: Text('${c['name'] ?? ''} (${c['phone_code'] ?? ''})', style: const TextStyle(fontSize: 13)))).toList(),
+          onChanged: _loadingCountries ? null : (v) => setState(() { _selectedCountryId = v; _quickCountryIdCtrl.text = v != null ? '$v' : ''; _countriesError = null; }),
+        ),
+        const SizedBox(height: 10),
+        Row(children: [
+          Expanded(child: TextField(
+            controller: _quickPhoneCtrl, keyboardType: TextInputType.phone,
+            inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[\d()\s]')), _phoneMaskFormatter],
+            decoration: _fieldDecor(label: loc.appointmentsFieldPhone, hint: loc.appointmentsFieldPhoneHint, prefix: const Icon(Icons.phone_outlined, size: 17)),
+          )),
+          const SizedBox(width: 10),
+          Expanded(child: TextField(
+            controller: _quickEmailCtrl, keyboardType: TextInputType.emailAddress,
+            decoration: _fieldDecor(label: loc.emailLabel, hint: loc.appointmentsFieldEmailHint, prefix: const Icon(Icons.email_outlined, size: 17)),
+          )),
+        ]),
+        const SizedBox(height: 18),
+
+        // Appointment info group
+        _groupLabel(loc.appointmentInfo),
+        const SizedBox(height: 8),
+        Row(children: [
+          Expanded(child: TextField(
+            controller: _quickDateCtrl, readOnly: true,
+            decoration: _fieldDecor(label: loc.date, hint: loc.calendarDateHint, prefix: const Icon(Icons.calendar_today_outlined, size: 17)),
+            onTap: _pickQuickDate,
+          )),
+          const SizedBox(width: 10),
+          Expanded(child: TextField(
+            controller: _quickTimeCtrl, readOnly: true,
+            decoration: _fieldDecor(label: loc.timeSelect, hint: loc.calendarTimeSlotHint, prefix: const Icon(Icons.access_time_outlined, size: 17)),
+          )),
+        ]),
+        const SizedBox(height: 10),
+        SizedBox(
+          width: double.infinity,
+          child: _outlineBtn(label: loc.getAvailableTimes, icon: Icons.schedule_outlined, onTap: _loadingSlots ? null : _fetchTimeSlots, loading: _loadingSlots),
+        ),
+        if (_slotsError != null) ...[
+          const SizedBox(height: 8),
+          _inlineError(_slotsError!),
+        ],
+        if (_loadingSlots) ...[
+          const SizedBox(height: 8),
+          const LinearProgressIndicator(color: _T.primary, backgroundColor: _T.primarySoft, minHeight: 2),
+        ],
+        if (_slotsRequested && !_loadingSlots && _slotsError == null && _timeSlots.isEmpty) ...[
+          const SizedBox(height: 8),
+          _buildWorkingPrefCallout(),
+        ],
+        if (_timeSlots.isNotEmpty) ...[
+          const SizedBox(height: 10),
+          _buildTimeSlotGrid(_timeSlots, _selectedSlotTime, (t) => setState(() { _selectedSlotTime = t; _quickTimeCtrl.text = t; _slotsError = null; })),
+        ],
+        const SizedBox(height: 10),
+        TextField(
+          controller: _quickNoteCtrl, maxLines: 2,
+          decoration: _fieldDecor(label: loc.note, hint: '...'),
+        ),
+        const SizedBox(height: 6),
+        _minimalToggle(label: loc.appointmentsFirstAppointment, value: _quickIsFirstAppointment, onChanged: (v) => setState(() { _quickIsFirstAppointment = v; })),
+        _minimalToggle(label: loc.doNotSendSms, subtitle: loc.smsOffForAppointment, value: _quickNoSms, onChanged: (v) => setState(() { _quickNoSms = v; })),
+        _minimalToggle(label: loc.appointmentsReminderDisableTitle, subtitle: loc.reminderOffForAppointment, value: _quickNoReminder, onChanged: (v) => setState(() { _quickNoReminder = v; })),
+        const SizedBox(height: 14),
+        _primaryBtn(
+          label: _savingQuick ? loc.appointmentsSubmitting : loc.quickAppointmentTitle,
+          icon: Icons.event_available_outlined,
+          onTap: _savingQuick ? null : _submitQuickAppointment,
+          loading: _savingQuick,
+        ),
+      ],
+    ));
+  }
+
+  // ── Working pref callout ───────────────────
+  Widget _buildWorkingPrefCallout() {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(color: const Color(0xFFEFF6FF), borderRadius: BorderRadius.circular(_T.r10), border: Border.all(color: const Color(0xFFBFDBFE))),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Icon(Icons.info_outline, color: Color(0xFF3B82F6), size: 16),
+          const SizedBox(width: 10),
+          Expanded(child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(loc.calendarWorkingHoursPrompt, style: const TextStyle(fontSize: 13, color: _T.ink, fontWeight: FontWeight.w500)),
+              const SizedBox(height: 8),
+              GestureDetector(
+                onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const WorkingPreferencesPage())),
+                child: Text(loc.setWorkingHours, style: const TextStyle(fontSize: 12, color: Color(0xFF2563EB), fontWeight: FontWeight.w600, decoration: TextDecoration.underline)),
               ),
-            );
-          },
+            ],
+          )),
+        ],
+      ),
+    );
+  }
+
+  // ── Modals ─────────────────────────────────
+  void _showEditSheet(Map<String, dynamic> appt) {
+    final int? appointmentId = appt['id'] is int ? appt['id'] as int : int.tryParse(appt['id']?.toString() ?? '');
+    final int? customerId    = appt['customer_id'] is int ? appt['customer_id'] as int : int.tryParse(appt['customer_id']?.toString() ?? '');
+    final int? statusId      = appt['appointment_status_id'] is int ? appt['appointment_status_id'] as int : int.tryParse(appt['appointment_status_id']?.toString() ?? '');
+    final rawDate = appt['date']?.toString() ?? '';
+    final dateCtrl  = TextEditingController(text: rawDate.trim().isEmpty ? '' : _formatDateDisplay(_parseInputDateOrNow(rawDate)));
+    final timeCtrl  = TextEditingController(text: _formatTime(appt['time']));
+    final notesCtrl = TextEditingController(text: appt['notes']?.toString() ?? '');
+    final customerName = (appt['customer']?['name'] ?? '').toString().isNotEmpty
+        ? appt['customer']['name'].toString()
+        : loc.dashboardCustomerFallback(appt['customer_id']?.toString() ?? '');
+    bool localNoSms = _asBool(appt['no_sms']);
+    bool localNoReminder = _asBool(appt['no_reminder']);
+    bool localScheduleChanged = false;
+    final origFormattedTime = _formatTime(appt['time']);
+    List<Map<String, dynamic>> localSlots = [];
+    String? localSlotsError;
+    bool localLoadingSlots = false;
+    String? localSelectedTime = timeCtrl.text.trim().isNotEmpty ? timeCtrl.text.trim() : null;
+    int? localSelectedStatusId = statusId;
+
+    showModalBottomSheet(
+      context: context, isScrollControlled: true, useSafeArea: true,
+      backgroundColor: _T.surface,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.96),
+      builder: (ctx) => StatefulBuilder(builder: (ctx, setModal) {
+        final effectiveStatusId = localSelectedStatusId ?? statusId ?? _defaultStatusId();
+
+        Future<void> loadSlots() async {
+          final di = dateCtrl.text.trim(); if (di.isEmpty) { _showSnack(loc.appointmentsEnterDateFirst); return; }
+          final token = await _getToken(); if (token == null || token.isEmpty) { _showSnack(loc.appointmentsSessionMissingLogin); return; }
+          setModal(() { localLoadingSlots = true; localSlotsError = null; localSlots = []; localSelectedTime = null; timeCtrl.clear(); });
+          try {
+            final resp = await authGet(Uri.parse('$apiBaseUrl/api/appointments/time-slots?date=${_normalizeSlotDate(di)}'), headers: {'Authorization': 'Bearer $token', 'Accept': 'application/json'});
+            final env  = _parseEnvelope(resp);
+            if (await _handleIssueByCode(env)) { setModal(() { localSlotsError = env.message ?? loc.appointmentsSlotsFetchFailedStatus(resp.statusCode.toString()); localLoadingSlots = false; }); return; }
+            if (env.isSuccess) {
+              final data = _dataOrPayload(env);
+              setModal(() { localSlots = data is List ? List<Map<String, dynamic>>.from(data.map((e) => Map<String, dynamic>.from(e))) : []; localLoadingSlots = false; });
+            } else { setModal(() { localSlotsError = env.message ?? loc.appointmentsSlotsFetchFailedStatus(resp.statusCode.toString()); localLoadingSlots = false; }); }
+          } catch (e) { setModal(() { localSlotsError = loc.appointmentsSlotsFetchFailed(e.toString()); localLoadingSlots = false; }); }
+        }
+
+        Future<void> pickDate() async {
+          final today = DateTime.now(); final min = DateTime(today.year, today.month, today.day); final max = DateTime(today.year + 5, 12, 31);
+          final p = await showDatePicker(context: ctx, initialDate: _clampDate(_parseInputDateOrNow(dateCtrl.text), min, max), firstDate: min, lastDate: max);
+          if (p != null) { setModal(() { dateCtrl.text = _formatDateDisplay(p); localSelectedTime = null; timeCtrl.clear(); localSlots = []; localSlotsError = null; localScheduleChanged = true; }); await loadSlots(); }
+        }
+
+        final bottom = MediaQuery.of(ctx).viewInsets.bottom + MediaQuery.of(ctx).viewPadding.bottom + 20;
+        return SafeArea(
+          top: false,
+          child: Padding(
+            padding: EdgeInsets.fromLTRB(20, 20, 20, bottom),
+            child: SingleChildScrollView(
+              keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+              child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
+                _sheetHandle(),
+                const SizedBox(height: 16),
+                Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+                  Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                    Text(loc.editAppointment, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: _T.ink, letterSpacing: -0.3)),
+                    const SizedBox(height: 2),
+                    Text(customerName, style: const TextStyle(fontSize: 13, color: _T.inkSecondary)),
+                  ]),
+                  _iconBtn(Icons.close, onTap: () => Navigator.of(ctx).pop()),
+                ]),
+                const SizedBox(height: 20),
+                Row(children: [
+                  Expanded(child: TextField(controller: dateCtrl, readOnly: true, onTap: pickDate, decoration: _fieldDecor(label: loc.date, hint: loc.calendarDateHint, prefix: const Icon(Icons.calendar_today_outlined, size: 17)))),
+                  const SizedBox(width: 10),
+                  Expanded(child: TextField(controller: timeCtrl, readOnly: true, decoration: _fieldDecor(label: loc.timeSelect, hint: loc.calendarTimeSlotHint, prefix: const Icon(Icons.access_time_outlined, size: 17)))),
+                ]),
+                const SizedBox(height: 10),
+                _outlineBtn(label: loc.getAvailableTimes, icon: Icons.schedule_outlined, onTap: localLoadingSlots ? null : loadSlots, loading: localLoadingSlots, fullWidth: true),
+                if (localSlotsError != null) ...[const SizedBox(height: 8), _inlineError(localSlotsError!)],
+                if (localLoadingSlots) ...[const SizedBox(height: 6), const LinearProgressIndicator(color: _T.primary, backgroundColor: _T.primarySoft, minHeight: 2)],
+                if (localSlots.isNotEmpty) ...[
+                  const SizedBox(height: 10),
+                  _buildTimeSlotGrid(localSlots, localSelectedTime, (t) {
+                    setModal(() { localSelectedTime = t; timeCtrl.text = t; localSlotsError = null; localScheduleChanged = t != origFormattedTime; });
+                  }, originalTime: origFormattedTime),
+                ],
+                const SizedBox(height: 10),
+                DropdownButtonFormField<int>(
+                  initialValue: effectiveStatusId, isExpanded: true,
+                  decoration: _fieldDecor(label: loc.status, hint: _loadingStatuses ? loc.calendarLoading : loc.appointmentsStatusSelectHint, error: _statusesError),
+                  items: _appointmentStatuses.map((s) => DropdownMenuItem<int>(value: s['id'] as int?, child: Text(_localizedStatusLabel(s), style: const TextStyle(fontSize: 13)))).toList(),
+                  onChanged: _loadingStatuses ? null : (v) => setModal(() { localSelectedStatusId = v; _statusesError = null; }),
+                ),
+                const SizedBox(height: 10),
+                TextField(controller: notesCtrl, maxLines: 2, decoration: _fieldDecor(label: loc.note, hint: '...')),
+                const SizedBox(height: 6),
+                _minimalToggle(label: loc.doNotSendSms, value: localNoSms, onChanged: (v) => setModal(() { localNoSms = v; })),
+                _minimalToggle(label: loc.doNotSendReminder, value: localNoReminder, onChanged: (v) => setModal(() { localNoReminder = v; })),
+                const SizedBox(height: 16),
+                _primaryBtn(
+                  label: loc.save, icon: Icons.save_outlined,
+                  onTap: (appointmentId == null || customerId == null || effectiveStatusId == null || _savingAppointment) ? null : () async {
+                    Navigator.of(ctx).pop();
+                    await _updateAppointment(
+                      appointmentId: appointmentId, customerId: customerId, statusId: effectiveStatusId,
+                      date: dateCtrl.text.trim(), time: (localSelectedTime ?? timeCtrl.text).trim(),
+                      notes: notesCtrl.text.trim(), noSms: localNoSms, noReminder: localNoReminder,
+                      originalDate: rawDate, originalTime: origFormattedTime, includeScheduleFields: localScheduleChanged,
+                    );
+                  },
+                  loading: _savingAppointment,
+                  color: _T.success,
+                ),
+              ]),
+            ),
+          ),
         );
-      },
+      }),
     );
   }
 
   void _showCustomerInfo(Map<String, dynamic> appt) {
-    final int? appointmentId = appt['id'] is int
-        ? appt['id'] as int
-        : int.tryParse(appt['id']?.toString() ?? '');
-    if (appointmentId == null) {
-      _showSnack(loc.appointmentsInfoMissing);
-      return;
-    }
-
+    final int? appointmentId = appt['id'] is int ? appt['id'] as int : int.tryParse(appt['id']?.toString() ?? '');
+    if (appointmentId == null) { _showSnack(loc.appointmentsInfoMissing); return; }
     Map<String, dynamic>? info;
     String? loadError;
 
-    Future<void> fetchInfo(StateSetter setModalState) async {
+    Future<void> fetchInfo(StateSetter setModal) async {
       final token = await _getToken();
-      if (token == null || token.isEmpty) {
-        setModalState(() {
-          loadError = loc.calendarSessionMissing;
-        });
-        return;
-      }
-
-      setModalState(() {
-        _loadingCustomerInfo = true;
-        loadError = null;
-      });
-
+      if (token == null || token.isEmpty) { setModal(() { loadError = loc.calendarSessionMissing; }); return; }
+      setModal(() { _loadingCustomerInfo = true; loadError = null; });
       try {
-        final response = await authPost(
-          Uri.parse('$apiBaseUrl/api/appointments/customer-info'),
-          headers: {
-            'Authorization': 'Bearer $token',
-            'Accept': 'application/json',
-            'Content-Type': 'application/json',
-          },
-          body: jsonEncode({'appointment_id': appointmentId}),
-        );
-        final envelope = _parseEnvelope(response);
-        final handled = await _handleIssueByCode(envelope);
-        if (handled) {
-          setModalState(() {
-            loadError = envelope.message ??
-                loc.appointmentsInfoFetchFailedStatus(
-                    response.statusCode.toString());
-            _loadingCustomerInfo = false;
-          });
-          return;
-        }
-        if (envelope.isSuccess) {
-          final data = _dataOrPayload(envelope);
-          setModalState(() {
-            info = data is Map ? Map<String, dynamic>.from(data) : null;
-            _loadingCustomerInfo = false;
-          });
-        } else {
-          setModalState(() {
-            loadError = envelope.message ??
-                loc.appointmentsInfoFetchFailedStatus(
-                    response.statusCode.toString());
-            _loadingCustomerInfo = false;
-          });
-        }
-      } catch (e) {
-        setModalState(() {
-          loadError = loc.appointmentsInfoFetchFailed(e.toString());
-          _loadingCustomerInfo = false;
-        });
-      }
+        final resp = await authPost(Uri.parse('$apiBaseUrl/api/appointments/customer-info'),
+          headers: {'Authorization': 'Bearer $token', 'Accept': 'application/json', 'Content-Type': 'application/json'},
+          body: jsonEncode({'appointment_id': appointmentId}));
+        final env = _parseEnvelope(resp);
+        if (await _handleIssueByCode(env)) { setModal(() { loadError = env.message ?? loc.appointmentsInfoFetchFailedStatus(resp.statusCode.toString()); _loadingCustomerInfo = false; }); return; }
+        if (env.isSuccess) { final data = _dataOrPayload(env); setModal(() { info = data is Map ? Map<String, dynamic>.from(data) : null; _loadingCustomerInfo = false; }); }
+        else { setModal(() { loadError = env.message ?? loc.appointmentsInfoFetchFailedStatus(resp.statusCode.toString()); _loadingCustomerInfo = false; }); }
+      } catch (e) { setModal(() { loadError = loc.appointmentsInfoFetchFailed(e.toString()); _loadingCustomerInfo = false; }); }
     }
 
     showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      useSafeArea: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (ctx) {
-        return StatefulBuilder(
-          builder: (ctx, setModalState) {
-            if (info == null && loadError == null && !_loadingCustomerInfo) {
-              fetchInfo(setModalState);
-            }
-            final recent = (info?['recent_appointments'] is List)
-                ? List<Map<String, dynamic>>.from(
-                    (info!['recent_appointments'] as List)
-                        .map((e) => Map<String, dynamic>.from(e)))
-                : <Map<String, dynamic>>[];
-            return SafeArea(
-              child: Padding(
-                padding: EdgeInsets.only(
-                  bottom: MediaQuery.of(ctx).viewInsets.bottom + 24,
-                  left: 16,
-                  right: 16,
-                  top: 16,
+      context: context, isScrollControlled: true, useSafeArea: true,
+      backgroundColor: _T.surface,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (ctx) => StatefulBuilder(builder: (ctx, setModal) {
+        if (info == null && loadError == null && !_loadingCustomerInfo) fetchInfo(setModal);
+        final recent = (info?['recent_appointments'] is List)
+            ? List<Map<String, dynamic>>.from((info!['recent_appointments'] as List).map((e) => Map<String, dynamic>.from(e)))
+            : <Map<String, dynamic>>[];
+        return SafeArea(
+          child: Padding(
+            padding: EdgeInsets.fromLTRB(20, 20, 20, MediaQuery.of(ctx).viewInsets.bottom + 28),
+            child: SingleChildScrollView(child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
+              _sheetHandle(),
+              const SizedBox(height: 16),
+              Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+                Text(loc.customerPreview, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: _T.ink, letterSpacing: -0.3)),
+                _iconBtn(Icons.close, onTap: () => Navigator.of(ctx).pop()),
+              ]),
+              if (_loadingCustomerInfo) ...[const SizedBox(height: 10), const LinearProgressIndicator(color: _T.primary, backgroundColor: _T.primarySoft, minHeight: 2)],
+              if (loadError != null) ...[
+                const SizedBox(height: 10),
+                Row(children: [
+                  Expanded(child: _inlineError(loadError!)),
+                  const SizedBox(width: 8),
+                  _iconBtn(Icons.refresh, onTap: () => fetchInfo(setModal)),
+                ]),
+              ],
+              if (info != null) ...[
+                const SizedBox(height: 16),
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(color: _T.surfaceAlt, borderRadius: BorderRadius.circular(_T.r12), border: Border.all(color: _T.border)),
+                  child: Row(children: [
+                    Container(
+                      width: 44, height: 44,
+                      decoration: BoxDecoration(color: _T.primarySoft, borderRadius: BorderRadius.circular(_T.r10)),
+                      child: const Icon(Icons.person_outline, color: _T.primary, size: 22),
+                    ),
+                    const SizedBox(width: 14),
+                    Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                      Text('${info?['customer_name'] ?? ''} ${info?['customer_lastname'] ?? ''}'.trim(), style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: _T.ink)),
+                      const SizedBox(height: 6),
+                      if ((info?['customer_phone'] ?? '').toString().isNotEmpty) _metaItem(Icons.phone_outlined, info?['customer_phone'] ?? ''),
+                      if ((info?['customer_email'] ?? '').toString().isNotEmpty) ...[const SizedBox(height: 3), _metaItem(Icons.email_outlined, info?['customer_email'] ?? '')],
+                    ])),
+                  ]),
                 ),
-                child: SingleChildScrollView(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            loc.customerPreview,
-                            style: const TextStyle(
-                                fontSize: 16, fontWeight: FontWeight.bold),
-                          ),
-                          IconButton(
-                            icon: const Icon(Icons.close),
-                            onPressed: () => Navigator.of(ctx).pop(),
-                          ),
-                        ],
-                      ),
-                      if (_loadingCustomerInfo)
-                        const LinearProgressIndicator(minHeight: 2),
-                      if (loadError != null)
-                        Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 8),
-                          child: Row(
-                            children: [
-                              Expanded(
-                                child: Text(
-                                  loadError!,
-                                  style: const TextStyle(color: Colors.red),
-                                ),
-                              ),
-                              IconButton(
-                                icon: const Icon(Icons.refresh),
-                                onPressed: () => fetchInfo(setModalState),
-                              ),
-                            ],
-                          ),
-                        ),
-                      if (info != null) ...[
-                        const SizedBox(height: 8),
-                        Card(
-                          elevation: 0,
-                          color: Colors.grey.shade100,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Padding(
-                            padding: const EdgeInsets.all(12),
-                            child: Row(
-                              children: [
-                                CircleAvatar(
-                                  backgroundColor: Colors.blueGrey.shade50,
-                                  child: const Icon(Icons.person,
-                                      color: Colors.blueGrey),
-                                ),
-                                const SizedBox(width: 12),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        '${info?['customer_name'] ?? ''} ${info?['customer_lastname'] ?? ''}'
-                                            .trim(),
-                                        style: const TextStyle(
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.w700,
-                                        ),
-                                      ),
-                                      const SizedBox(height: 4),
-                                      if ((info?['customer_phone'] ?? '')
-                                          .toString()
-                                          .isNotEmpty)
-                                        Row(
-                                          children: [
-                                            const Icon(Icons.phone,
-                                                size: 16, color: Colors.grey),
-                                            const SizedBox(width: 6),
-                                            Text(info?['customer_phone'] ?? ''),
-                                          ],
-                                        ),
-                                      if ((info?['customer_email'] ?? '')
-                                          .toString()
-                                          .isNotEmpty)
-                                        Row(
-                                          children: [
-                                            const Icon(Icons.email,
-                                                size: 16, color: Colors.grey),
-                                            const SizedBox(width: 6),
-                                            Text(info?['customer_email'] ?? ''),
-                                          ],
-                                        ),
-                                    ],
-                                  ),
-                                ),
-                              ],
+                const SizedBox(height: 20),
+                Row(children: [
+                  Text(loc.recentAppointments, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: _T.ink)),
+                  const Spacer(),
+                  const Icon(Icons.history, size: 16, color: _T.inkSecondary),
+                ]),
+                const SizedBox(height: 10),
+                if (recent.isEmpty)
+                  Padding(padding: const EdgeInsets.symmetric(vertical: 16), child: Center(child: Text(loc.appointmentsNoRecords, style: const TextStyle(fontSize: 13, color: _T.inkSecondary))))
+                else
+                  ...recent.map((r) {
+                    final date = _formatDate(r['date']?.toString()); final time = _formatTime(r['time']);
+                    final status = (r['status'] ?? '').toString(); final notes = (r['notes'] ?? '').toString();
+                    return Container(
+                      margin: const EdgeInsets.only(bottom: 8),
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(color: _T.surface, borderRadius: BorderRadius.circular(_T.r10), border: Border.all(color: _T.border)),
+                      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                        Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+                          Row(children: [
+                            _metaItem(Icons.calendar_today_outlined, date),
+                            const SizedBox(width: 12),
+                            _metaItem(Icons.access_time_outlined, time),
+                          ]),
+                          if (status.isNotEmpty)
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                              decoration: BoxDecoration(color: _T.surfaceAlt, borderRadius: BorderRadius.circular(_T.r4), border: Border.all(color: _T.border)),
+                              child: Text(status.toUpperCase(), style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: _T.inkSecondary)),
                             ),
-                          ),
-                        ),
-                        const SizedBox(height: 12),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              loc.recentAppointments,
-                              style: const TextStyle(
-                                  fontSize: 14, fontWeight: FontWeight.bold),
-                            ),
-                            const Icon(Icons.history,
-                                size: 18, color: Colors.grey),
-                          ],
-                        ),
-                        const SizedBox(height: 8),
-                        if (recent.isEmpty)
-                          Text(loc.appointmentsNoRecords)
-                        else
-                          ...recent.map((r) {
-                            final date = _formatDate(r['date']?.toString());
-                            final time = _formatTime(r['time']);
-                            final status = (r['status'] ?? '').toString();
-                            final notes = (r['notes'] ?? '').toString();
-                            return Card(
-                              elevation: 0,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(10),
-                                side: BorderSide(
-                                  color: Colors.grey.shade200,
-                                ),
-                              ),
-                              margin: const EdgeInsets.only(bottom: 8),
-                              child: Padding(
-                                padding: const EdgeInsets.all(12),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Row(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.spaceBetween,
-                                      children: [
-                                        Text(
-                                          '$date • $time',
-                                          style: const TextStyle(
-                                              fontWeight: FontWeight.w600),
-                                        ),
-                                        if (status.isNotEmpty)
-                                          Chip(
-                                            label: Text(
-                                              status.toUpperCase(),
-                                              style: const TextStyle(
-                                                  fontSize: 11,
-                                                  fontWeight: FontWeight.bold),
-                                            ),
-                                            backgroundColor:
-                                                Colors.blueGrey.shade50,
-                                            materialTapTargetSize:
-                                                MaterialTapTargetSize
-                                                    .shrinkWrap,
-                                            padding: const EdgeInsets.symmetric(
-                                                horizontal: 8, vertical: 0),
-                                          ),
-                                      ],
-                                    ),
-                                    if (notes.isNotEmpty) ...[
-                                      const SizedBox(height: 6),
-                                      Text(
-                                        notes,
-                                        style: const TextStyle(
-                                            color: Colors.black87),
-                                      ),
-                                    ],
-                                  ],
-                                ),
-                              ),
-                            );
-                          }),
-                      ],
-                      const SizedBox(height: 12),
-                    ],
-                  ),
-                ),
-              ),
-            );
-          },
+                        ]),
+                        if (notes.isNotEmpty) ...[const SizedBox(height: 6), Text(notes, style: const TextStyle(fontSize: 12, color: _T.inkSecondary, height: 1.4))],
+                      ]),
+                    );
+                  }),
+              ],
+            ])),
+          ),
         );
-      },
+      }),
     );
   }
 
   void _showRebookSheet(Map<String, dynamic> appt) {
-    final int? customerId = appt['customer_id'] is int
-        ? appt['customer_id'] as int
-        : int.tryParse(appt['customer_id']?.toString() ?? '');
+    final int? customerId = appt['customer_id'] is int ? appt['customer_id'] as int : int.tryParse(appt['customer_id']?.toString() ?? '');
     final customer = appt['customer'] is Map ? appt['customer'] : null;
-    final String customerName = (customer?['name'] ?? '').toString().isNotEmpty
-        ? customer['name'].toString()
-        : loc.dashboardCustomerFallback(appt["customer_id"]?.toString() ?? '');
-
-    final TextEditingController dateCtrl = TextEditingController();
-    final TextEditingController timeCtrl = TextEditingController();
-    final TextEditingController notesCtrl = TextEditingController();
-
+    final customerName = (customer?['name'] ?? '').toString().isNotEmpty ? customer!['name'].toString() : loc.dashboardCustomerFallback(appt['customer_id']?.toString() ?? '');
+    final dateCtrl  = TextEditingController();
+    final timeCtrl  = TextEditingController();
+    final notesCtrl = TextEditingController();
     List<Map<String, dynamic>> localSlots = [];
     String? localSlotsError;
     bool localLoadingSlots = false;
@@ -2344,1396 +1506,243 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
     int? localSelectedStatusId = _defaultStatusId();
 
     showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      useSafeArea: true,
-      constraints: BoxConstraints(
-        maxHeight: MediaQuery.of(context).size.height * 0.96,
-      ),
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (ctx) {
-        return StatefulBuilder(
-          builder: (ctx, setModalState) {
-            Future<void> loadSlots() async {
-              final dateInput = dateCtrl.text.trim();
-              if (dateInput.isEmpty) {
-                _showSnack(loc.appointmentsEnterDateFirst);
-                return;
-              }
+      context: context, isScrollControlled: true, useSafeArea: true,
+      backgroundColor: _T.surface,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.96),
+      builder: (ctx) => StatefulBuilder(builder: (ctx, setModal) {
+        Future<void> loadSlots() async {
+          final di = dateCtrl.text.trim(); if (di.isEmpty) { _showSnack(loc.appointmentsEnterDateFirst); return; }
+          final token = await _getToken(); if (token == null || token.isEmpty) { _showSnack(loc.appointmentsSessionMissingLogin); return; }
+          setModal(() { localLoadingSlots = true; localSlotsError = null; localSlots = []; localSelectedTime = null; timeCtrl.clear(); });
+          try {
+            final resp = await authGet(Uri.parse('$apiBaseUrl/api/appointments/time-slots?date=${_normalizeSlotDate(di)}'), headers: {'Authorization': 'Bearer $token', 'Accept': 'application/json'});
+            final env  = _parseEnvelope(resp);
+            if (await _handleIssueByCode(env)) { setModal(() { localSlotsError = env.message ?? loc.appointmentsSlotsFetchFailedStatus(resp.statusCode.toString()); localLoadingSlots = false; }); return; }
+            if (env.isSuccess) { final data = _dataOrPayload(env); setModal(() { localSlots = data is List ? List<Map<String, dynamic>>.from(data.map((e) => Map<String, dynamic>.from(e))) : []; localLoadingSlots = false; }); }
+            else { setModal(() { localSlotsError = env.message ?? loc.appointmentsSlotsFetchFailedStatus(resp.statusCode.toString()); localLoadingSlots = false; }); }
+          } catch (e) { setModal(() { localSlotsError = loc.appointmentsSlotsFetchFailed(e.toString()); localLoadingSlots = false; }); }
+        }
 
-              final token = await _getToken();
-              if (token == null || token.isEmpty) {
-                _showSnack(loc.appointmentsSessionMissingLogin);
-                return;
-              }
+        Future<void> pickDate() async {
+          final today = DateTime.now(); final min = DateTime(today.year, today.month, today.day); final max = DateTime(today.year + 5, 12, 31);
+          final p = await showDatePicker(context: ctx, initialDate: _clampDate(_parseInputDateOrNow(dateCtrl.text), min, max), firstDate: min, lastDate: max);
+          if (p != null) { setModal(() { dateCtrl.text = _formatDateDisplay(p); localSelectedTime = null; timeCtrl.clear(); localSlots = []; localSlotsError = null; }); await loadSlots(); }
+        }
 
-              final formattedDate = _normalizeSlotDate(dateInput);
-              setModalState(() {
-                localLoadingSlots = true;
-                localSlotsError = null;
-                localSlots = [];
-                localSelectedTime = null;
-                timeCtrl.clear();
-              });
-
-              try {
-                final response = await authGet(
-                  Uri.parse(
-                      '$apiBaseUrl/api/appointments/time-slots?date=$formattedDate'),
-                  headers: {
-                    'Authorization': 'Bearer $token',
-                    'Accept': 'application/json',
-                  },
-                );
-                final envelope = _parseEnvelope(response);
-                final handled = await _handleIssueByCode(envelope);
-                if (handled) {
-                  setModalState(() {
-                    localSlotsError = envelope.message ??
-                        loc.appointmentsSlotsFetchFailedStatus(
-                            response.statusCode.toString());
-                    localLoadingSlots = false;
-                  });
-                  return;
-                }
-                if (envelope.isSuccess) {
-                  final data = _dataOrPayload(envelope);
-                  final slots = data is List
-                      ? List<Map<String, dynamic>>.from(
-                          data.map((e) => Map<String, dynamic>.from(e)))
-                      : <Map<String, dynamic>>[];
-                  setModalState(() {
-                    localSlots = slots;
-                    localSlotsError = null;
-                    localLoadingSlots = false;
-                  });
-                } else {
-                  setModalState(() {
-                    localSlotsError = envelope.message ??
-                        loc.appointmentsSlotsFetchFailedStatus(
-                            response.statusCode.toString());
-                    localLoadingSlots = false;
-                  });
-                }
-              } catch (e) {
-                setModalState(() {
-                  localSlotsError =
-                      loc.appointmentsSlotsFetchFailed(e.toString());
-                  localLoadingSlots = false;
-                });
-              }
-            }
-
-            Future<void> pickDate() async {
-              final today = DateTime.now();
-              final minDate = DateTime(today.year, today.month, today.day);
-              final maxDate = DateTime(today.year + 5, 12, 31);
-              DateTime initial = _clampDate(
-                _parseInputDateOrNow(dateCtrl.text),
-                minDate,
-                maxDate,
-              );
-              final picked = await showDatePicker(
-                context: ctx,
-                initialDate: initial,
-                firstDate: minDate,
-                lastDate: maxDate,
-              );
-              if (picked != null) {
-                setModalState(() {
-                  dateCtrl.text = _formatDateDisplay(picked);
-                  localSelectedTime = null;
-                  timeCtrl.clear();
-                  localSlots = [];
-                  localSlotsError = null;
-                });
-                await loadSlots();
-              }
-            }
-
-            const bg = Color(0xFFF9F9F9);
-            const surface = Colors.white;
-            const accent = Color(0xFF111111);
-            const muted = Color(0xFF8A8A8A);
-            const border = Color(0xFFE8E8E8);
-            const success = Color(0xFF18A058);
-            const danger = Color(0xFFE53935);
-            const radius = 14.0;
-
-            InputDecoration field({
-              required String label,
-              String? hint,
-              Widget? prefix,
-              String? error,
-            }) =>
-                InputDecoration(
-                  labelText: label,
-                  hintText: hint,
-                  errorText: error,
-                  prefixIcon: prefix,
-                  labelStyle: const TextStyle(fontSize: 13, color: muted),
-                  hintStyle: const TextStyle(fontSize: 13, color: muted),
-                  filled: true,
-                  fillColor: surface,
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 14,
-                    vertical: 12,
-                  ),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(radius),
-                    borderSide: const BorderSide(color: border),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(radius),
-                    borderSide: const BorderSide(color: border),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(radius),
-                    borderSide: const BorderSide(color: accent, width: 1.5),
-                  ),
-                );
-
-            Widget minimalSwitch({
-              required String title,
-              required String subtitle,
-              required bool value,
-              required ValueChanged<bool> onChanged,
-            }) {
-              return Padding(
-                padding: const EdgeInsets.symmetric(vertical: 2),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            title,
-                            style: const TextStyle(
-                              fontSize: 14,
-                              color: Color(0xFF333333),
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                          const SizedBox(height: 1),
-                          Text(
-                            subtitle,
-                            style: const TextStyle(fontSize: 12, color: muted),
-                          ),
-                        ],
-                      ),
-                    ),
-                    Switch.adaptive(
-                      value: value,
-                      onChanged: onChanged,
-                      activeThumbColor: accent,
-                      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                    ),
-                  ],
-                ),
-              );
-            }
-
-            final media = MediaQuery.of(ctx);
-            final bottomInset =
-                media.viewInsets.bottom + media.viewPadding.bottom + 24;
-
-            return SafeArea(
-              top: false,
-              child: Container(
-                color: bg,
-                child: SingleChildScrollView(
-                  keyboardDismissBehavior:
-                      ScrollViewKeyboardDismissBehavior.onDrag,
-                  padding: EdgeInsets.fromLTRB(20, 16, 20, bottomInset),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Center(
-                        child: Container(
-                          width: 36,
-                          height: 4,
-                          decoration: BoxDecoration(
-                            color: border,
-                            borderRadius: BorderRadius.circular(99),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 18),
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  loc.reschedule,
-                                  style: const TextStyle(
-                                    fontSize: 20,
-                                    fontWeight: FontWeight.w700,
-                                    letterSpacing: -0.4,
-                                    color: accent,
-                                  ),
-                                ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  customerName,
-                                  style: const TextStyle(
-                                    fontSize: 13,
-                                    color: muted,
-                                  ),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          InkWell(
-                            borderRadius: BorderRadius.circular(10),
-                            onTap: () => Navigator.of(ctx).pop(),
-                            child: Container(
-                              width: 34,
-                              height: 34,
-                              decoration: BoxDecoration(
-                                color: surface,
-                                borderRadius: BorderRadius.circular(10),
-                                border: Border.all(color: border),
-                              ),
-                              child: const Icon(
-                                Icons.close,
-                                size: 18,
-                                color: accent,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 22),
-                      const Text(
-                        'TARIH & SAAT',
-                        style: TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w700,
-                          letterSpacing: 0.8,
-                          color: muted,
-                        ),
-                      ),
-                      const SizedBox(height: 10),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: TextField(
-                              controller: dateCtrl,
-                              readOnly: true,
-                              decoration: field(
-                                label: loc.date,
-                                hint: loc.calendarDateHint,
-                                prefix: const Icon(
-                                  Icons.calendar_today_outlined,
-                                  size: 18,
-                                ),
-                              ),
-                              onTap: pickDate,
-                            ),
-                          ),
-                          const SizedBox(width: 10),
-                          Expanded(
-                            child: TextField(
-                              controller: timeCtrl,
-                              readOnly: true,
-                              decoration: field(
-                                label: loc.timeSelect,
-                                hint: loc.calendarTimeSlotHint,
-                                prefix: const Icon(Icons.access_time, size: 18),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 12),
-                      SizedBox(
-                        width: double.infinity,
-                        child: OutlinedButton(
-                          onPressed: localLoadingSlots ? null : loadSlots,
-                          style: OutlinedButton.styleFrom(
-                            foregroundColor: accent,
-                            side: const BorderSide(color: border, width: 1.5),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(radius),
-                            ),
-                            padding: const EdgeInsets.symmetric(vertical: 13),
-                          ),
-                          child: localLoadingSlots
-                              ? const SizedBox(
-                                  width: 16,
-                                  height: 16,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                  ),
-                                )
-                              : Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    const Icon(Icons.schedule, size: 16),
-                                    const SizedBox(width: 6),
-                                    Text(
-                                      loc.getAvailableTimes,
-                                      style: const TextStyle(
-                                        fontSize: 13,
-                                        fontWeight: FontWeight.w600,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                        ),
-                      ),
-                      if (localSlotsError != null) ...[
-                        const SizedBox(height: 8),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 10,
-                          ),
-                          decoration: BoxDecoration(
-                            color: danger.withValues(alpha: 0.06),
-                            borderRadius: BorderRadius.circular(10),
-                            border: Border.all(
-                                color: danger.withValues(alpha: 0.2)),
-                          ),
-                          child: Row(
-                            children: [
-                              const Icon(
-                                Icons.error_outline,
-                                size: 14,
-                                color: danger,
-                              ),
-                              const SizedBox(width: 6),
-                              Expanded(
-                                child: Text(
-                                  localSlotsError!,
-                                  style: const TextStyle(
-                                    fontSize: 12,
-                                    color: danger,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                      const SizedBox(height: 12),
-                      DropdownButtonFormField<int>(
-                        initialValue: localSelectedStatusId,
-                        isExpanded: true,
-                        decoration: field(
-                          label: loc.status,
-                          hint: _loadingStatuses
-                              ? loc.calendarLoading
-                              : loc.appointmentsStatusSelectHint,
-                          error: _statusesError,
-                        ),
-                        items: _appointmentStatuses
-                            .map(
-                              (s) => DropdownMenuItem<int>(
-                                value: s['id'] as int?,
-                                child: Text(_localizedStatusLabel(s)),
-                              ),
-                            )
-                            .toList(),
-                        onChanged: _loadingStatuses
-                            ? null
-                            : (val) {
-                                setModalState(() {
-                                  localSelectedStatusId = val;
-                                  _statusesError = null;
-                                });
-                              },
-                      ),
-                      if (localSlots.isNotEmpty) ...[
-                        const SizedBox(height: 14),
-                        Wrap(
-                          spacing: 8,
-                          runSpacing: 8,
-                          children: localSlots.map((slot) {
-                            final time = slot['time']?.toString() ?? '';
-                            final booked = slot['booked'] == true;
-                            final selected = localSelectedTime == time;
-                            return GestureDetector(
-                              onTap: booked
-                                  ? null
-                                  : () => setModalState(() {
-                                        localSelectedTime = time;
-                                        timeCtrl.text = time;
-                                        localSlotsError = null;
-                                      }),
-                              child: AnimatedContainer(
-                                duration: const Duration(milliseconds: 150),
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 14,
-                                  vertical: 8,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: booked
-                                      ? const Color(0xFFF3F3F3)
-                                      : selected
-                                          ? success
-                                          : surface,
-                                  borderRadius: BorderRadius.circular(10),
-                                  border: Border.all(
-                                    color: booked
-                                        ? border
-                                        : selected
-                                            ? success
-                                            : border,
-                                  ),
-                                ),
-                                child: Text(
-                                  time,
-                                  style: TextStyle(
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.w600,
-                                    color: booked
-                                        ? muted
-                                        : selected
-                                            ? Colors.white
-                                            : accent,
-                                    decoration: booked
-                                        ? TextDecoration.lineThrough
-                                        : null,
-                                  ),
-                                ),
-                              ),
-                            );
-                          }).toList(),
-                        ),
-                      ],
-                      const SizedBox(height: 20),
-                      const Divider(
-                        height: 1,
-                        thickness: 1,
-                        color: Color(0xFFEEEEEE),
-                      ),
-                      const SizedBox(height: 20),
-                      TextField(
-                        controller: notesCtrl,
-                        maxLines: 3,
-                        decoration: field(
-                          label: '',
-                          hint: 'Not ekleyin...',
-                        ).copyWith(labelText: null),
-                      ),
-                      const SizedBox(height: 16),
-                      minimalSwitch(
-                        title: loc.doNotSendSms,
-                        subtitle: loc.smsOffForAppointment,
-                        value: localNoSms,
-                        onChanged: (val) {
-                          setModalState(() {
-                            localNoSms = val;
-                          });
-                        },
-                      ),
-                      minimalSwitch(
-                        title: loc.doNotSendReminder,
-                        subtitle: loc.reminderOffForAppointment,
-                        value: localNoReminder,
-                        onChanged: (val) {
-                          setModalState(() {
-                            localNoReminder = val;
-                          });
-                        },
-                      ),
-                      const SizedBox(height: 18),
-                      SizedBox(
-                        width: double.infinity,
-                        child: ElevatedButton(
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: accent,
-                            foregroundColor: Colors.white,
-                            disabledBackgroundColor:
-                                accent.withValues(alpha: 0.4),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(radius),
-                            ),
-                            padding: const EdgeInsets.symmetric(vertical: 15),
-                            elevation: 0,
-                          ),
-                          onPressed: (customerId == null || _creatingRebook)
-                              ? null
-                              : () async {
-                                  Navigator.of(ctx).pop();
-                                  await _createAppointmentForCustomer(
-                                    customerId: customerId,
-                                    date: dateCtrl.text.trim(),
-                                    time: (localSelectedTime ?? timeCtrl.text)
-                                        .trim(),
-                                    notes: notesCtrl.text.trim(),
-                                    noSms: localNoSms,
-                                    noReminder: localNoReminder,
-                                    appointmentStatusId: localSelectedStatusId,
-                                  );
-                                },
-                          child: _creatingRebook
-                              ? const SizedBox(
-                                  width: 18,
-                                  height: 18,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                    color: Colors.white,
-                                  ),
-                                )
-                              : Text(
-                                  loc.rescheduleAppointment,
-                                  style: const TextStyle(
-                                    fontSize: 15,
-                                    fontWeight: FontWeight.w700,
-                                    letterSpacing: 0.2,
-                                  ),
-                                ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            );
-          },
-        );
-      },
-    );
-  }
-
-  Widget _buildAppointmentCard(Map<String, dynamic> appt) {
-    final customer = appt['customer'] is Map ? appt['customer'] : null;
-    final status =
-        appt['appointment_status'] is Map ? appt['appointment_status'] : null;
-    final rawCustomerName = customer?['name']?.toString() ?? '';
-    final customerName = rawCustomerName.isNotEmpty
-        ? rawCustomerName
-        : loc.dashboardCustomerFallback(appt["customer_id"]?.toString() ?? '');
-    final statusName = status == null
-        ? ''
-        : _localizedStatusLabel(Map<String, dynamic>.from(status));
-    final statusColor = _statusColor(status?['color']?.toString());
-    final phone =
-        (customer?['phone'] ?? customer?['formatted_phone'] ?? appt['phone'])
-            ?.toString();
-    Widget actionBtn({
-      required IconData icon,
-      required Color color,
-      required String tooltip,
-      required VoidCallback onPressed,
-    }) {
-      return Tooltip(
-        message: tooltip,
-        child: InkWell(
-          borderRadius: BorderRadius.circular(10),
-          onTap: onPressed,
-          child: Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Icon(icon, size: 18, color: color),
-          ),
-        ),
-      );
-    }
-
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 250),
-      margin: const EdgeInsets.only(bottom: 12),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [primaryColor.withValues(alpha: 0.08), Colors.white],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-        border: Border.all(color: Colors.grey.shade200),
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          borderRadius: BorderRadius.circular(16),
-          onTap: () => _showEditSheet(appt),
-          child: Padding(
-            padding: const EdgeInsets.all(14),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    CircleAvatar(
-                      backgroundColor: statusColor.withValues(alpha: 0.15),
-                      child: Icon(Icons.event, color: statusColor),
-                    ),
-                    const SizedBox(width: 8),
-                    if (statusName.isNotEmpty)
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 12, vertical: 6),
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            colors: [
-                              accentColor,
-                              accentColor.withValues(alpha: 0.7),
-                            ],
-                          ),
-                          borderRadius: BorderRadius.circular(20),
-                          boxShadow: [
-                            BoxShadow(
-                              color: accentColor.withValues(alpha: 0.2),
-                              blurRadius: 8,
-                              offset: const Offset(0, 2),
-                            ),
-                          ],
-                        ),
-                        child: Text(
-                          statusName.toUpperCase(),
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.w700,
-                            fontSize: 11,
-                          ),
-                        ),
-                      ),
-                    const Spacer(),
-                    actionBtn(
-                      icon: Icons.visibility,
-                      color: primaryColor,
-                      tooltip: loc.appointmentsCustomerPreviewTooltip,
-                      onPressed: () => _showCustomerInfo(appt),
-                    ),
-                    const SizedBox(width: 6),
-                    actionBtn(
-                      icon: Icons.add_task,
-                      color: secondaryColor,
-                      tooltip: loc.appointmentsRebookTooltip,
-                      onPressed: () => _showRebookSheet(appt),
-                    ),
-                    const SizedBox(width: 6),
-                    actionBtn(
-                      icon: Icons.edit,
-                      color: Colors.black87,
-                      tooltip: loc.appointmentsEditTooltip,
-                      onPressed: () => _showEditSheet(appt),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 10),
-                Text(
-                  customerName,
-                  style: const TextStyle(
-                    fontSize: 17,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                Row(
-                  children: [
-                    const Icon(Icons.calendar_today,
-                        size: 14, color: Colors.grey),
-                    const SizedBox(width: 6),
-                    Text(
-                      '${_formatDate(appt['date'])} • ${_formatTime(appt['time'])}',
-                      style: const TextStyle(color: Colors.black87),
-                    ),
-                  ],
-                ),
-                if (phone != null && phone.isNotEmpty) ...[
-                  const SizedBox(height: 6),
-                  Row(
-                    children: [
-                      const Icon(Icons.phone, size: 14, color: Colors.grey),
-                      const SizedBox(width: 6),
-                      Text(phone),
-                    ],
-                  ),
-                ],
-                if ((appt['notes'] ?? '').toString().isNotEmpty) ...[
-                  const SizedBox(height: 8),
-                  Text(
-                    appt['notes'].toString(),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(color: Colors.black87),
-                  ),
-                ],
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildAppointmentList() {
-    if (_loadingList) {
-      return const Padding(
-        padding: EdgeInsets.symmetric(vertical: 32),
-        child: Center(child: CircularProgressIndicator()),
-      );
-    }
-
-    if (_error != null) {
-      return _sectionCard(
-        leadingIcon: Icons.error_outline,
-        title: loc.appointmentsTitle,
-        child: Container(
-          width: double.infinity,
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            color: Colors.red.withValues(alpha: 0.08),
-            borderRadius: BorderRadius.circular(10),
-          ),
-          child: Text(
-            _error!,
-            style: const TextStyle(color: Colors.red),
-          ),
-        ),
-      );
-    }
-
-    if (_appointments.isEmpty) {
-      return _sectionCard(
-        leadingIcon: Icons.event_busy_outlined,
-        title: loc.appointmentsTitle,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 8),
-          child: Text(loc.appointmentsEmpty),
-        ),
-      );
-    }
-
-    return _sectionCard(
-      leadingIcon: Icons.event_note_outlined,
-      title: loc.appointmentsTitle,
-      subtitle: loc.appointmentsCountLabel(_appointments.length.toString()),
-      child: Column(
-        children: _appointments.map(_buildAppointmentCard).toList(),
-      ),
-    );
-  }
-
-  Widget _buildFilterForm() {
-    if (!_showFilters) return const SizedBox.shrink();
-
-    return _sectionCard(
-      leadingIcon: Icons.filter_alt_outlined,
-      title: loc.showFilter,
-      subtitle: loc.appointmentsFilterSubtitle,
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        children: [
-          Row(
-            children: [
-              Expanded(
-                child: TextField(
-                  controller: _filterNameController,
-                  decoration: InputDecoration(
-                    labelText: loc.appointmentsFieldName,
-                    hintText: loc.appointmentsFieldNameFilterHint,
-                  ),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: TextField(
-                  controller: _filterLastNameController,
-                  decoration: InputDecoration(
-                    labelText: loc.appointmentsFieldLastName,
-                    hintText: loc.appointmentsFieldLastNameFilterHint,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          TextField(
-            controller: _filterPhoneController,
-            decoration: InputDecoration(
-              labelText: loc.appointmentsFieldPhone,
-              hintText: loc.appointmentsFieldPhone,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Row(
-            children: [
-              Expanded(
-                child: TextField(
-                  controller: _filterDateFromController,
-                  readOnly: true,
-                  decoration: InputDecoration(
-                    labelText: loc.appointmentsStartDate,
-                    hintText: loc.calendarDateHint,
-                  ),
-                  onTap: () async {
-                    final today = DateTime.now();
-                    final minDate = DateTime(today.year - 1, 1, 1);
-                    final maxDate = DateTime(today.year + 5, 12, 31);
-                    final initial = _clampDate(
-                        _parseInputDateOrNow(_filterDateFromController.text),
-                        minDate,
-                        maxDate);
-                    final picked = await showDatePicker(
-                      context: context,
-                      initialDate: initial,
-                      firstDate: minDate,
-                      lastDate: maxDate,
-                    );
-                    if (picked != null) {
-                      setState(() {
-                        _filterDateFromController.text =
-                            _formatDateDisplay(picked);
-                      });
-                    }
-                  },
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: TextField(
-                  controller: _filterDateToController,
-                  readOnly: true,
-                  decoration: InputDecoration(
-                    labelText: loc.appointmentsEndDate,
-                    hintText: loc.calendarDateHint,
-                  ),
-                  onTap: () async {
-                    final today = DateTime.now();
-                    final minDate = DateTime(today.year - 1, 1, 1);
-                    final maxDate = DateTime(today.year + 5, 12, 31);
-                    final initial = _clampDate(
-                        _parseInputDateOrNow(_filterDateToController.text),
-                        minDate,
-                        maxDate);
-                    final picked = await showDatePicker(
-                      context: context,
-                      initialDate: initial,
-                      firstDate: minDate,
-                      lastDate: maxDate,
-                    );
-                    if (picked != null) {
-                      setState(() {
-                        _filterDateToController.text =
-                            _formatDateDisplay(picked);
-                      });
-                    }
-                  },
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Row(
-            children: [
-              Expanded(
-                child: DropdownButtonFormField<String>(
-                  initialValue: _filterTimeFromController.text.isNotEmpty
-                      ? _filterTimeFromController.text
-                      : null,
-                  decoration: InputDecoration(
-                    labelText: loc.appointmentsStartTime,
-                    hintText: 'HH:MM',
-                  ),
-                  items: _timeOptions
-                      .map(
-                        (t) => DropdownMenuItem<String>(
-                          value: t,
-                          child: Text(t),
-                        ),
-                      )
-                      .toList(),
-                  onChanged: (val) {
-                    setState(() {
-                      _filterTimeFromController.text = val ?? '';
-                    });
-                  },
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: DropdownButtonFormField<String>(
-                  initialValue: _filterTimeToController.text.isNotEmpty
-                      ? _filterTimeToController.text
-                      : null,
-                  decoration: InputDecoration(
-                    labelText: loc.appointmentsEndTime,
-                    hintText: 'HH:MM',
-                  ),
-                  items: _timeOptions
-                      .map(
-                        (t) => DropdownMenuItem<String>(
-                          value: t,
-                          child: Text(t),
-                        ),
-                      )
-                      .toList(),
-                  onChanged: (val) {
-                    setState(() {
-                      _filterTimeToController.text = val ?? '';
-                    });
-                  },
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              Expanded(
-                child: ElevatedButton.icon(
-                  onPressed: _applyFilters,
-                  icon: const Icon(Icons.search),
-                  style: _mainButtonStyle(),
-                  label: Text(loc.showFilter),
-                ),
-              ),
-              const SizedBox(width: 12),
-              ElevatedButton(
-                onPressed: _clearFilters,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.grey.shade200,
-                  foregroundColor: Colors.black87,
-                ),
-                child: Text(loc.appointmentsClear),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildQuickForm() {
-    if (!_hasUserPack) {
-      return _sectionCard(
-        title: loc.quickAppointmentTitle,
-        actions: [
-          if (!_isIosPaymentRestricted)
-            TextButton(
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const SmsPacksPage()),
-                );
-              },
-              child: Text(loc.appointmentsBuyPackage),
-            ),
-        ],
-        child: Text(
-          _isIosPaymentRestricted
-              ? loc.iosSmsPurchaseRestrictionMessage
-              : loc.appointmentsPackageRequired,
-          style: const TextStyle(fontWeight: FontWeight.w600),
-        ),
-      );
-    }
-
-    if (!_showQuickForm) return const SizedBox.shrink();
-
-    return _sectionCard(
-      leadingIcon: Icons.add_circle_outline,
-      title: loc.quickAppointmentTitle,
-      subtitle: loc.quickAppointmentSubtitle,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Align(
-            alignment: Alignment.centerRight,
-            child: IconButton(
-              tooltip: loc.appointmentsClose,
-              icon: const Icon(Icons.close),
-              onPressed: () {
-                setState(() {
-                  _showQuickForm = false;
-                });
-              },
-            ),
-          ),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-            decoration: BoxDecoration(
-              color: Colors.blueGrey.withValues(alpha: 0.04),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Row(
-              children: [
-                const Icon(Icons.tips_and_updates, color: Colors.blueGrey),
+        final bottom = MediaQuery.of(ctx).viewInsets.bottom + MediaQuery.of(ctx).viewPadding.bottom + 24;
+        return SafeArea(
+          top: false,
+          child: SingleChildScrollView(
+            keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+            padding: EdgeInsets.fromLTRB(20, 20, 20, bottom),
+            child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
+              _sheetHandle(),
+              const SizedBox(height: 16),
+              Row(children: [
+                Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Text(loc.reschedule, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700, color: _T.ink, letterSpacing: -0.4)),
+                  const SizedBox(height: 3),
+                  Text(customerName, style: const TextStyle(fontSize: 13, color: _T.inkSecondary), maxLines: 1, overflow: TextOverflow.ellipsis),
+                ])),
+                _iconBtn(Icons.close, onTap: () => Navigator.of(ctx).pop()),
+              ]),
+              const SizedBox(height: 22),
+              _groupLabel('TARİH & SAAT'),
+              const SizedBox(height: 8),
+              Row(children: [
+                Expanded(child: TextField(controller: dateCtrl, readOnly: true, onTap: pickDate, decoration: _fieldDecor(label: loc.date, hint: loc.calendarDateHint, prefix: const Icon(Icons.calendar_today_outlined, size: 17)))),
                 const SizedBox(width: 10),
-                Expanded(
-                  child: Text(
-                    loc.quickAppointmentSubtitle,
-                    style: const TextStyle(color: Colors.black87),
-                  ),
-                ),
+                Expanded(child: TextField(controller: timeCtrl, readOnly: true, decoration: _fieldDecor(label: loc.timeSelect, hint: loc.calendarTimeSlotHint, prefix: const Icon(Icons.access_time_outlined, size: 17)))),
+              ]),
+              const SizedBox(height: 10),
+              _outlineBtn(label: loc.getAvailableTimes, icon: Icons.schedule_outlined, onTap: localLoadingSlots ? null : loadSlots, loading: localLoadingSlots, fullWidth: true),
+              if (localSlotsError != null) ...[const SizedBox(height: 8), _inlineError(localSlotsError!)],
+              if (localLoadingSlots) ...[const SizedBox(height: 6), const LinearProgressIndicator(color: _T.primary, backgroundColor: _T.primarySoft, minHeight: 2)],
+              if (localSlots.isNotEmpty) ...[
+                const SizedBox(height: 12),
+                _buildTimeSlotGrid(localSlots, localSelectedTime, (t) => setModal(() { localSelectedTime = t; timeCtrl.text = t; })),
               ],
-            ),
-          ),
-          const SizedBox(height: 12),
-          Text(
-            loc.customerInfo,
-            style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
-          ),
-          const SizedBox(height: 8),
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: Colors.grey.shade50,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.grey.shade200),
-            ),
-            child: Column(
-              children: [
-                Row(
-                  children: [
-                    Expanded(
-                      child: TextField(
-                        controller: _quickNameController,
-                        decoration: InputDecoration(
-                          labelText: loc.appointmentsFieldName,
-                          hintText: loc.appointmentsFieldNameHint,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: TextField(
-                        controller: _quickLastNameController,
-                        decoration: InputDecoration(
-                          labelText: loc.appointmentsFieldLastName,
-                          hintText: loc.appointmentsFieldLastNameHint,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 10),
-                DropdownButtonFormField<int>(
-                  initialValue: _selectedCountryId,
-                  isExpanded: true,
-                  decoration: InputDecoration(
-                    labelText: loc.appointmentsCountry,
-                    hintText: _loadingCountries
-                        ? loc.calendarLoading
-                        : loc.appointmentsSelectCountry,
-                    errorText: _countriesError,
-                  ),
-                  items: _countries
-                      .map(
-                        (c) => DropdownMenuItem<int>(
-                          value: c['id'] as int?,
-                          child: Text(
-                            '${c['name'] ?? ''} (${c['phone_code'] ?? ''})',
-                          ),
-                        ),
-                      )
-                      .toList(),
-                  onChanged: _loadingCountries
-                      ? null
-                      : (val) {
-                          setState(() {
-                            _selectedCountryId = val;
-                            _quickCountryIdController.text =
-                                val != null ? '$val' : '';
-                            _countriesError = null;
-                          });
-                        },
-                ),
-                const SizedBox(height: 10),
-                Row(
-                  children: [
-                    Expanded(
-                      child: TextField(
-                        controller: _quickPhoneController,
-                        keyboardType: TextInputType.phone,
-                        inputFormatters: [
-                          FilteringTextInputFormatter.allow(
-                            RegExp(r'[\d()\s]'),
-                          ),
-                          _phoneMaskFormatter,
-                        ],
-                        decoration: InputDecoration(
-                          labelText: loc.appointmentsFieldPhone,
-                          hintText: loc.appointmentsFieldPhoneHint,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: TextField(
-                        controller: _quickEmailController,
-                        keyboardType: TextInputType.emailAddress,
-                        decoration: InputDecoration(
-                          labelText: loc.emailLabel,
-                          hintText: loc.appointmentsFieldEmailHint,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 14),
-          Text(
-            loc.appointmentInfo,
-            style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
-          ),
-          const SizedBox(height: 8),
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: Colors.grey.shade50,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.grey.shade200),
-            ),
-            child: Column(
-              children: [
-                Row(
-                  children: [
-                    Expanded(
-                      child: TextField(
-                        controller: _quickDateController,
-                        readOnly: true,
-                        decoration: InputDecoration(
-                          labelText: loc.date,
-                          hintText: loc.calendarDateHint,
-                        ),
-                        onTap: _pickQuickDate,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: TextField(
-                        controller: _quickTimeController,
-                        readOnly: true,
-                        decoration: InputDecoration(
-                          labelText: loc.timeSelect,
-                          hintText: loc.calendarTimeSlotHint,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 10),
-                Row(
-                  children: [
-                    ElevatedButton.icon(
-                      onPressed: _loadingSlots ? null : _fetchTimeSlots,
-                      icon: _loadingSlots
-                          ? const SizedBox(
-                              width: 16,
-                              height: 16,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                valueColor:
-                                    AlwaysStoppedAnimation(Colors.white),
-                              ),
-                            )
-                          : const Icon(Icons.schedule),
-                      label: Text(loc.getAvailableTimes),
-                    ),
-                    const SizedBox(width: 12),
-                    if (_slotsError != null)
-                      Expanded(
-                        child: Text(
-                          _slotsError!,
-                          style: const TextStyle(color: Colors.red),
-                        ),
-                      ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                if (_loadingSlots) const LinearProgressIndicator(minHeight: 2),
-                if (_slotsRequested &&
-                    !_loadingSlots &&
-                    _slotsError == null &&
-                    _timeSlots.isEmpty)
-                  _buildWorkingPrefCallout(),
-                if (_timeSlots.isNotEmpty)
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: _timeSlots.map((slot) {
-                      final time = slot['time']?.toString() ?? '';
-                      final booked = slot['booked'] == true;
-                      final selected = _selectedSlotTime == time;
-                      return ChoiceChip(
-                        label: Text(time),
-                        selected: selected,
-                        onSelected: booked
-                            ? null
-                            : (val) {
-                                if (val) {
-                                  setState(() {
-                                    _selectedSlotTime = time;
-                                    _quickTimeController.text = time;
-                                    _slotsError = null;
-                                  });
-                                }
-                              },
-                        disabledColor: Colors.grey.shade300,
-                        selectedColor: Colors.green.shade200,
-                        labelStyle: TextStyle(
-                          color: booked
-                              ? Colors.grey
-                              : (selected ? Colors.black : Colors.black87),
-                        ),
-                      );
-                    }).toList(),
-                  ),
-                const SizedBox(height: 10),
-                TextField(
-                  controller: _quickNoteController,
-                  maxLines: 2,
-                  decoration: InputDecoration(
-                    labelText: loc.note,
-                    hintText: loc.appointmentsFieldEmailHint,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                SwitchListTile(
-                  contentPadding: EdgeInsets.zero,
-                  title: Text(loc.appointmentsFirstAppointment),
-                  value: _quickIsFirstAppointment,
-                  onChanged: (val) {
-                    setState(() {
-                      _quickIsFirstAppointment = val;
-                    });
-                  },
-                ),
-                SwitchListTile(
-                  contentPadding: EdgeInsets.zero,
-                  title: Text(loc.doNotSendSms),
-                  subtitle: Text(loc.smsOffForAppointment),
-                  value: _quickNoSms,
-                  onChanged: (val) {
-                    setState(() {
-                      _quickNoSms = val;
-                    });
-                  },
-                ),
-                SwitchListTile(
-                  contentPadding: EdgeInsets.zero,
-                  title: Text(loc.appointmentsReminderDisableTitle),
-                  subtitle: Text(loc.reminderOffForAppointment),
-                  value: _quickNoReminder,
-                  onChanged: (val) {
-                    setState(() {
-                      _quickNoReminder = val;
-                    });
-                  },
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 12),
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton.icon(
-              onPressed: _savingQuick ? null : _submitQuickAppointment,
-              style: _mainButtonStyle(),
-              icon: _savingQuick
-                  ? const SizedBox(
-                      width: 16,
-                      height: 16,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        valueColor: AlwaysStoppedAnimation(Colors.white),
-                      ),
-                    )
-                  : const Icon(Icons.event_available),
-              label: Text(
-                _savingQuick
-                    ? loc.appointmentsSubmitting
-                    : loc.quickAppointmentTitle,
+              const SizedBox(height: 16),
+              DropdownButtonFormField<int>(
+                initialValue: localSelectedStatusId, isExpanded: true,
+                decoration: _fieldDecor(label: loc.status, hint: _loadingStatuses ? loc.calendarLoading : loc.appointmentsStatusSelectHint, error: _statusesError),
+                items: _appointmentStatuses.map((s) => DropdownMenuItem<int>(value: s['id'] as int?, child: Text(_localizedStatusLabel(s), style: const TextStyle(fontSize: 13)))).toList(),
+                onChanged: _loadingStatuses ? null : (v) => setModal(() { localSelectedStatusId = v; }),
               ),
-            ),
+              const SizedBox(height: 10),
+              TextField(controller: notesCtrl, maxLines: 3, decoration: _fieldDecor(label: loc.note, hint: '...')),
+              const SizedBox(height: 8),
+              _minimalToggle(label: loc.doNotSendSms, subtitle: loc.smsOffForAppointment, value: localNoSms, onChanged: (v) => setModal(() { localNoSms = v; })),
+              _minimalToggle(label: loc.doNotSendReminder, subtitle: loc.reminderOffForAppointment, value: localNoReminder, onChanged: (v) => setModal(() { localNoReminder = v; })),
+              const SizedBox(height: 16),
+              _primaryBtn(
+                label: loc.rescheduleAppointment, icon: Icons.event_available_outlined,
+                loading: _creatingRebook,
+                onTap: (customerId == null || _creatingRebook) ? null : () async {
+                  Navigator.of(ctx).pop();
+                  await _createAppointmentForCustomer(customerId: customerId, date: dateCtrl.text.trim(), time: (localSelectedTime ?? timeCtrl.text).trim(), notes: notesCtrl.text.trim(), noSms: localNoSms, noReminder: localNoReminder, appointmentStatusId: localSelectedStatusId);
+                },
+              ),
+            ]),
           ),
-        ],
+        );
+      }),
+    );
+  }
+
+  // ── Shared small widgets ───────────────────
+  Widget _sheetHandle() => Center(child: Container(width: 36, height: 4, decoration: BoxDecoration(color: _T.border, borderRadius: BorderRadius.circular(99))));
+
+  Widget _groupLabel(String label) => Text(label, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: _T.inkSecondary, letterSpacing: 0.6));
+
+  Widget _inlineError(String msg) => Container(
+    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+    decoration: BoxDecoration(color: _T.dangerSoft, borderRadius: BorderRadius.circular(_T.r8), border: Border.all(color: _T.danger.withValues(alpha: 0.2))),
+    child: Row(children: [
+      const Icon(Icons.error_outline, size: 14, color: _T.danger),
+      const SizedBox(width: 8),
+      Expanded(child: Text(msg, style: const TextStyle(fontSize: 12, color: _T.danger))),
+    ]),
+  );
+
+  Widget _minimalToggle({required String label, String? subtitle, required bool value, required ValueChanged<bool> onChanged}) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(children: [
+        Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text(label, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: _T.ink)),
+          if (subtitle != null) Text(subtitle, style: const TextStyle(fontSize: 11, color: _T.inkSecondary)),
+        ])),
+        Switch.adaptive(
+          value: value,
+          onChanged: onChanged,
+          activeThumbColor: _T.primary,
+          activeTrackColor: _T.primarySoft,
+          materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+        ),
+      ]),
+    );
+  }
+
+  Widget _primaryBtn({required String label, IconData? icon, required VoidCallback? onTap, bool loading = false, Color color = _T.primary}) {
+    return SizedBox(
+      width: double.infinity,
+      child: ElevatedButton(
+        onPressed: loading ? null : onTap,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: color, foregroundColor: Colors.white,
+          disabledBackgroundColor: color.withValues(alpha: 0.4),
+          elevation: 0,
+          padding: const EdgeInsets.symmetric(vertical: 14),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(_T.r12)),
+        ),
+        child: Row(mainAxisAlignment: MainAxisAlignment.center, mainAxisSize: MainAxisSize.min, children: [
+          if (loading) const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+          else if (icon != null) Icon(icon, size: 17),
+          const SizedBox(width: 8),
+          Text(label, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, letterSpacing: 0.1)),
+        ]),
       ),
     );
   }
 
+  Widget _outlineBtn({required String label, IconData? icon, required VoidCallback? onTap, bool loading = false, bool fullWidth = false}) {
+    final btn = OutlinedButton(
+      onPressed: loading ? null : onTap,
+      style: OutlinedButton.styleFrom(
+        foregroundColor: _T.ink,
+        side: const BorderSide(color: _T.border, width: 1.5),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(_T.r12)),
+      ),
+      child: Row(mainAxisAlignment: MainAxisAlignment.center, mainAxisSize: MainAxisSize.min, children: [
+        if (loading) const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2, color: _T.inkSecondary))
+        else if (icon != null) Icon(icon, size: 16, color: _T.inkSecondary),
+        const SizedBox(width: 6),
+        Text(label, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: _T.inkSecondary)),
+      ]),
+    );
+    return fullWidth ? SizedBox(width: double.infinity, child: btn) : btn;
+  }
+
+  Widget _buildTimeSlotGrid(List<Map<String, dynamic>> slots, String? selectedTime, ValueChanged<String> onSelect, {String? originalTime}) {
+    return Wrap(
+      spacing: 8, runSpacing: 8,
+      children: slots.map((slot) {
+        final time   = slot['time']?.toString() ?? '';
+        final booked = slot['booked'] == true || slot['booked'] == 1;
+        final canUse = originalTime != null && time == originalTime;
+        final disabled = booked && !canUse;
+        final selected = selectedTime == time;
+        return GestureDetector(
+          onTap: disabled ? null : () => onSelect(time),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 150),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+            decoration: BoxDecoration(
+              color: disabled ? _T.surfaceAlt : selected ? _T.success : _T.surface,
+              borderRadius: BorderRadius.circular(_T.r8),
+              border: Border.all(color: disabled ? _T.border : selected ? _T.success : _T.border, width: selected ? 1.5 : 1),
+            ),
+            child: Text(
+              time,
+              style: TextStyle(
+                fontSize: 13, fontWeight: FontWeight.w600,
+                color: disabled ? _T.inkDisabled : selected ? Colors.white : _T.ink,
+                decoration: disabled ? TextDecoration.lineThrough : null,
+              ),
+            ),
+          ),
+        );
+      }).toList(),
+    );
+  }
+
+  // ── Build ───────────────────────────────────
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: backgroundColor,
+      backgroundColor: _T.bg,
       appBar: AppBar(
         elevation: 0,
-        backgroundColor: Colors.white,
-        foregroundColor: Colors.black87,
-        titleSpacing: 0,
-        title: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                color: primaryColor.withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: const Icon(Icons.calendar_today, color: primaryColor),
-            ),
-            const SizedBox(width: 10),
-            Text(
-              loc.appointmentsTitle,
-              style: const TextStyle(fontWeight: FontWeight.w700),
-            ),
-          ],
-        ),
+        scrolledUnderElevation: 0,
+        backgroundColor: _T.surface,
+        foregroundColor: _T.ink,
+        titleSpacing: 16,
+        title: Row(children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(color: _T.primarySoft, borderRadius: BorderRadius.circular(_T.r8)),
+            child: const Icon(Icons.calendar_today_outlined, color: _T.primary, size: 18),
+          ),
+          const SizedBox(width: 10),
+          Text(loc.appointmentsTitle, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 17, color: _T.ink, letterSpacing: -0.2)),
+        ]),
+        bottom: const PreferredSize(preferredSize: Size.fromHeight(1), child: Divider(height: 1, color: _T.border)),
         actions: [
           if (widget.showBottomNav)
-            IconButton(
-              onPressed: _navigateToDashboard,
-              icon: const Icon(Icons.home_outlined),
-              tooltip: loc.appointmentsHomeTooltip,
-            ),
-          IconButton(
-            onPressed: _fetchAppointments,
-            icon: const Icon(Icons.refresh),
-            tooltip: loc.refresh,
-          ),
-          const SizedBox(width: 6),
+            IconButton(onPressed: _navigateToDashboard, icon: const Icon(Icons.home_outlined, color: _T.inkSecondary), tooltip: loc.appointmentsHomeTooltip),
+          IconButton(onPressed: _fetchAppointments, icon: const Icon(Icons.refresh, color: _T.inkSecondary), tooltip: loc.refresh),
+          const SizedBox(width: 4),
         ],
       ),
       body: RefreshIndicator(
         onRefresh: _fetchAppointments,
+        color: _T.primary,
         child: SingleChildScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
-          padding: const EdgeInsets.all(16),
-          clipBehavior: Clip.none,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildHeaderHero(),
-              _buildQuickForm(),
-              _buildFilterForm(),
-              const SizedBox(height: 16),
-              _buildAppointmentList(),
-            ],
-          ),
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            _buildHeaderHero(),
+            _buildQuickForm(),
+            _buildFilterForm(),
+            _buildAppointmentList(),
+          ]),
         ),
       ),
       bottomNavigationBar: widget.showBottomNav
-          ? MainNavBar(
-              currentIndex: 1,
-              onIndexSelected: widget.onTabSelected,
-            )
+          ? MainNavBar(currentIndex: 1, onIndexSelected: widget.onTabSelected)
           : null,
     );
   }

@@ -76,8 +76,11 @@ class _MyLinksPageState extends State<MyLinksPage>
 
   void _goBack() {
     final nav = Navigator.of(context);
-    if (nav.canPop()) nav.pop();
-    else _goHome();
+    if (nav.canPop()) {
+      nav.pop();
+    } else {
+      _goHome();
+    }
   }
 
   // ── Lifecycle ─────────────────────────────────────────────────────────────
@@ -154,7 +157,7 @@ class _MyLinksPageState extends State<MyLinksPage>
             headers: {'Authorization': 'Bearer $token', 'Accept': 'application/json'}),
       ]);
 
-      List<Map<String, dynamic>> _decode(http.Response r) {
+      List<Map<String, dynamic>> decodeResponse(http.Response r) {
         if (r.statusCode != 200) return [];
         final d = json.decode(r.body);
         final list = d is List ? d : (d is Map<String, dynamic> ? d['data'] : null);
@@ -165,8 +168,8 @@ class _MyLinksPageState extends State<MyLinksPage>
       }
 
       if (!mounted) return;
-      final ft = _decode(responses[0]);
-      final fc = _decode(responses[1]);
+      final ft = decodeResponse(responses[0]);
+      final fc = decodeResponse(responses[1]);
 
       setState(() {
         linkTypes = ft;
@@ -234,7 +237,7 @@ class _MyLinksPageState extends State<MyLinksPage>
         backgroundColor: error ? _T.dangerBg : _T.successBg,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12),
-          side: BorderSide(color: error ? _T.danger.withOpacity(0.4) : _T.success.withOpacity(0.4)),
+          side: BorderSide(color: error ? _T.danger.withValues(alpha: 0.4) : _T.success.withValues(alpha: 0.4)),
         ),
         content: Row(
           children: [
@@ -547,7 +550,7 @@ class _MyLinksPageState extends State<MyLinksPage>
         border: Border.all(color: _T.border),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: Colors.black.withValues(alpha: 0.04),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),
@@ -669,7 +672,7 @@ class _MyLinksPageState extends State<MyLinksPage>
         border: Border.all(color: _T.border),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: Colors.black.withValues(alpha: 0.04),
             blurRadius: 16,
             offset: const Offset(0, 6),
           ),
@@ -766,7 +769,7 @@ class _MyLinksPageState extends State<MyLinksPage>
             Container(
               width: 60,
               height: 60,
-              decoration: BoxDecoration(
+              decoration: const BoxDecoration(
                 color: _T.accentLight,
                 shape: BoxShape.circle,
               ),
@@ -869,9 +872,9 @@ class _MyLinksPageState extends State<MyLinksPage>
 
                   // Bottom bar
                   Container(
-                    decoration: BoxDecoration(
+                    decoration: const BoxDecoration(
                       color: _T.surface,
-                      border: const Border(top: BorderSide(color: _T.border)),
+                      border: Border(top: BorderSide(color: _T.border)),
                     ),
                     padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
                     child: Column(
@@ -894,7 +897,7 @@ class _MyLinksPageState extends State<MyLinksPage>
                               color: showForm ? _T.accentLight : _T.accent,
                               borderRadius: BorderRadius.circular(13),
                               border: showForm
-                                  ? Border.all(color: _T.accentMid.withOpacity(0.5))
+                                  ? Border.all(color: _T.accentMid.withValues(alpha: 0.5))
                                   : null,
                             ),
                             child: Row(
@@ -972,7 +975,7 @@ class _IconBtn extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.all(6),
           decoration: BoxDecoration(
-            color: color.withOpacity(0.08),
+            color: color.withValues(alpha: 0.08),
             borderRadius: BorderRadius.circular(8),
           ),
           child: Icon(icon, size: 16, color: color),
@@ -1090,7 +1093,7 @@ class _MinimalDropdown<T> extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => DropdownButtonFormField<T>(
-        value: value,
+        initialValue: value,
         items: items,
         onChanged: onChanged,
         style: const TextStyle(fontSize: 14, color: _T.textPrimary),
@@ -1144,7 +1147,7 @@ class _PrimaryButton extends StatelessWidget {
                 ? []
                 : [
                     BoxShadow(
-                      color: _T.accent.withOpacity(0.25),
+                      color: _T.accent.withValues(alpha: 0.25),
                       blurRadius: 16,
                       offset: const Offset(0, 6),
                     ),
