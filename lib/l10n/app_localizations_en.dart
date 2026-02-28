@@ -809,6 +809,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String get calendarSlotBusy => 'Selected time slot is full.';
 
   @override
+  String get appointmentsConsecutiveSlotsUnavailable =>
+      'No consecutive available slots were found. Please update your time selection.';
+
+  @override
+  String get commonForbiddenAction =>
+      'You do not have permission for this action.';
+
+  @override
+  String get commonHolidayDateUnavailable =>
+      'The selected date falls on a holiday.';
+
+  @override
   String get calendarCustomerInfoMissing => 'Person info not found.';
 
   @override
@@ -1476,6 +1488,10 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get smsPacksAgreementTitle =>
       'I have read and accept the purchase agreement.';
+
+  @override
+  String get smsPacksPaymentSecurityNote =>
+      'Payment is completed on PayTR\'s secure payment page. The app does not collect or store your credit card details.';
 
   @override
   String get smsPacksSummaryTitle => 'Purchase Summary';

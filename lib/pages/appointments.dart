@@ -5,8 +5,10 @@ import 'package:bagla_mobile/config.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:http/http.dart' as http;
 import '../utils/appointment_date_utils.dart';
 import '../dashboard_page.dart';
+import '../login_page.dart';
 import 'sms_packs.dart';
 import 'working_preferences.dart';
 import '../widgets/main_nav.dart';
@@ -94,6 +96,36 @@ class _PhoneMaskFormatter extends TextInputFormatter {
   }
 }
 
+class _ApiEnvelope {
+  final int statusCode;
+  final Map<String, dynamic> payload;
+  final String? code;
+  final String? message;
+  final String? type;
+  final dynamic data;
+  final Map<String, dynamic>? meta;
+  final Map<String, dynamic>? errors;
+
+  const _ApiEnvelope({
+    required this.statusCode,
+    required this.payload,
+    required this.code,
+    required this.message,
+    required this.type,
+    required this.data,
+    required this.meta,
+    required this.errors,
+  });
+
+  bool get isSuccessType => (type ?? '').toLowerCase() == 'success';
+  bool get isSuccess {
+    if (isSuccessType) return true;
+    final upper = (code ?? '').toUpperCase();
+    if (upper == 'OK' || upper == 'CREATED' || upper == 'UPDATED') return true;
+    return statusCode >= 200 && statusCode < 300;
+  }
+}
+
 class _AppointmentsPageState extends State<AppointmentsPage> {
   AppLocalizations get loc => AppLocalizations.of(context);
   bool get _isIosPaymentRestricted =>
@@ -172,6 +204,160 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
     if (value is num) return value != 0;
     final str = value.toString().trim().toLowerCase();
     return str == '1' || str == 'true' || str == 'yes';
+  }
+
+  _ApiEnvelope _parseEnvelope(http.Response response) {
+    Map<String, dynamic> payload = <String, dynamic>{};
+    try {
+      final decoded = jsonDecode(response.body);
+      if (decoded is Map) {
+        payload = Map<String, dynamic>.from(decoded);
+      } else {
+        payload = <String, dynamic>{'data': decoded};
+      }
+    } catch (_) {
+      payload = <String, dynamic>{'message': response.body};
+    }
+
+    final dynamic rawErrors = payload['errors'];
+    final dynamic rawMeta = payload['meta'];
+    return _ApiEnvelope(
+      statusCode: response.statusCode,
+      payload: payload,
+      code: payload['code']?.toString(),
+      message: payload['message']?.toString(),
+      type: payload['type']?.toString(),
+      data: payload.containsKey('data') ? payload['data'] : payload,
+      meta: rawMeta is Map ? Map<String, dynamic>.from(rawMeta) : null,
+      errors: rawErrors is Map ? Map<String, dynamic>.from(rawErrors) : null,
+    );
+  }
+
+  String? _firstFieldError(Map<String, dynamic>? errors) {
+    if (errors == null || errors.isEmpty) return null;
+    final first = errors.values.first;
+    if (first is List && first.isNotEmpty) {
+      return first.first?.toString();
+    }
+    return first?.toString();
+  }
+
+  String _holidayWarningMessage(_ApiEnvelope envelope) {
+    final holiday = envelope.meta?['holiday'] ??
+        (envelope.data is Map ? envelope.data['holiday'] : null) ??
+        envelope.payload['holiday'];
+    if (holiday is Map) {
+      final msg = holiday['message']?.toString();
+      if (msg != null && msg.trim().isNotEmpty) return msg;
+      final name = holiday['name']?.toString() ?? '';
+      final date = holiday['date']?.toString() ?? '';
+      final joined = [name, date].where((e) => e.isNotEmpty).join(' - ');
+      if (joined.isNotEmpty) return joined;
+    } else if (holiday != null && holiday.toString().trim().isNotEmpty) {
+      return holiday.toString();
+    }
+    return envelope.message?.trim().isNotEmpty == true
+        ? envelope.message!
+        : loc.commonHolidayDateUnavailable;
+  }
+
+  Future<void> _redirectToLogin() async {
+    await clearTokens();
+    if (!mounted) return;
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute(
+        builder: (_) => LoginPage(onLocaleChange: (_) {}),
+      ),
+      (_) => false,
+    );
+  }
+
+  Future<bool> _handleIssueByCode(
+    _ApiEnvelope envelope, {
+    bool allowPackageNavigation = true,
+    bool firstAppointmentFlow = false,
+  }) async {
+    final code = _normalizedIssueCode(envelope);
+    if (code.isEmpty &&
+        envelope.statusCode >= 200 &&
+        envelope.statusCode < 300) {
+      return false;
+    }
+    switch (code) {
+      case 'NO_PACKAGE':
+        _hasUserPack = false;
+        _showSnack(
+          _isIosPaymentRestricted
+              ? loc.iosSmsPurchaseRestrictionMessage
+              : loc.appointmentsPackageRequired,
+        );
+        if (!_isIosPaymentRestricted && allowPackageNavigation && mounted) {
+          await Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const SmsPacksPage()),
+          );
+        }
+        return true;
+      case 'HOLIDAY':
+        _showSnack(_holidayWarningMessage(envelope));
+        return true;
+      case 'SLOT_BUSY':
+        _selectedSlotTime = null;
+        _quickTimeController.clear();
+        final message = envelope.message?.trim();
+        _showSnack(
+          message != null && message.isNotEmpty
+              ? message
+              : (firstAppointmentFlow
+                  ? loc.appointmentsConsecutiveSlotsUnavailable
+                  : loc.calendarSlotBusy),
+        );
+        return true;
+      case 'VALIDATION_ERROR':
+        _showSnack(
+          _firstFieldError(envelope.errors) ??
+              envelope.message ??
+              loc.appointmentsRequiredFields,
+        );
+        return true;
+      case 'UNAUTHORIZED':
+        _showSnack(loc.appointmentsSessionMissingLogin);
+        await _redirectToLogin();
+        return true;
+      case 'FORBIDDEN':
+        _showSnack(loc.commonForbiddenAction);
+        return true;
+      default:
+        if (envelope.statusCode == 401) {
+          _showSnack(loc.appointmentsSessionMissingLogin);
+          await _redirectToLogin();
+          return true;
+        }
+        if (envelope.statusCode == 403) {
+          _showSnack(loc.commonForbiddenAction);
+          return true;
+        }
+        return false;
+    }
+  }
+
+  String _normalizedIssueCode(_ApiEnvelope envelope) {
+    final rawCode = (envelope.code ?? '').toUpperCase().trim();
+    if (rawCode.isNotEmpty) return rawCode;
+
+    if (envelope.statusCode == 409) return 'SLOT_BUSY';
+    if (envelope.statusCode == 422) return 'VALIDATION_ERROR';
+    if (envelope.statusCode == 401) return 'UNAUTHORIZED';
+    if (envelope.statusCode == 403) {
+      final msg = (envelope.message ?? '').toLowerCase();
+      if (msg.contains('package')) return 'NO_PACKAGE';
+      return 'FORBIDDEN';
+    }
+    return '';
+  }
+
+  dynamic _dataOrPayload(_ApiEnvelope envelope) {
+    return envelope.data ?? envelope.payload;
   }
 
   int _countToday() {
@@ -612,18 +798,27 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
           'Accept': 'application/json',
         },
       );
+      final envelope = _parseEnvelope(response);
+      final handled = await _handleIssueByCode(envelope);
+      if (handled) {
+        if (!mounted) return;
+        setState(() {
+          _loadingList = false;
+          _error = envelope.message ?? loc.appointmentsPackageRequired;
+        });
+        return;
+      }
 
-      if (response.statusCode == 200) {
-        final decoded = jsonDecode(response.body);
-        final rawData = decoded['data'] ?? decoded;
+      if (envelope.isSuccess) {
+        final rawData = _dataOrPayload(envelope);
         bool? extractedUserPack;
-        if (decoded is Map) {
-          final candidate = decoded['user_pack'] ?? decoded['userPack'];
-          if (candidate != null) extractedUserPack = _asBool(candidate);
-        }
+        final topCandidate =
+            envelope.payload['user_pack'] ?? envelope.payload['userPack'];
+        if (topCandidate != null) extractedUserPack = _asBool(topCandidate);
         if (rawData is Map) {
-          final candidate = rawData['user_pack'] ?? rawData['userPack'];
-          if (candidate != null) extractedUserPack = _asBool(candidate);
+          final nestedCandidate = rawData['user_pack'] ?? rawData['userPack'];
+          if (nestedCandidate != null)
+            extractedUserPack = _asBool(nestedCandidate);
         }
         final hasUserPack = extractedUserPack ?? true;
         List<Map<String, dynamic>> list = [];
@@ -648,7 +843,7 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
         });
       } else {
         setState(() {
-          _error =
+          _error = envelope.message ??
               loc.appointmentsFetchFailedStatus(response.statusCode.toString());
           _loadingList = false;
         });
@@ -684,9 +879,20 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
           'Accept': 'application/json',
         },
       );
-      if (response.statusCode == 200) {
-        final decoded = jsonDecode(response.body);
-        final data = decoded['data'] ?? decoded;
+      final envelope = _parseEnvelope(response);
+      final handled = await _handleIssueByCode(envelope);
+      if (handled) {
+        if (!mounted) return;
+        setState(() {
+          _loadingCountries = false;
+          _countriesError = envelope.message ??
+              loc.appointmentsCountriesFetchFailedStatus(
+                  response.statusCode.toString());
+        });
+        return;
+      }
+      if (envelope.isSuccess) {
+        final data = _dataOrPayload(envelope);
         List<Map<String, dynamic>> list = [];
         if (data is List) {
           list = List<Map<String, dynamic>>.from(
@@ -705,8 +911,9 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
       } else {
         setState(() {
           _loadingCountries = false;
-          _countriesError = loc.appointmentsCountriesFetchFailedStatus(
-              response.statusCode.toString());
+          _countriesError = envelope.message ??
+              loc.appointmentsCountriesFetchFailedStatus(
+                  response.statusCode.toString());
         });
       }
     } catch (e) {
@@ -740,10 +947,20 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
           'Accept': 'application/json',
         },
       );
-
-      if (response.statusCode == 200) {
-        final decoded = jsonDecode(response.body);
-        final data = decoded['data'] ?? decoded;
+      final envelope = _parseEnvelope(response);
+      final handled = await _handleIssueByCode(envelope);
+      if (handled) {
+        if (!mounted) return;
+        setState(() {
+          _loadingStatuses = false;
+          _statusesError = envelope.message ??
+              loc.appointmentsStatusesFetchFailedStatus(
+                  response.statusCode.toString());
+        });
+        return;
+      }
+      if (envelope.isSuccess) {
+        final data = _dataOrPayload(envelope);
         List<Map<String, dynamic>> list = [];
         if (data is List) {
           list = List<Map<String, dynamic>>.from(
@@ -757,8 +974,9 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
       } else {
         setState(() {
           _loadingStatuses = false;
-          _statusesError = loc.appointmentsStatusesFetchFailedStatus(
-              response.statusCode.toString());
+          _statusesError = envelope.message ??
+              loc.appointmentsStatusesFetchFailedStatus(
+                  response.statusCode.toString());
         });
       }
     } catch (e) {
@@ -892,28 +1110,32 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
           'customer_lastname': lastName,
           'country_id': countryId,
           'phone': phone,
-          'email': email,
+          'email': email.isEmpty ? null : email,
           'date': normalizedDate,
           'time': time,
           'note': note,
-          'is_first_appointment': _quickIsFirstAppointment ? 1 : 0,
+          'is_first_appointment': _quickIsFirstAppointment,
           'no_sms': _quickNoSms,
           'no_reminder': _quickNoReminder,
         }),
       );
-
-      if (response.statusCode == 200 || response.statusCode == 201) {
+      final envelope = _parseEnvelope(response);
+      if (envelope.isSuccess) {
         _showSnack(loc.appointmentsCreateSuccess, success: true);
         await _fetchAppointments();
         _resetQuickForm();
       } else {
-        String message =
-            loc.appointmentsCreateFailedStatus(response.statusCode.toString());
-        try {
-          final decoded = jsonDecode(response.body);
-          message = decoded['message']?.toString() ?? message;
-        } catch (_) {}
-        _showSnack(message);
+        final handled = await _handleIssueByCode(
+          envelope,
+          firstAppointmentFlow: _quickIsFirstAppointment,
+        );
+        if (!handled) {
+          _showSnack(
+            envelope.message ??
+                loc.appointmentsCreateFailedStatus(
+                    response.statusCode.toString()),
+          );
+        }
       }
     } catch (e) {
       _showSnack(loc.appointmentsCreateFailed(e.toString()));
@@ -997,6 +1219,17 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
     return reg.hasMatch(trimmed);
   }
 
+  String? _normalizeTimeToApi(String input) {
+    final trimmed = input.trim();
+    if (trimmed.isEmpty) return null;
+    final reg = RegExp(r'^([01]\d|2[0-3]):([0-5]\d)(?::[0-5]\d)?$');
+    final match = reg.firstMatch(trimmed);
+    if (match == null) return null;
+    final hh = match.group(1)!;
+    final mm = match.group(2)!;
+    return '$hh:$mm';
+  }
+
   DateTime _clampDate(DateTime date, DateTime min, DateTime max) {
     if (date.isBefore(min)) return min;
     if (date.isAfter(max)) return max;
@@ -1065,10 +1298,21 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
           'Accept': 'application/json',
         },
       );
+      final envelope = _parseEnvelope(response);
+      final handled = await _handleIssueByCode(envelope);
+      if (handled) {
+        if (!mounted) return;
+        setState(() {
+          _slotsError = envelope.message ??
+              loc.appointmentsSlotsFetchFailedStatus(
+                  response.statusCode.toString());
+          _loadingSlots = false;
+        });
+        return;
+      }
 
-      if (response.statusCode == 200) {
-        final decoded = jsonDecode(response.body);
-        final data = decoded['data'] ?? decoded;
+      if (envelope.isSuccess) {
+        final data = _dataOrPayload(envelope);
         if (!mounted) return;
         setState(() {
           _timeSlots = data is List
@@ -1079,8 +1323,9 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
         });
       } else {
         setState(() {
-          _slotsError = loc.appointmentsSlotsFetchFailedStatus(
-              response.statusCode.toString());
+          _slotsError = envelope.message ??
+              loc.appointmentsSlotsFetchFailedStatus(
+                  response.statusCode.toString());
           _loadingSlots = false;
         });
       }
@@ -1152,10 +1397,16 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
     required String notes,
     required bool noSms,
     required bool noReminder,
+    String? originalDate,
+    String? originalTime,
+    bool includeScheduleFields = true,
   }) async {
     if (_savingAppointment) return;
+    final normalizedDate =
+        _normalizeDateToApi(date) ?? _normalizeSlotDate(date);
+    final normalizedTime = _normalizeTimeToApi(time) ?? time.trim();
 
-    if (date.isEmpty || time.isEmpty) {
+    if (normalizedDate.isEmpty || normalizedTime.isEmpty) {
       _showSnack(loc.appointmentsDateTimeRequired);
       return;
     }
@@ -1171,6 +1422,43 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
     });
 
     try {
+      final originalDateNormalized = originalDate == null
+          ? null
+          : (_normalizeDateToApi(originalDate) ??
+              _normalizeSlotDate(originalDate));
+      final originalTimeNormalized = originalTime == null
+          ? null
+          : (_normalizeTimeToApi(originalTime) ?? originalTime.trim());
+      final scheduleChanged = originalDateNormalized == null ||
+          originalTimeNormalized == null ||
+          originalDateNormalized != normalizedDate ||
+          originalTimeNormalized != normalizedTime;
+      final shouldValidateSlot = includeScheduleFields && scheduleChanged;
+
+      if (shouldValidateSlot) {
+        final validateResponse = await authPost(
+          Uri.parse('$apiBaseUrl/api/appointments/validate'),
+          headers: {
+            'Authorization': 'Bearer $token',
+            'Accept': 'application/json',
+            'Content-Type': 'application/json',
+          },
+          body: jsonEncode({
+            'customer_id': customerId,
+            'date': normalizedDate,
+            'time': normalizedTime,
+          }),
+        );
+        final validateEnvelope = _parseEnvelope(validateResponse);
+        if (!validateEnvelope.isSuccess) {
+          final handled = await _handleIssueByCode(validateEnvelope);
+          if (!handled) {
+            _showSnack(validateEnvelope.message ?? loc.calendarSlotBusy);
+          }
+          return;
+        }
+      }
+
       final response = await authPut(
         Uri.parse('$apiBaseUrl/api/appointments/$appointmentId'),
         headers: {
@@ -1181,25 +1469,26 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
         body: jsonEncode({
           'customer_id': customerId,
           'appointment_status_id': statusId,
-          'date': date,
-          'time': time,
+          if (includeScheduleFields) 'date': normalizedDate,
+          if (includeScheduleFields) 'time': normalizedTime,
           'notes': notes,
           'no_sms': noSms,
           'no_reminder': noReminder,
         }),
       );
-
-      if (response.statusCode == 200 || response.statusCode == 201) {
+      final envelope = _parseEnvelope(response);
+      if (envelope.isSuccess) {
         _showSnack(loc.appointmentsUpdateSuccess, success: true);
         await _fetchAppointments();
       } else {
-        String message =
-            loc.appointmentsUpdateFailedStatus(response.statusCode.toString());
-        try {
-          final decoded = jsonDecode(response.body);
-          message = decoded['message']?.toString() ?? message;
-        } catch (_) {}
-        _showSnack(message);
+        final handled = await _handleIssueByCode(envelope);
+        if (!handled) {
+          _showSnack(
+            envelope.message ??
+                loc.appointmentsUpdateFailedStatus(
+                    response.statusCode.toString()),
+          );
+        }
       }
     } catch (e) {
       _showSnack(loc.appointmentsUpdateFailed(e.toString()));
@@ -1231,7 +1520,11 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
       return;
     }
 
-    if (date.isEmpty || time.isEmpty) {
+    final normalizedDate =
+        _normalizeDateToApi(date) ?? _normalizeSlotDate(date);
+    final normalizedTime = _normalizeTimeToApi(time) ?? time.trim();
+
+    if (normalizedDate.isEmpty || normalizedTime.isEmpty) {
       _showSnack(loc.appointmentsDateTimeRequired);
       return;
     }
@@ -1253,6 +1546,28 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
     });
 
     try {
+      final validateResponse = await authPost(
+        Uri.parse('$apiBaseUrl/api/appointments/validate'),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode({
+          'customer_id': customerId,
+          'date': normalizedDate,
+          'time': normalizedTime,
+        }),
+      );
+      final validateEnvelope = _parseEnvelope(validateResponse);
+      if (!validateEnvelope.isSuccess) {
+        final handled = await _handleIssueByCode(validateEnvelope);
+        if (!handled) {
+          _showSnack(validateEnvelope.message ?? loc.calendarSlotBusy);
+        }
+        return;
+      }
+
       final response = await authPost(
         Uri.parse('$apiBaseUrl/api/appointments'),
         headers: {
@@ -1263,25 +1578,26 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
         body: jsonEncode({
           'customer_id': customerId,
           'appointment_status_id': statusId,
-          'date': date,
-          'time': time,
+          'date': normalizedDate,
+          'time': normalizedTime,
           'notes': notes,
           'no_sms': noSms,
           'no_reminder': noReminder,
         }),
       );
-
-      if (response.statusCode == 200 || response.statusCode == 201) {
+      final envelope = _parseEnvelope(response);
+      if (envelope.isSuccess) {
         _showSnack(loc.appointmentsRebookSuccess, success: true);
         await _fetchAppointments();
       } else {
-        String message =
-            loc.appointmentsCreateFailedStatus(response.statusCode.toString());
-        try {
-          final decoded = jsonDecode(response.body);
-          message = decoded['message']?.toString() ?? message;
-        } catch (_) {}
-        _showSnack(message);
+        final handled = await _handleIssueByCode(envelope);
+        if (!handled) {
+          _showSnack(
+            envelope.message ??
+                loc.appointmentsCreateFailedStatus(
+                    response.statusCode.toString()),
+          );
+        }
       }
     } catch (e) {
       _showSnack(loc.appointmentsCreateFailed(e.toString()));
@@ -1339,6 +1655,8 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
 
     bool localNoSms = _asBool(appt['no_sms']);
     bool localNoReminder = _asBool(appt['no_reminder']);
+    bool localScheduleChanged = false;
+    final originalFormattedTime = _formatTime(appt['time']);
 
     List<Map<String, dynamic>> localSlots = [];
     String? localSlotsError;
@@ -1394,10 +1712,19 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
                     'Accept': 'application/json',
                   },
                 );
-
-                if (response.statusCode == 200) {
-                  final decoded = jsonDecode(response.body);
-                  final data = decoded['data'] ?? decoded;
+                final envelope = _parseEnvelope(response);
+                final handled = await _handleIssueByCode(envelope);
+                if (handled) {
+                  setModalState(() {
+                    localSlotsError = envelope.message ??
+                        loc.appointmentsSlotsFetchFailedStatus(
+                            response.statusCode.toString());
+                    localLoadingSlots = false;
+                  });
+                  return;
+                }
+                if (envelope.isSuccess) {
+                  final data = _dataOrPayload(envelope);
                   final slots = data is List
                       ? List<Map<String, dynamic>>.from(
                           data.map((e) => Map<String, dynamic>.from(e)))
@@ -1409,8 +1736,9 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
                   });
                 } else {
                   setModalState(() {
-                    localSlotsError = loc.appointmentsSlotsFetchFailedStatus(
-                        response.statusCode.toString());
+                    localSlotsError = envelope.message ??
+                        loc.appointmentsSlotsFetchFailedStatus(
+                            response.statusCode.toString());
                     localLoadingSlots = false;
                   });
                 }
@@ -1445,6 +1773,7 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
                   timeCtrl.clear();
                   localSlots = [];
                   localSlotsError = null;
+                  localScheduleChanged = true;
                 });
                 await loadSlots();
               }
@@ -1589,12 +1918,15 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
                           runSpacing: 8,
                           children: localSlots.map((slot) {
                             final time = slot['time']?.toString() ?? '';
-                            final booked = slot['booked'] == true;
+                            final booked =
+                                slot['booked'] == true || slot['booked'] == 1;
+                            final canUseBooked = time == originalFormattedTime;
+                            final disabled = booked && !canUseBooked;
                             final selected = localSelectedTime == time;
                             return ChoiceChip(
                               label: Text(time),
                               selected: selected,
-                              onSelected: booked
+                              onSelected: disabled
                                   ? null
                                   : (val) {
                                       if (val) {
@@ -1602,13 +1934,15 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
                                           localSelectedTime = time;
                                           timeCtrl.text = time;
                                           localSlotsError = null;
+                                          localScheduleChanged =
+                                              time != originalFormattedTime;
                                         });
                                       }
                                     },
                               disabledColor: Colors.grey.shade300,
                               selectedColor: Colors.green.shade200,
                               labelStyle: TextStyle(
-                                color: booked
+                                color: disabled
                                     ? Colors.grey
                                     : (selected
                                         ? Colors.black
@@ -1658,17 +1992,24 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
                                   _savingAppointment)
                               ? null
                               : () async {
+                                  final selectedDate = dateCtrl.text.trim();
+                                  final selectedTime =
+                                      (localSelectedTime ?? timeCtrl.text)
+                                          .trim();
+                                  final scheduleChanged = localScheduleChanged;
                                   Navigator.of(ctx).pop();
                                   await _updateAppointment(
                                     appointmentId: appointmentId,
                                     customerId: customerId,
                                     statusId: effectiveStatusId,
-                                    date: dateCtrl.text.trim(),
-                                    time: (localSelectedTime ?? timeCtrl.text)
-                                        .trim(),
+                                    date: selectedDate,
+                                    time: selectedTime,
                                     notes: notesCtrl.text.trim(),
                                     noSms: localNoSms,
                                     noReminder: localNoReminder,
+                                    originalDate: rawDate,
+                                    originalTime: originalFormattedTime,
+                                    includeScheduleFields: scheduleChanged,
                                   );
                                 },
                           icon: _savingAppointment
@@ -1733,23 +2074,28 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
           },
           body: jsonEncode({'appointment_id': appointmentId}),
         );
-
-        if (response.statusCode == 200) {
-          final decoded = jsonDecode(response.body);
-          final data = decoded['data'] ?? decoded;
+        final envelope = _parseEnvelope(response);
+        final handled = await _handleIssueByCode(envelope);
+        if (handled) {
           setModalState(() {
-            info = Map<String, dynamic>.from(data);
+            loadError = envelope.message ??
+                loc.appointmentsInfoFetchFailedStatus(
+                    response.statusCode.toString());
+            _loadingCustomerInfo = false;
+          });
+          return;
+        }
+        if (envelope.isSuccess) {
+          final data = _dataOrPayload(envelope);
+          setModalState(() {
+            info = data is Map ? Map<String, dynamic>.from(data) : null;
             _loadingCustomerInfo = false;
           });
         } else {
-          String message = loc.appointmentsInfoFetchFailedStatus(
-              response.statusCode.toString());
-          try {
-            final decoded = jsonDecode(response.body);
-            message = decoded['message']?.toString() ?? message;
-          } catch (_) {}
           setModalState(() {
-            loadError = message;
+            loadError = envelope.message ??
+                loc.appointmentsInfoFetchFailedStatus(
+                    response.statusCode.toString());
             _loadingCustomerInfo = false;
           });
         }
@@ -2041,10 +2387,19 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
                     'Accept': 'application/json',
                   },
                 );
-
-                if (response.statusCode == 200) {
-                  final decoded = jsonDecode(response.body);
-                  final data = decoded['data'] ?? decoded;
+                final envelope = _parseEnvelope(response);
+                final handled = await _handleIssueByCode(envelope);
+                if (handled) {
+                  setModalState(() {
+                    localSlotsError = envelope.message ??
+                        loc.appointmentsSlotsFetchFailedStatus(
+                            response.statusCode.toString());
+                    localLoadingSlots = false;
+                  });
+                  return;
+                }
+                if (envelope.isSuccess) {
+                  final data = _dataOrPayload(envelope);
                   final slots = data is List
                       ? List<Map<String, dynamic>>.from(
                           data.map((e) => Map<String, dynamic>.from(e)))
@@ -2056,8 +2411,9 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
                   });
                 } else {
                   setModalState(() {
-                    localSlotsError = loc.appointmentsSlotsFetchFailedStatus(
-                        response.statusCode.toString());
+                    localSlotsError = envelope.message ??
+                        loc.appointmentsSlotsFetchFailedStatus(
+                            response.statusCode.toString());
                     localLoadingSlots = false;
                   });
                 }

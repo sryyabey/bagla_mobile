@@ -3,15 +3,48 @@ import 'dart:convert';
 import 'package:bagla_mobile/auth.dart';
 import 'package:bagla_mobile/config.dart';
 import 'package:bagla_mobile/dashboard_page.dart';
+import 'package:bagla_mobile/login_page.dart';
 import 'package:bagla_mobile/pages/working_preferences.dart';
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'sms_packs.dart';
 import '../utils/appointment_date_utils.dart';
 import '../widgets/main_nav.dart';
 import 'package:bagla_mobile/l10n/app_localizations.dart';
+
+class _ApiEnvelope {
+  final int statusCode;
+  final Map<String, dynamic> payload;
+  final String? code;
+  final String? message;
+  final String? type;
+  final dynamic data;
+  final Map<String, dynamic>? meta;
+  final Map<String, dynamic>? errors;
+
+  const _ApiEnvelope({
+    required this.statusCode,
+    required this.payload,
+    required this.code,
+    required this.message,
+    required this.type,
+    required this.data,
+    required this.meta,
+    required this.errors,
+  });
+
+  bool get isSuccessType => (type ?? '').toLowerCase() == 'success';
+  bool get isSuccess {
+    if (isSuccessType) return true;
+    final c = (code ?? '').toUpperCase();
+    if (c == 'OK' || c == 'CREATED' || c == 'UPDATED') return true;
+    return statusCode >= 200 && statusCode < 300;
+  }
+}
 
 DateTime _startOfWeek(DateTime date) {
   final weekday = date.weekday; // 1 = Mon
@@ -50,7 +83,8 @@ Future<Dio> _buildAuthedDio({bool includeJsonContentType = false}) async {
   dio.interceptors.add(
     InterceptorsWrapper(
       onError: (err, handler) async {
-        final alreadyRetried = err.requestOptions.extra[_authRetriedKey] == true;
+        final alreadyRetried =
+            err.requestOptions.extra[_authRetriedKey] == true;
         if (err.response?.statusCode != 401 || alreadyRetried) {
           return handler.next(err);
         }
@@ -229,6 +263,7 @@ class WeeklyCalendarData {
   final Map<String, String> statusColors;
   final Map<String, dynamic> workingPreferences;
   final bool hasTimeSlots;
+  final bool? hasUserPack;
 
   WeeklyCalendarData({
     required this.weekStart,
@@ -241,6 +276,7 @@ class WeeklyCalendarData {
     required this.statusColors,
     required this.workingPreferences,
     required this.hasTimeSlots,
+    required this.hasUserPack,
   });
 
   factory WeeklyCalendarData.fromJson(Map<String, dynamic> json) {
@@ -302,6 +338,11 @@ class WeeklyCalendarData {
 
     final rawTimeSlot = json['time_slot'];
     bool hasTimeSlots = parseBool(rawTimeSlot, defaultValue: true);
+    bool? hasUserPack;
+    final rawUserPack = json['user_pack'] ?? json['userPack'];
+    if (rawUserPack != null) {
+      hasUserPack = parseBool(rawUserPack);
+    }
 
     // Eğer API boş zaman aralığı haritası döndüyse uyarıyı göster
     final hasAnySlot = slotsMap.values.any((slots) => slots.isNotEmpty);
@@ -322,6 +363,7 @@ class WeeklyCalendarData {
           ? Map<String, dynamic>.from(json['working_preferences'])
           : <String, dynamic>{},
       hasTimeSlots: hasTimeSlots,
+      hasUserPack: hasUserPack,
     );
   }
 }
@@ -406,8 +448,219 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
       const <String, List<Map<String, dynamic>>>{};
   static final RegExp _timeKeyPattern = RegExp(r'^(\d{2}):(\d{2})(?::\d{2})?$');
   static const Color _primaryColor = Color(0xFF6366F1);
+  bool? _hasUserPack;
 
   AppLocalizations get loc => AppLocalizations.of(context);
+  bool get _isIosPaymentRestricted =>
+      !kIsWeb && defaultTargetPlatform == TargetPlatform.iOS;
+
+  bool _asBool(dynamic value) {
+    if (value == null) return false;
+    if (value is bool) return value;
+    if (value is num) return value != 0;
+    final str = value.toString().trim().toLowerCase();
+    return str == '1' || str == 'true' || str == 'yes';
+  }
+
+  _ApiEnvelope _parseEnvelope(
+    dynamic body, {
+    int statusCode = 200,
+  }) {
+    Map<String, dynamic> payload = <String, dynamic>{};
+    if (body is Map) {
+      payload = Map<String, dynamic>.from(body);
+    } else if (body is String) {
+      try {
+        final decoded = jsonDecode(body);
+        if (decoded is Map) {
+          payload = Map<String, dynamic>.from(decoded);
+        } else {
+          payload = <String, dynamic>{'data': decoded};
+        }
+      } catch (_) {
+        payload = <String, dynamic>{'message': body};
+      }
+    } else {
+      payload = <String, dynamic>{'data': body};
+    }
+
+    final rawErrors = payload['errors'];
+    final rawMeta = payload['meta'];
+    return _ApiEnvelope(
+      statusCode: statusCode,
+      payload: payload,
+      code: payload['code']?.toString(),
+      message: payload['message']?.toString(),
+      type: payload['type']?.toString(),
+      data: payload.containsKey('data') ? payload['data'] : payload,
+      meta: rawMeta is Map ? Map<String, dynamic>.from(rawMeta) : null,
+      errors: rawErrors is Map ? Map<String, dynamic>.from(rawErrors) : null,
+    );
+  }
+
+  String? _firstFieldError(Map<String, dynamic>? errors) {
+    if (errors == null || errors.isEmpty) return null;
+    final first = errors.values.first;
+    if (first is List && first.isNotEmpty) return first.first?.toString();
+    return first?.toString();
+  }
+
+  String _holidayWarningMessage(_ApiEnvelope envelope) {
+    final holiday = envelope.meta?['holiday'] ??
+        (envelope.data is Map ? envelope.data['holiday'] : null) ??
+        envelope.payload['holiday'];
+    if (holiday is Map) {
+      final msg = holiday['message']?.toString();
+      if (msg != null && msg.trim().isNotEmpty) return msg;
+      final name = holiday['name']?.toString() ?? '';
+      final date = holiday['date']?.toString() ?? '';
+      final joined = [name, date].where((e) => e.isNotEmpty).join(' - ');
+      if (joined.isNotEmpty) return joined;
+    } else if (holiday != null && holiday.toString().trim().isNotEmpty) {
+      return holiday.toString();
+    }
+    return envelope.message?.trim().isNotEmpty == true
+        ? envelope.message!
+        : loc.commonHolidayDateUnavailable;
+  }
+
+  Future<void> _redirectToLogin() async {
+    await clearTokens();
+    if (!mounted) return;
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute(builder: (_) => LoginPage(onLocaleChange: (_) {})),
+      (_) => false,
+    );
+  }
+
+  Future<bool> _handleIssueByCode(
+    _ApiEnvelope envelope, {
+    bool allowPackageNavigation = true,
+    bool firstAppointmentFlow = false,
+    VoidCallback? onSlotBusy,
+  }) async {
+    final code = _normalizedIssueCode(envelope);
+    if (code.isEmpty &&
+        envelope.statusCode >= 200 &&
+        envelope.statusCode < 300) {
+      return false;
+    }
+    switch (code) {
+      case 'NO_PACKAGE':
+        _hasUserPack = false;
+        _showSnack(
+          _isIosPaymentRestricted
+              ? loc.iosSmsPurchaseRestrictionMessage
+              : loc.appointmentsPackageRequired,
+        );
+        if (!_isIosPaymentRestricted && allowPackageNavigation && mounted) {
+          await Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const SmsPacksPage()),
+          );
+        }
+        return true;
+      case 'HOLIDAY':
+        _showSnack(_holidayWarningMessage(envelope));
+        return true;
+      case 'SLOT_BUSY':
+        onSlotBusy?.call();
+        final message = envelope.message?.trim();
+        _showSnack(
+          message != null && message.isNotEmpty
+              ? message
+              : (firstAppointmentFlow
+                  ? loc.appointmentsConsecutiveSlotsUnavailable
+                  : loc.calendarSlotBusy),
+        );
+        return true;
+      case 'VALIDATION_ERROR':
+        _showSnack(
+          _firstFieldError(envelope.errors) ??
+              envelope.message ??
+              loc.calendarDateTimeRequired,
+        );
+        return true;
+      case 'UNAUTHORIZED':
+        _showSnack(loc.calendarSessionExpired);
+        await _redirectToLogin();
+        return true;
+      case 'FORBIDDEN':
+        _showSnack(loc.commonForbiddenAction);
+        return true;
+      default:
+        if (envelope.statusCode == 401) {
+          _showSnack(loc.calendarSessionExpired);
+          await _redirectToLogin();
+          return true;
+        }
+        if (envelope.statusCode == 403) {
+          _showSnack(loc.commonForbiddenAction);
+          return true;
+        }
+        return false;
+    }
+  }
+
+  String _issueMessageForCode(
+    _ApiEnvelope envelope, {
+    bool firstAppointmentFlow = false,
+    String? fallback,
+  }) {
+    final code = _normalizedIssueCode(envelope);
+    switch (code) {
+      case 'NO_PACKAGE':
+        return _isIosPaymentRestricted
+            ? loc.iosSmsPurchaseRestrictionMessage
+            : loc.appointmentsPackageRequired;
+      case 'HOLIDAY':
+        return _holidayWarningMessage(envelope);
+      case 'SLOT_BUSY':
+        final msg = envelope.message?.trim();
+        if (msg != null && msg.isNotEmpty) return msg;
+        return firstAppointmentFlow
+            ? loc.appointmentsConsecutiveSlotsUnavailable
+            : loc.calendarSlotBusy;
+      case 'VALIDATION_ERROR':
+        return _firstFieldError(envelope.errors) ??
+            envelope.message ??
+            fallback ??
+            loc.calendarDateTimeRequired;
+      case 'UNAUTHORIZED':
+        return loc.calendarSessionExpired;
+      case 'FORBIDDEN':
+        return loc.commonForbiddenAction;
+      default:
+        return envelope.message ??
+            _firstFieldError(envelope.errors) ??
+            fallback ??
+            loc.calendarFetchFailed('');
+    }
+  }
+
+  String _normalizedIssueCode(_ApiEnvelope envelope) {
+    final rawCode = (envelope.code ?? '').toUpperCase().trim();
+    if (rawCode.isNotEmpty) return rawCode;
+
+    if (envelope.statusCode == 409) return 'SLOT_BUSY';
+    if (envelope.statusCode == 422) return 'VALIDATION_ERROR';
+    if (envelope.statusCode == 401) return 'UNAUTHORIZED';
+    if (envelope.statusCode == 403) {
+      final msg = (envelope.message ?? '').toLowerCase();
+      if (msg.contains('package')) return 'NO_PACKAGE';
+      return 'FORBIDDEN';
+    }
+    return '';
+  }
+
+  String? _normalizeTimeToApi(String input) {
+    final trimmed = input.trim();
+    if (trimmed.isEmpty) return null;
+    final reg = RegExp(r'^([01]\d|2[0-3]):([0-5]\d)(?::[0-5]\d)?$');
+    final m = reg.firstMatch(trimmed);
+    if (m == null) return null;
+    return '${m.group(1)}:${m.group(2)}';
+  }
 
   @override
   void initState() {
@@ -423,6 +676,81 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
         backgroundColor: success ? Colors.green : Colors.red,
       ),
     );
+  }
+
+  Future<bool> _ensurePackageForAppointmentActions() async {
+    _hasUserPack = await _fetchUserPackStatus();
+    if (_hasUserPack == true) return true;
+    if (!mounted) return false;
+
+    final navigateToPackagePage = await showDialog<bool>(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            title: Text(loc.appointmentsBuyPackage),
+            content: Text(
+              _isIosPaymentRestricted
+                  ? loc.iosSmsPurchaseRestrictionMessage
+                  : loc.appointmentsPackageRequired,
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(ctx).pop(false),
+                child: Text(loc.appointmentsClose),
+              ),
+              if (!_isIosPaymentRestricted)
+                ElevatedButton(
+                  onPressed: () => Navigator.of(ctx).pop(true),
+                  child: Text(loc.appointmentsBuyPackage),
+                ),
+            ],
+          ),
+        ) ??
+        false;
+
+    if (navigateToPackagePage && mounted) {
+      await Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => const SmsPacksPage()),
+      );
+    }
+    return false;
+  }
+
+  Future<bool> _fetchUserPackStatus() async {
+    final token = await _getToken();
+    if (token == null || token.isEmpty) return true;
+    try {
+      final response = await authGet(
+        Uri.parse('$apiBaseUrl/api/appointments')
+            .replace(queryParameters: {'per_page': '1'}),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Accept': 'application/json',
+        },
+      );
+      final envelope = _parseEnvelope(
+        response.body,
+        statusCode: response.statusCode,
+      );
+      final code = (envelope.code ?? '').toUpperCase();
+      if (code == 'NO_PACKAGE') return false;
+      if (code == 'UNAUTHORIZED' || response.statusCode == 401) {
+        await _redirectToLogin();
+        return false;
+      }
+      if (!envelope.isSuccess) return true;
+
+      final rawData = envelope.data;
+      dynamic candidate;
+      candidate = envelope.payload['user_pack'] ?? envelope.payload['userPack'];
+      if (candidate == null && rawData is Map) {
+        candidate = rawData['user_pack'] ?? rawData['userPack'];
+      }
+      if (candidate == null) return true;
+      return _asBool(candidate);
+    } catch (_) {
+      return true;
+    }
   }
 
   void _changeWeek(int deltaWeeks) {
@@ -962,6 +1290,8 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
     required String initialDate,
     required String initialTime,
   }) async {
+    if (!await _ensurePackageForAppointmentActions()) return;
+
     final dateCtrl = TextEditingController(
       text: _formatDateDisplay(_parseInputDateOrNow(initialDate)),
     );
@@ -979,9 +1309,14 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
     bool localNoReminder = false;
     bool localIsFirstAppointment = false;
     List<Map<String, dynamic>> localSlots = [];
+    List<Map<String, dynamic>> localCountries = [];
+    int? localSelectedCountryId;
     bool localLoadingSlots = false;
+    bool localLoadingCountries = false;
     String? localSlotsError;
+    String? localCountriesError;
     String? localSaveError;
+    bool countriesInitialized = false;
     // ── Design tokens ────────────────────────────────────────────────────────
     const bg = Color(0xFFF9F9F9);
     const surface = Colors.white;
@@ -1053,25 +1388,51 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
                   '/api/appointments/time-slots',
                   queryParameters: {'date': date},
                 );
-                final raw = resp.data is Map
-                    ? ((resp.data as Map)['data'] ?? resp.data)
-                    : resp.data;
-                final slots = raw is List
-                    ? raw
-                        .map((e) => Map<String, dynamic>.from(e as Map))
-                        .toList()
-                    : <Map<String, dynamic>>[];
-                setModalState(() {
-                  localSlots = slots;
-                  localLoadingSlots = false;
-                  localSlotsError = null;
-                  final hasSelected = localSlots.any(
-                      (s) => (s['time']?.toString() ?? '') == selectedTime);
-                  if (!hasSelected) {
-                    selectedTime = null;
-                    timeCtrl.clear();
-                  }
-                });
+                final envelope = _parseEnvelope(
+                  resp.data,
+                  statusCode: resp.statusCode ?? 200,
+                );
+                final handled = await _handleIssueByCode(
+                  envelope,
+                  allowPackageNavigation: false,
+                );
+                if (handled) {
+                  setModalState(() {
+                    localLoadingSlots = false;
+                    localSlotsError = _issueMessageForCode(
+                      envelope,
+                      fallback: loc.calendarFetchFailed(''),
+                    );
+                  });
+                  return;
+                }
+                if (envelope.isSuccess) {
+                  final raw = envelope.data;
+                  final slots = raw is List
+                      ? raw
+                          .map((e) => Map<String, dynamic>.from(e as Map))
+                          .toList()
+                      : <Map<String, dynamic>>[];
+                  setModalState(() {
+                    localSlots = slots;
+                    localLoadingSlots = false;
+                    localSlotsError = null;
+                    final hasSelected = localSlots.any(
+                        (s) => (s['time']?.toString() ?? '') == selectedTime);
+                    if (!hasSelected) {
+                      selectedTime = null;
+                      timeCtrl.clear();
+                    }
+                  });
+                } else {
+                  setModalState(() {
+                    localLoadingSlots = false;
+                    localSlotsError = _issueMessageForCode(
+                      envelope,
+                      fallback: loc.calendarFetchFailed(''),
+                    );
+                  });
+                }
               } on AuthRequiredException {
                 setModalState(() {
                   localLoadingSlots = false;
@@ -1121,9 +1482,18 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
                 final dio = await _buildAuthedDio();
                 final resp = await dio
                     .get('/api/customers/$customerId/appointment-defaults');
-                final raw = resp.data is Map
-                    ? ((resp.data as Map)['data'] ?? resp.data)
-                    : resp.data;
+                final envelope = _parseEnvelope(
+                  resp.data,
+                  statusCode: resp.statusCode ?? 200,
+                );
+                if (!envelope.isSuccess) {
+                  await _handleIssueByCode(
+                    envelope,
+                    allowPackageNavigation: false,
+                  );
+                  return;
+                }
+                final raw = envelope.data;
                 if (raw is Map) {
                   setModalState(() {
                     if ((raw['last_note']?.toString().trim() ?? '')
@@ -1139,6 +1509,59 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
               } catch (_) {}
             }
 
+            Future<void> loadCountries() async {
+              setModalState(() {
+                localLoadingCountries = true;
+                localCountriesError = null;
+              });
+              try {
+                final dio = await _buildAuthedDio();
+                final resp = await dio.get('/api/settings/countries');
+                final envelope = _parseEnvelope(
+                  resp.data,
+                  statusCode: resp.statusCode ?? 200,
+                );
+                final handled = await _handleIssueByCode(
+                  envelope,
+                  allowPackageNavigation: false,
+                );
+                if (handled) {
+                  setModalState(() {
+                    localLoadingCountries = false;
+                    localCountriesError = _issueMessageForCode(
+                      envelope,
+                      fallback: loc.calendarFetchFailed(''),
+                    );
+                  });
+                  return;
+                }
+                final raw = envelope.data;
+                final countries = raw is List
+                    ? raw
+                        .map((e) => Map<String, dynamic>.from(e as Map))
+                        .toList()
+                    : <Map<String, dynamic>>[];
+                setModalState(() {
+                  localCountries = countries;
+                  localLoadingCountries = false;
+                  localCountriesError = null;
+                  if (localSelectedCountryId == null && countries.isNotEmpty) {
+                    localSelectedCountryId = _asInt(countries.first['id']);
+                  }
+                });
+              } on AuthRequiredException {
+                setModalState(() {
+                  localLoadingCountries = false;
+                  localCountriesError = loc.calendarSessionMissing;
+                });
+              } catch (e) {
+                setModalState(() {
+                  localLoadingCountries = false;
+                  localCountriesError = loc.calendarFetchFailed(e.toString());
+                });
+              }
+            }
+
             Future<void> submit() async {
               if (_slotActionBusy) return;
               setModalState(() => localSaveError = null);
@@ -1150,126 +1573,226 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
               }
               final dateInput = dateCtrl.text.trim();
               final createDate = _normalizeSlotDate(dateInput);
-              final time = (selectedTime ?? timeCtrl.text).trim();
+              final time =
+                  _normalizeTimeToApi(selectedTime ?? timeCtrl.text) ?? '';
               if (createDate.isEmpty || time.isEmpty) {
                 setModalState(
                     () => localSaveError = loc.calendarDateTimeRequired);
                 return;
               }
-              final defaultStatusId = await _resolveDefaultStatusId();
-              if (defaultStatusId == null) {
-                setModalState(
-                    () => localSaveError = loc.appointmentsStatusMissing);
-                return;
-              }
               setState(() => _slotActionBusy = true);
               try {
                 final dio = await _buildAuthedDio(includeJsonContentType: true);
-                int? customerId = _asInt(selectedCustomer?['id']);
                 if (createForNewCustomer) {
                   final firstName = newNameCtrl.text.trim();
                   final lastName = newLastNameCtrl.text.trim();
                   final phone = newPhoneCtrl.text.trim();
                   final email = newEmailCtrl.text.trim();
-                  if (firstName.isEmpty || phone.isEmpty) {
+                  if (firstName.isEmpty ||
+                      lastName.isEmpty ||
+                      phone.isEmpty ||
+                      localSelectedCountryId == null) {
                     setModalState(
                         () => localSaveError = loc.appointmentsRequiredFields);
                     return;
                   }
-                  final createCustomerResp =
-                      await dio.post('/api/customers', data: {
-                    'name': '$firstName $lastName'.trim(),
+                  final quickResp = await dio
+                      .post('/api/appointments/quick_appointment', data: {
+                    'customer_name': firstName,
+                    'customer_lastname': lastName,
+                    'country_id': localSelectedCountryId,
                     'phone': phone,
                     'email': email.isEmpty ? null : email,
+                    'date': createDate,
+                    'time': time,
+                    'note': notesCtrl.text.trim().isEmpty
+                        ? null
+                        : notesCtrl.text.trim(),
+                    'is_first_appointment': localIsFirstAppointment,
+                    'no_sms': localNoSms,
+                    'no_reminder': localNoReminder,
                   });
-                  final raw = createCustomerResp.data is Map
-                      ? ((createCustomerResp.data as Map)['data'] ??
-                          createCustomerResp.data)
-                      : createCustomerResp.data;
-                  if (raw is Map) customerId = _asInt(raw['id']);
-                  if (customerId == null) {
-                    setModalState(
-                        () => localSaveError = loc.calendarCreateFailed);
+                  final quickEnvelope = _parseEnvelope(
+                    quickResp.data,
+                    statusCode: quickResp.statusCode ?? 200,
+                  );
+                  if (!quickEnvelope.isSuccess) {
+                    final handled = await _handleIssueByCode(
+                      quickEnvelope,
+                      allowPackageNavigation: false,
+                      firstAppointmentFlow: localIsFirstAppointment,
+                      onSlotBusy: () {
+                        setModalState(() {
+                          selectedTime = null;
+                          timeCtrl.clear();
+                        });
+                      },
+                    );
+                    if (!handled) {
+                      setModalState(() {
+                        localSaveError = _issueMessageForCode(
+                          quickEnvelope,
+                          firstAppointmentFlow: localIsFirstAppointment,
+                          fallback: loc.calendarCreateFailed,
+                        );
+                      });
+                    }
                     return;
                   }
                 } else {
-                  customerId = _asInt(selectedCustomer?['id']);
+                  final customerId = _asInt(selectedCustomer?['id']);
                   if (customerId == null) {
                     setModalState(
                         () => localSaveError = loc.calendarSelectPerson);
                     return;
                   }
-                }
-                try {
-                  await dio.post('/api/appointments/validate', data: {
+                  final defaultStatusId = await _resolveDefaultStatusId();
+                  if (defaultStatusId == null) {
+                    setModalState(
+                        () => localSaveError = loc.appointmentsStatusMissing);
+                    return;
+                  }
+                  try {
+                    final validateResp = await dio.post(
+                      '/api/appointments/validate',
+                      data: {
+                        'customer_id': customerId,
+                        'date': createDate,
+                        'time': time,
+                      },
+                    );
+                    final validateEnvelope = _parseEnvelope(
+                      validateResp.data,
+                      statusCode: validateResp.statusCode ?? 200,
+                    );
+                    if (!validateEnvelope.isSuccess) {
+                      final handled = await _handleIssueByCode(
+                        validateEnvelope,
+                        allowPackageNavigation: false,
+                        firstAppointmentFlow: localIsFirstAppointment,
+                        onSlotBusy: () {
+                          setModalState(() {
+                            selectedTime = null;
+                            timeCtrl.clear();
+                          });
+                        },
+                      );
+                      if (!handled) {
+                        setModalState(() {
+                          localSaveError = _issueMessageForCode(
+                            validateEnvelope,
+                            firstAppointmentFlow: localIsFirstAppointment,
+                            fallback: loc.calendarDateTimeRequired,
+                          );
+                        });
+                      } else if (_normalizedIssueCode(validateEnvelope) ==
+                          'SLOT_BUSY') {
+                        setModalState(() {
+                          localSaveError = localIsFirstAppointment
+                              ? loc.appointmentsConsecutiveSlotsUnavailable
+                              : loc.calendarSlotBusy;
+                        });
+                      } else {
+                        setModalState(() {
+                          localSaveError = _issueMessageForCode(
+                            validateEnvelope,
+                            firstAppointmentFlow: localIsFirstAppointment,
+                            fallback: loc.calendarDateTimeRequired,
+                          );
+                        });
+                      }
+                      return;
+                    }
+                  } on DioException catch (e) {
+                    final envelope = _parseEnvelope(
+                      e.response?.data,
+                      statusCode: e.response?.statusCode ?? 0,
+                    );
+                    final handled = await _handleIssueByCode(
+                      envelope,
+                      allowPackageNavigation: false,
+                      firstAppointmentFlow: localIsFirstAppointment,
+                      onSlotBusy: () {
+                        setModalState(() {
+                          selectedTime = null;
+                          timeCtrl.clear();
+                        });
+                      },
+                    );
+                    if (!handled) {
+                      setModalState(() {
+                        localSaveError = _issueMessageForCode(
+                          envelope,
+                          firstAppointmentFlow: localIsFirstAppointment,
+                          fallback: loc.calendarSlotBusy,
+                        );
+                      });
+                    }
+                    return;
+                  }
+                  final createResp = await dio.post('/api/appointments', data: {
                     'customer_id': customerId,
+                    'appointment_status_id': defaultStatusId,
                     'date': createDate,
                     'time': time,
+                    'notes': notesCtrl.text.trim(),
+                    'is_first_appointment': localIsFirstAppointment,
+                    'no_sms': localNoSms,
+                    'no_reminder': localNoReminder,
                   });
-                } on DioException catch (e) {
-                  final status = e.response?.statusCode;
-                  final message = e.response?.data is Map
-                      ? (e.response?.data['message']?.toString() ?? '')
-                      : '';
-                  if (status == 409) {
+                  final createEnvelope = _parseEnvelope(
+                    createResp.data,
+                    statusCode: createResp.statusCode ?? 200,
+                  );
+                  if (!createEnvelope.isSuccess) {
+                    await _handleIssueByCode(
+                      createEnvelope,
+                      allowPackageNavigation: false,
+                      firstAppointmentFlow: localIsFirstAppointment,
+                    );
                     setModalState(() {
-                      localSaveError =
-                          message.isNotEmpty ? message : loc.calendarSlotBusy;
+                      localSaveError = _issueMessageForCode(
+                        createEnvelope,
+                        firstAppointmentFlow: localIsFirstAppointment,
+                        fallback: loc.calendarCreateFailed,
+                      );
                     });
                     return;
                   }
-                  if (status == 422) {
-                    setModalState(() {
-                      localSaveError = message.isNotEmpty
-                          ? message
-                          : loc.calendarDateTimeRequired;
-                    });
-                    return;
-                  }
-                  rethrow;
                 }
-                await dio.post('/api/appointments', data: {
-                  'customer_id': customerId,
-                  'appointment_status_id': defaultStatusId,
-                  'date': createDate,
-                  'time': time,
-                  'notes': notesCtrl.text.trim(),
-                  'is_first_appointment': localIsFirstAppointment,
-                  'no_sms': localNoSms,
-                  'no_reminder': localNoReminder,
-                });
                 if (ctx.mounted) Navigator.of(ctx).pop();
                 _showSnack(loc.calendarCreateSuccess, success: true);
                 await _refreshWeek();
               } on DioException catch (e) {
-                final status = e.response?.statusCode;
-                String? msg;
-                if (e.response?.data is Map) {
-                  final data = e.response!.data as Map;
-                  msg =
-                      data['message']?.toString() ?? data['error']?.toString();
-                  if (status == 422 && (msg == null || msg.isEmpty)) {
-                    final rawErrors = data['errors'];
-                    if (rawErrors is Map && rawErrors.isNotEmpty) {
-                      final first = rawErrors.values.first;
-                      msg = first is List && first.isNotEmpty
-                          ? first.first?.toString()
-                          : first?.toString();
-                    }
-                  }
-                }
-                if (status == 422 && msg != null && msg.isNotEmpty) {
+                final envelope = _parseEnvelope(
+                  e.response?.data,
+                  statusCode: e.response?.statusCode ?? 0,
+                );
+                final handled = await _handleIssueByCode(
+                  envelope,
+                  allowPackageNavigation: false,
+                  firstAppointmentFlow: localIsFirstAppointment,
+                );
+                final msg = _issueMessageForCode(
+                  envelope,
+                  firstAppointmentFlow: localIsFirstAppointment,
+                  fallback: loc.calendarCreateFailed,
+                );
+                if (handled && msg.isNotEmpty) {
                   setModalState(() => localSaveError = msg);
                   return;
                 }
                 setModalState(() {
-                  localSaveError = '${loc.calendarCreateFailed}'
-                      '${status != null ? ' (HTTP $status)' : ''}'
-                      '${msg != null ? ': $msg' : ''}';
+                  localSaveError = msg;
                 });
               } finally {
                 if (mounted) setState(() => _slotActionBusy = false);
               }
+            }
+
+            if (createForNewCustomer && !countriesInitialized) {
+              countriesInitialized = true;
+              Future.microtask(loadCountries);
             }
 
             final media = MediaQuery.of(ctx);
@@ -1300,7 +1823,7 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
                         ),
                       ),
                     ),
-                    const SizedBox(height: 20),
+                    const SizedBox(height: 16),
                     Row(
                       children: [
                         Expanded(
@@ -1345,6 +1868,10 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
                             onTap: () => setModalState(() {
                               createForNewCustomer = true;
                               selectedCustomer = null;
+                              if (!countriesInitialized) {
+                                countriesInitialized = true;
+                                Future.microtask(loadCountries);
+                              }
                             }),
                           ),
                         ],
@@ -1417,6 +1944,50 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
                           ),
                         ],
                       ),
+                      const SizedBox(height: 10),
+                      DropdownButtonFormField<int>(
+                        value: localCountries.any((c) =>
+                                _asInt(c['id']) == localSelectedCountryId)
+                            ? localSelectedCountryId
+                            : null,
+                        isExpanded: true,
+                        decoration: field(
+                          label: loc.appointmentsCountry,
+                          hint: localLoadingCountries
+                              ? loc.calendarLoading
+                              : loc.appointmentsSelectCountry,
+                          prefix: const Icon(Icons.public, size: 18),
+                        ),
+                        items: localCountries
+                            .map((c) {
+                              final id = _asInt(c['id']);
+                              if (id == null) return null;
+                              final name =
+                                  (c['name']?.toString().trim().isNotEmpty ==
+                                          true)
+                                      ? c['name'].toString()
+                                      : id.toString();
+                              return DropdownMenuItem<int>(
+                                value: id,
+                                child: Text(name),
+                              );
+                            })
+                            .whereType<DropdownMenuItem<int>>()
+                            .toList(),
+                        onChanged: localLoadingCountries
+                            ? null
+                            : (value) => setModalState(() {
+                                  localSelectedCountryId = value;
+                                  localCountriesError = null;
+                                }),
+                      ),
+                      if (localCountriesError != null) ...[
+                        const SizedBox(height: 8),
+                        Text(
+                          localCountriesError!,
+                          style: const TextStyle(fontSize: 12, color: danger),
+                        ),
+                      ],
                       const SizedBox(height: 10),
                       TextField(
                         controller: newPhoneCtrl,
@@ -1670,7 +2241,7 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
                         ),
                       ),
                     ],
-                    const SizedBox(height: 20),
+                    const SizedBox(height: 16),
                     SizedBox(
                       width: double.infinity,
                       child: ElevatedButton(
@@ -1678,12 +2249,12 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
                         style: ElevatedButton.styleFrom(
                           backgroundColor: accent,
                           foregroundColor: Colors.white,
-                          disabledBackgroundColor:
-                              accent.withValues(alpha: 0.4),
+                          disabledBackgroundColor: Colors.black26,
+                          disabledForegroundColor: Colors.white70,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(radius),
                           ),
-                          padding: const EdgeInsets.symmetric(vertical: 15),
+                          padding: const EdgeInsets.symmetric(vertical: 14),
                           elevation: 0,
                         ),
                         child: _slotActionBusy
@@ -1691,7 +2262,7 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
                                 width: 18,
                                 height: 18,
                                 child: CircularProgressIndicator(
-                                  strokeWidth: 2,
+                                  strokeWidth: 2.2,
                                   color: Colors.white,
                                 ),
                               )
@@ -1721,6 +2292,8 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
     required String initialTime,
     required bool createNewForCustomer,
   }) async {
+    if (!await _ensurePackageForAppointmentActions()) return;
+
     final appointmentId = _asInt(appointment['id']);
     final customerId = _asInt(appointment['customer_id']);
     final statusId = _resolveStatusId(appointment);
@@ -1829,27 +2402,53 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
                   '/api/appointments/time-slots',
                   queryParameters: {'date': date},
                 );
-                final raw = resp.data is Map
-                    ? ((resp.data as Map)['data'] ?? resp.data)
-                    : resp.data;
-                final slots = raw is List
-                    ? raw
-                        .map((e) => Map<String, dynamic>.from(e as Map))
-                        .toList()
-                    : <Map<String, dynamic>>[];
+                final envelope = _parseEnvelope(
+                  resp.data,
+                  statusCode: resp.statusCode ?? 200,
+                );
+                final handled = await _handleIssueByCode(
+                  envelope,
+                  allowPackageNavigation: false,
+                );
+                if (handled) {
+                  setModalState(() {
+                    localLoadingSlots = false;
+                    localSlotsError = _issueMessageForCode(
+                      envelope,
+                      fallback: loc.calendarFetchFailed(''),
+                    );
+                  });
+                  return;
+                }
+                if (envelope.isSuccess) {
+                  final raw = envelope.data;
+                  final slots = raw is List
+                      ? raw
+                          .map((e) => Map<String, dynamic>.from(e as Map))
+                          .toList()
+                      : <Map<String, dynamic>>[];
 
-                setModalState(() {
-                  localSlots = slots;
-                  localLoadingSlots = false;
-                  localSlotsError = null;
-                  final hasSelected = localSlots.any(
-                    (s) => (s['time']?.toString() ?? '') == localSelectedTime,
-                  );
-                  if (!hasSelected) {
-                    localSelectedTime = null;
-                    timeCtrl.clear();
-                  }
-                });
+                  setModalState(() {
+                    localSlots = slots;
+                    localLoadingSlots = false;
+                    localSlotsError = null;
+                    final hasSelected = localSlots.any(
+                      (s) => (s['time']?.toString() ?? '') == localSelectedTime,
+                    );
+                    if (!hasSelected) {
+                      localSelectedTime = null;
+                      timeCtrl.clear();
+                    }
+                  });
+                } else {
+                  setModalState(() {
+                    localLoadingSlots = false;
+                    localSlotsError = _issueMessageForCode(
+                      envelope,
+                      fallback: loc.calendarFetchFailed(''),
+                    );
+                  });
+                }
               } on AuthRequiredException {
                 setModalState(() {
                   localLoadingSlots = false;
@@ -1910,9 +2509,25 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
                 final dio = await _buildAuthedDio();
                 final resp =
                     await dio.get('/api/settings/appointment-statuses');
-                final raw = resp.data is Map
-                    ? ((resp.data as Map)['data'] ?? resp.data)
-                    : resp.data;
+                final envelope = _parseEnvelope(
+                  resp.data,
+                  statusCode: resp.statusCode ?? 200,
+                );
+                final handled = await _handleIssueByCode(
+                  envelope,
+                  allowPackageNavigation: false,
+                );
+                if (handled) {
+                  setModalState(() {
+                    localLoadingStatuses = false;
+                    localStatusesError = _issueMessageForCode(
+                      envelope,
+                      fallback: loc.calendarFetchFailed(''),
+                    );
+                  });
+                  return;
+                }
+                final raw = envelope.data;
                 final fetched = raw is List
                     ? raw
                         .map((e) => Map<String, dynamic>.from(e as Map))
@@ -1963,9 +2578,14 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
             Future<void> submit() async {
               if (_slotActionBusy) return;
               final dateInput = dateCtrl.text.trim();
-              final time = (localSelectedTime ?? timeCtrl.text).trim();
+              final time =
+                  _normalizeTimeToApi(localSelectedTime ?? timeCtrl.text) ?? '';
               final apiDate = _normalizeDateToApi(dateInput);
               final createDate = _normalizeSlotDate(dateInput);
+              final initialDateNormalized =
+                  _normalizeDateToApi(initialDate) ?? _normalizeSlotDate(initialDate);
+              final initialTimeNormalized =
+                  _normalizeTimeToApi(initialTime) ?? initialTime.trim();
               if (localSelectedStatusId == null) {
                 _showSnack(loc.appointmentsStatusSelectHint);
                 return;
@@ -1993,27 +2613,123 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
                   'no_reminder': localNoReminder,
                 };
 
+                final selectedDateForValidation =
+                    createNewForCustomer ? createDate : (apiDate ?? createDate);
+                final shouldValidateSlot = createNewForCustomer ||
+                    selectedDateForValidation != initialDateNormalized ||
+                    time != initialTimeNormalized;
+
+                if (shouldValidateSlot) {
+                  final validateResp = await dio.post(
+                    '/api/appointments/validate',
+                    data: {
+                      'customer_id': customerId,
+                      'date': selectedDateForValidation,
+                      'time': time,
+                    },
+                  );
+                  final validateEnvelope = _parseEnvelope(
+                    validateResp.data,
+                    statusCode: validateResp.statusCode ?? 200,
+                  );
+                  if (!validateEnvelope.isSuccess) {
+                    final handled = await _handleIssueByCode(
+                      validateEnvelope,
+                      allowPackageNavigation: false,
+                      onSlotBusy: () {
+                        setModalState(() {
+                          localSelectedTime = null;
+                          timeCtrl.clear();
+                        });
+                      },
+                    );
+                    if (!handled) {
+                      _showSnack(
+                        _issueMessageForCode(
+                          validateEnvelope,
+                          fallback: loc.calendarSlotBusy,
+                        ),
+                      );
+                    }
+                    return;
+                  }
+                }
+
                 if (createNewForCustomer) {
-                  await dio.post('/api/appointments', data: payload);
+                  final createResp =
+                      await dio.post('/api/appointments', data: payload);
+                  final createEnvelope = _parseEnvelope(
+                    createResp.data,
+                    statusCode: createResp.statusCode ?? 200,
+                  );
+                  if (!createEnvelope.isSuccess) {
+                    final handled = await _handleIssueByCode(
+                      createEnvelope,
+                      allowPackageNavigation: false,
+                    );
+                    if (!handled) {
+                      _showSnack(
+                        _issueMessageForCode(
+                          createEnvelope,
+                          fallback: loc.calendarCreateFailed,
+                        ),
+                      );
+                    }
+                    return;
+                  }
                   _showSnack(loc.calendarCreateSuccess, success: true);
                 } else {
-                  await dio.put('/api/appointments/$appointmentId',
-                      data: payload);
+                  final updateResp = await dio
+                      .put('/api/appointments/$appointmentId', data: payload);
+                  final updateEnvelope = _parseEnvelope(
+                    updateResp.data,
+                    statusCode: updateResp.statusCode ?? 200,
+                  );
+                  if (!updateEnvelope.isSuccess) {
+                    final handled = await _handleIssueByCode(
+                      updateEnvelope,
+                      allowPackageNavigation: false,
+                    );
+                    if (!handled) {
+                      _showSnack(
+                        _issueMessageForCode(
+                          updateEnvelope,
+                          fallback: loc.calendarUpdateFailed,
+                        ),
+                      );
+                    }
+                    return;
+                  }
                   _showSnack(loc.calendarUpdateSuccess, success: true);
                 }
 
                 if (ctx.mounted) Navigator.of(ctx).pop();
                 await _refreshWeek();
               } on DioException catch (e) {
-                final status = e.response?.statusCode;
-                final msg = e.response?.data is Map
-                    ? (e.response?.data['message']?.toString() ??
-                        e.response?.data['error']?.toString())
-                    : null;
-                _showSnack(
-                  '${createNewForCustomer ? loc.calendarCreateFailed : loc.calendarUpdateFailed}'
-                  '${status != null ? ' (HTTP $status)' : ''}${msg != null ? ': $msg' : ''}',
+                final envelope = _parseEnvelope(
+                  e.response?.data,
+                  statusCode: e.response?.statusCode ?? 0,
                 );
+                final handled = await _handleIssueByCode(
+                  envelope,
+                  allowPackageNavigation: false,
+                  onSlotBusy: () {
+                    setModalState(() {
+                      localSelectedTime = null;
+                      timeCtrl.clear();
+                    });
+                  },
+                );
+                if (!handled) {
+                  _showSnack(
+                    _issueMessageForCode(
+                      envelope,
+                      fallback: createNewForCustomer
+                          ? loc.calendarCreateFailed
+                          : loc.calendarUpdateFailed,
+                    ),
+                  );
+                }
               } finally {
                 if (mounted) {
                   setState(() {
@@ -2768,6 +3484,7 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
     ref.listen<AsyncValue<WeeklyCalendarData>>(
       weeklyCalendarProvider(_weekStart),
       (previous, next) {
+        _hasUserPack = next.asData?.value.hasUserPack ?? _hasUserPack;
         if (next.hasError) {
           final msg = next.error.toString();
           if (msg != _lastErrorMessage) {

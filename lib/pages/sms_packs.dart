@@ -1871,20 +1871,35 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
               ),
             ],
           ),
-          child: Row(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Icon(Icons.verified_user, color: Colors.white),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  '${loc.smsPacksPaymentMethod} • SSL',
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w700,
+              Row(
+                children: [
+                  const Icon(Icons.verified_user, color: Colors.white),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      '${loc.smsPacksPaymentMethod} • SSL',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
                   ),
+                  const Icon(Icons.lock_outline, color: Colors.white),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Text(
+                loc.smsPacksPaymentSecurityNote,
+                style: TextStyle(
+                  color: Colors.white.withValues(alpha: 0.9),
+                  fontSize: 12,
+                  height: 1.35,
+                  fontWeight: FontWeight.w500,
                 ),
               ),
-              const Icon(Icons.lock_outline, color: Colors.white),
             ],
           ),
         ),

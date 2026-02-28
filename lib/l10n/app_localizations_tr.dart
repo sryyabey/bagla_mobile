@@ -810,6 +810,17 @@ class AppLocalizationsTr extends AppLocalizations {
   String get calendarSlotBusy => 'Seçilen saat dolu.';
 
   @override
+  String get appointmentsConsecutiveSlotsUnavailable =>
+      'Ardışık uygun slot bulunamadı. Lütfen saat seçimini güncelleyin.';
+
+  @override
+  String get commonForbiddenAction => 'Bu işlem için yetkiniz yok.';
+
+  @override
+  String get commonHolidayDateUnavailable =>
+      'Seçilen tarih tatil gününe denk geliyor.';
+
+  @override
   String get calendarCustomerInfoMissing => 'Kişi bilgisi bulunamadı.';
 
   @override
@@ -1477,6 +1488,10 @@ class AppLocalizationsTr extends AppLocalizations {
   @override
   String get smsPacksAgreementTitle =>
       'Satın alma sözleşmesini okudum, onaylıyorum.';
+
+  @override
+  String get smsPacksPaymentSecurityNote =>
+      'Ödeme işlemi PayTR güvenli ödeme sayfasında tamamlanır. Uygulama kredi kartı bilgilerinizi toplamaz veya saklamaz.';
 
   @override
   String get smsPacksSummaryTitle => 'Satın Alma Özeti';

@@ -1526,6 +1526,24 @@ abstract class AppLocalizations {
   /// **'Selected time slot is full.'**
   String get calendarSlotBusy;
 
+  /// No description provided for @appointmentsConsecutiveSlotsUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'No consecutive available slots were found. Please update your time selection.'**
+  String get appointmentsConsecutiveSlotsUnavailable;
+
+  /// No description provided for @commonForbiddenAction.
+  ///
+  /// In en, this message translates to:
+  /// **'You do not have permission for this action.'**
+  String get commonForbiddenAction;
+
+  /// No description provided for @commonHolidayDateUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'The selected date falls on a holiday.'**
+  String get commonHolidayDateUnavailable;
+
   /// No description provided for @calendarCustomerInfoMissing.
   ///
   /// In en, this message translates to:
@@ -2731,6 +2749,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'I have read and accept the purchase agreement.'**
   String get smsPacksAgreementTitle;
+
+  /// No description provided for @smsPacksPaymentSecurityNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Payment is completed on PayTR\'s secure payment page. The app does not collect or store your credit card details.'**
+  String get smsPacksPaymentSecurityNote;
 
   /// No description provided for @smsPacksSummaryTitle.
   ///
