@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:in_app_purchase/in_app_purchase.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import 'package:flutter_html/flutter_html.dart';
 
@@ -11,6 +12,7 @@ import '../config.dart';
 import '../login_page.dart';
 import '../auth.dart';
 import '../dashboard_page.dart';
+import '../services/apple_subscription_catalog.dart';
 import 'package:bagla_mobile/l10n/app_localizations.dart';
 
 class SmsPacksPage extends StatefulWidget {
@@ -22,8 +24,12 @@ class SmsPacksPage extends StatefulWidget {
 
 class _SmsPacksPageState extends State<SmsPacksPage> {
   AppLocalizations get loc => AppLocalizations.of(context);
+  final InAppPurchase _inAppPurchase = InAppPurchase.instance;
+  static const Set<String> _supportedPlanTypes = {'monthly', 'annual', 'yearly'};
   bool get _isAndroidPurchaseSupported =>
-      !kIsWeb && defaultTargetPlatform == TargetPlatform.android;
+      !kIsWeb &&
+      (defaultTargetPlatform == TargetPlatform.android ||
+          defaultTargetPlatform == TargetPlatform.iOS);
   bool get _isPurchaseRestricted => !_isAndroidPurchaseSupported;
   bool _loading = true;
   bool _purchasing = false;
@@ -69,6 +75,11 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
   Timer? _paymentTimer;
   String? _contractTitle;
   String? _contractDescriptionHtml;
+  bool _loadingIosProducts = false;
+  final Map<String, ProductDetails> _iosProductsById = {};
+  StreamSubscription<List<PurchaseDetails>>? _purchaseSubscription;
+  bool _restoringPurchases = false;
+  Map<String, dynamic>? _pendingApplePack;
 
   final List<Map<String, String>> _paymentOptions = const [
     {'value': 'credit_card', 'label': 'credit_card'},
@@ -79,6 +90,12 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
   @override
   void initState() {
     super.initState();
+    _purchaseSubscription = _inAppPurchase.purchaseStream.listen(
+      _onPurchaseUpdated,
+      onError: (_) {
+        _showSnack('Apple satin alma akisi izlenemedi.');
+      },
+    );
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _bootstrap();
     });
@@ -98,6 +115,7 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
     _identityController.dispose();
     _addressController.dispose();
     _addressTitleController.dispose();
+    _purchaseSubscription?.cancel();
     super.dispose();
   }
 
@@ -117,8 +135,7 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
     }
 
     if (mounted) {
-      setState(() {
-      });
+      setState(() {});
     }
 
     // Ardışık yerine paralel başlat; token hazır
@@ -126,6 +143,7 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
       _loadPacks(),
       _loadCountries(),
       _loadAddresses(),
+      _loadIosProducts(),
     ]);
   }
 
@@ -170,7 +188,11 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
         final data = decoded['data'] ?? decoded;
 
         final List<String> types =
-            (data['types'] as List?)?.map((e) => e.toString()).toList() ?? [];
+            (data['types'] as List?)
+                ?.map((e) => e.toString())
+                .where(_isSupportedPlanType)
+                .toList() ??
+            [];
         final Map<String, dynamic> packMap =
             data['packs_by_type'] is Map<String, dynamic>
                 ? Map<String, dynamic>.from(data['packs_by_type'])
@@ -179,8 +201,13 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
         final Map<String, List<Map<String, dynamic>>> parsed = {};
         packMap.forEach((key, value) {
           if (value is List) {
-            parsed[key] =
-                value.map((e) => Map<String, dynamic>.from(e)).toList();
+            final supportedPacks = value
+                .map((e) => Map<String, dynamic>.from(e))
+                .where((pack) => _isSupportedPlanType(pack['type']?.toString()))
+                .toList();
+            if (supportedPacks.isNotEmpty && _isSupportedPlanType(key)) {
+              parsed[key] = supportedPacks;
+            }
           }
         });
 
@@ -249,6 +276,11 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
         });
       }
     }
+  }
+
+  static bool _isSupportedPlanType(String? raw) {
+    if (raw == null) return false;
+    return _supportedPlanTypes.contains(raw.trim().toLowerCase());
   }
 
   Future<void> _loadCountries() async {
@@ -537,6 +569,55 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
     }
   }
 
+  Future<void> _loadIosProducts() async {
+    if (kIsWeb || defaultTargetPlatform != TargetPlatform.iOS) {
+      return;
+    }
+
+    final isAvailable = await _inAppPurchase.isAvailable();
+    if (!isAvailable) {
+      if (!mounted) return;
+      setState(() {
+        _loadingIosProducts = false;
+        _iosProductsById.clear();
+      });
+      return;
+    }
+
+    setState(() {
+      _loadingIosProducts = true;
+    });
+
+    try {
+      final response = await InAppPurchase.instance.queryProductDetails(
+        AppleSubscriptionCatalog.productIds,
+      );
+      if (response.notFoundIDs.isNotEmpty) {
+        debugPrint(
+          '[sms_packs] notFound product IDs: ${response.notFoundIDs.join(', ')}',
+        );
+      }
+      if (!mounted) return;
+      setState(() {
+        _iosProductsById
+          ..clear()
+          ..addEntries(
+              response.productDetails.map((item) => MapEntry(item.id, item)));
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _iosProductsById.clear();
+      });
+    } finally {
+      if (mounted) {
+        setState(() {
+          _loadingIosProducts = false;
+        });
+      }
+    }
+  }
+
   Color? _parseColor(String? hex) {
     if (hex == null || hex.isEmpty) return null;
     final cleaned = hex.replaceAll('#', '').trim();
@@ -733,6 +814,47 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
     return raw?.toUpperCase() ?? '';
   }
 
+  ProductDetails? _appleProductForPack(Map<String, dynamic> pack) {
+    if (kIsWeb || defaultTargetPlatform != TargetPlatform.iOS) {
+      return null;
+    }
+    final productId = AppleSubscriptionCatalog.productIdForPackData(
+      pack,
+      fallbackPlanType: _selectedType,
+    );
+    if (productId == null) return null;
+    return _iosProductsById[productId];
+  }
+
+  Map<String, dynamic>? _packForAppleProductId(String productId) {
+    for (final packs in _packsByType.values) {
+      for (final pack in packs) {
+        final mappedId = AppleSubscriptionCatalog.productIdForPackData(
+          pack,
+        );
+        if (mappedId == productId) {
+          return pack;
+        }
+      }
+    }
+    return null;
+  }
+
+  String _displayPriceForPack(Map<String, dynamic> pack) {
+    final appleProduct = _appleProductForPack(pack);
+    if (appleProduct != null) {
+      return appleProduct.price;
+    }
+    final price = pack['price']?.toString();
+    return (price == null || price.isEmpty) ? '-' : '₺$price';
+  }
+
+  String? _displayTaxLabelForPack(Map<String, dynamic> pack) {
+    final priceWithTax = pack['price_with_tax']?.toString() ?? '';
+    if (priceWithTax.isEmpty) return null;
+    return loc.smsPacksPriceWithTax(priceWithTax);
+  }
+
   String _getNameById(List<Map<String, dynamic>> list, int? id) {
     if (id == null) return '';
     final match = list.firstWhere((item) => item['id'] == id, orElse: () => {});
@@ -831,8 +953,7 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
       _taxOfficeController.text = address['tax_office']?.toString() ?? '';
       _addressController.text = address['address']?.toString() ?? '';
       _noteController.text = address['note']?.toString() ?? '';
-      _showInvoiceFields =
-          _companyController.text.trim().isNotEmpty ||
+      _showInvoiceFields = _companyController.text.trim().isNotEmpty ||
           _identityController.text.trim().isNotEmpty ||
           _taxNumberController.text.trim().isNotEmpty ||
           _taxOfficeController.text.trim().isNotEmpty;
@@ -903,13 +1024,18 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
       _purchasing = true;
     });
 
-    try {
+    if (!kIsWeb && defaultTargetPlatform == TargetPlatform.iOS) {
+      await _purchaseIosSubscription();
+      return;
+    }
+
+      try {
       final planType =
-          _selectedPack?['type']?.toString() ?? _selectedType ?? 'sms';
-          final countryNumber =
-              _selectedPhoneCode == null || _selectedPhoneCode!.isEmpty
-                  ? ''
-                  : '+$_selectedPhoneCode';
+          _selectedPack?['type']?.toString() ?? _selectedType ?? 'monthly';
+      final countryNumber =
+          _selectedPhoneCode == null || _selectedPhoneCode!.isEmpty
+              ? ''
+              : '+$_selectedPhoneCode';
       final body = {
         'pack_id': _selectedPack!['id'],
         'plan_type': planType,
@@ -988,6 +1114,234 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
         });
       }
     }
+  }
+
+  Future<void> _purchaseIosSubscription() async {
+    final pack = _selectedPack;
+    if (pack == null) {
+      _showSnack(loc.smsPacksSelectPack);
+      setState(() {
+        _purchasing = false;
+      });
+      return;
+    }
+
+    final product = _appleProductForPack(pack);
+    if (product == null) {
+      _showSnack(
+        _loadingIosProducts
+            ? 'App Store fiyatlari yukleniyor. Biraz sonra tekrar deneyin.'
+            : 'Bu paket App Store urunu ile eslesmedi.',
+      );
+      setState(() {
+        _purchasing = false;
+      });
+      return;
+    }
+
+    try {
+      final purchaseParam = PurchaseParam(
+        productDetails: product,
+      );
+      _pendingApplePack = Map<String, dynamic>.from(pack);
+      final started = await _inAppPurchase.buyNonConsumable(
+        purchaseParam: purchaseParam,
+      );
+      if (!started) {
+        _showSnack('App Store satin alma istegi baslatilamadi.');
+        if (mounted) {
+          setState(() {
+            _purchasing = false;
+          });
+        }
+      }
+    } catch (e) {
+      _showSnack('App Store satin alma hatasi: $e');
+      if (mounted) {
+        setState(() {
+          _purchasing = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _restoreApplePurchases() async {
+    if (kIsWeb || defaultTargetPlatform != TargetPlatform.iOS) return;
+    setState(() {
+      _restoringPurchases = true;
+    });
+    try {
+      await _inAppPurchase.restorePurchases();
+      _showSnack('Apple satin alimlari geri yukleniyor...', success: true);
+    } catch (e) {
+      _showSnack('Geri yukleme baslatilamadi: $e');
+      if (mounted) {
+        setState(() {
+          _restoringPurchases = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _onPurchaseUpdated(List<PurchaseDetails> purchases) async {
+    for (final purchase in purchases) {
+      switch (purchase.status) {
+        case PurchaseStatus.pending:
+          if (mounted) {
+            setState(() {
+              _purchasing = true;
+            });
+          }
+          break;
+        case PurchaseStatus.purchased:
+        case PurchaseStatus.restored:
+          await _handleCompletedApplePurchase(purchase);
+          break;
+        case PurchaseStatus.error:
+          _showSnack(
+            purchase.error?.message.isNotEmpty == true
+                ? purchase.error!.message
+                : 'App Store satin alma islemi basarisiz oldu.',
+          );
+          if (purchase.pendingCompletePurchase) {
+            await _inAppPurchase.completePurchase(purchase);
+          }
+          if (mounted) {
+            setState(() {
+              _purchasing = false;
+              _restoringPurchases = false;
+            });
+          }
+          break;
+        case PurchaseStatus.canceled:
+          if (purchase.pendingCompletePurchase) {
+            await _inAppPurchase.completePurchase(purchase);
+          }
+          _showSnack('Satin alma islemi iptal edildi.');
+          if (mounted) {
+            setState(() {
+              _purchasing = false;
+              _restoringPurchases = false;
+            });
+          }
+          break;
+      }
+    }
+  }
+
+  Future<void> _handleCompletedApplePurchase(PurchaseDetails purchase) async {
+    final pack =
+        _packForAppleProductId(purchase.productID) ?? _pendingApplePack;
+    if (pack == null) {
+      _showSnack('App Store urunu icin paket eslesmesi bulunamadi.');
+      if (purchase.pendingCompletePurchase) {
+        await _inAppPurchase.completePurchase(purchase);
+      }
+      if (mounted) {
+        setState(() {
+          _purchasing = false;
+          _restoringPurchases = false;
+        });
+      }
+      return;
+    }
+
+    await _submitIosPurchaseToBackend(
+      purchase: purchase,
+      pack: pack,
+      restored: purchase.status == PurchaseStatus.restored,
+    );
+
+    if (purchase.pendingCompletePurchase) {
+      await _inAppPurchase.completePurchase(purchase);
+    }
+
+    if (mounted) {
+      setState(() {
+        _purchasing = false;
+        _restoringPurchases = false;
+      });
+    }
+    _pendingApplePack = null;
+  }
+
+  Future<void> _submitIosPurchaseToBackend({
+    required PurchaseDetails purchase,
+    required Map<String, dynamic> pack,
+    required bool restored,
+  }) async {
+    final planType = pack['type']?.toString() ?? _selectedType ?? 'monthly';
+    final countryNumber =
+        _selectedPhoneCode == null || _selectedPhoneCode!.isEmpty
+            ? ''
+            : '+$_selectedPhoneCode';
+
+    final body = {
+      'pack_id': pack['id'],
+      'plan_type': planType,
+      'title': _addressTitleController.text.trim(),
+      if (_selectedAddressId != null) 'address_id': _selectedAddressId,
+      'country_id': _selectedCountryId,
+      'city_id': _selectedCityId,
+      'district_id': _selectedDistrictId,
+      'name': _nameController.text.trim(),
+      'last_name': _lastNameController.text.trim(),
+      'company_name': _companyController.text.trim(),
+      'email': _emailController.text.trim(),
+      'phone': _extractPhoneDigits(_phoneController.text.trim()),
+      'country_number': countryNumber,
+      'identity_number': _identityController.text.trim(),
+      'tax_number': _taxNumberController.text.trim(),
+      'tax_office': _taxOfficeController.text.trim(),
+      'address': _addressController.text.trim(),
+      'note': _noteController.text.trim(),
+      'payment_method': 'apple_iap',
+      'terms_agreement': true,
+      'apple_product_id': purchase.productID,
+      'apple_purchase_id': purchase.purchaseID,
+      'apple_transaction_date': purchase.transactionDate,
+      'apple_source': purchase.verificationData.source,
+      'apple_receipt_data': purchase.verificationData.serverVerificationData,
+      'apple_local_receipt_data':
+          purchase.verificationData.localVerificationData,
+      'apple_is_restore': restored,
+    };
+
+    final response = await authPost(
+      Uri.parse('$apiBaseUrl/api/packs/orders'),
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+      },
+      body: jsonEncode(body),
+    );
+
+    if (response.statusCode == 401) {
+      await _handleUnauthorized();
+      return;
+    }
+
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      String message = restored
+          ? 'Apple aboneligi geri yuklendi.'
+          : 'Apple aboneligi basariyla aktif edildi.';
+      try {
+        final decoded = jsonDecode(response.body);
+        message = decoded['message']?.toString() ??
+            decoded['data']?['message']?.toString() ??
+            message;
+      } catch (_) {}
+      _showSnack(message, success: true);
+      return;
+    }
+
+    String message =
+        'Apple satin alma dogrulamasi backend tarafinda tamamlanamadi.';
+    try {
+      final decoded = jsonDecode(response.body);
+      message = decoded['message']?.toString() ?? message;
+    } catch (_) {}
+    _showSnack(message);
   }
 
   Future<void> _startPaytrPayment(String transactionId) async {
@@ -1216,8 +1570,8 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
           final bool selected = _selectedPack?['id'] == packId;
           final packColor =
               _parseColor(pack['color']?.toString()) ?? Colors.indigo.shade50;
-          final String price = pack['price']?.toString() ?? '-';
-          final String priceWithTax = pack['price_with_tax']?.toString() ?? '';
+          final String price = _displayPriceForPack(pack);
+          final String? priceWithTax = _displayTaxLabelForPack(pack);
           final String smsCount = pack['sms_count']?.toString() ?? '-';
           final List<dynamic> details =
               pack['details'] is List ? pack['details'] as List : const [];
@@ -1226,7 +1580,8 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
           return AnimatedContainer(
             duration: const Duration(milliseconds: 200),
             decoration: BoxDecoration(
-              color: selected ? packColor.withValues(alpha: 0.16) : Colors.white,
+              color:
+                  selected ? packColor.withValues(alpha: 0.16) : Colors.white,
               borderRadius: BorderRadius.circular(16),
               border: Border.all(
                 color: selected ? packColor : Colors.grey.shade200,
@@ -1279,7 +1634,7 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      '₺$price',
+                      price,
                       style: TextStyle(
                         color: packColor,
                         fontWeight: FontWeight.w800,
@@ -1288,9 +1643,7 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      priceWithTax.isNotEmpty
-                          ? loc.smsPacksPriceWithTax(priceWithTax)
-                          : '',
+                      priceWithTax ?? '',
                       style: const TextStyle(
                         color: Colors.black54,
                         fontSize: 12,
@@ -1406,8 +1759,9 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
 
     final pack = _selectedPack;
     final packSms = pack?['sms_count']?.toString() ?? '-';
-    final packPrice = pack?['price']?.toString() ?? '-';
-    final packPriceWithTax = pack?['price_with_tax']?.toString() ?? '';
+    final packPrice = pack == null ? '-' : _displayPriceForPack(pack);
+    final packPriceWithTax =
+        pack == null ? null : _displayTaxLabelForPack(pack);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1422,10 +1776,10 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
                 style: const TextStyle(fontWeight: FontWeight.w700),
               ),
               const SizedBox(height: 6),
-              Text('₺$packPrice', style: const TextStyle(fontSize: 18)),
-              if (packPriceWithTax.isNotEmpty)
+              Text(packPrice, style: const TextStyle(fontSize: 18)),
+              if (packPriceWithTax != null)
                 Text(
-                  '${loc.smsPacksVatIncluded} ₺$packPriceWithTax',
+                  packPriceWithTax,
                   style: const TextStyle(color: Colors.black54),
                 ),
             ],
@@ -1809,9 +2163,9 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
     final paymentLabel = _isPurchaseRestricted
         ? '-'
         : (_paymentOptions.firstWhere(
-              (e) => e['value'] == _selectedPayment,
-              orElse: () => _paymentOptions.first,
-            )['value'] ==
+                  (e) => e['value'] == _selectedPayment,
+                  orElse: () => _paymentOptions.first,
+                )['value'] ==
                 'credit_card'
             ? loc.smsPacksPaymentMethod
             : (_paymentOptions.firstWhere(
@@ -1917,7 +2271,8 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
             children: [
               Text(
                 loc.smsPacksSummaryPurchaseInfo,
-                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+                style:
+                    const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
               ),
               const SizedBox(height: 10),
               infoRow(loc.smsPacksPackLabel, pack['name']?.toString() ?? '-',
@@ -1975,7 +2330,8 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
             children: [
               Text(
                 loc.smsPacksBuyerLabel,
-                style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
+                style:
+                    const TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
               ),
               const SizedBox(height: 10),
               infoRow(
@@ -2216,6 +2572,18 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
     return Scaffold(
       appBar: AppBar(
         title: Text(loc.smsPacksTitle),
+        actions: [
+          if (!kIsWeb && defaultTargetPlatform == TargetPlatform.iOS)
+            TextButton(
+              onPressed: _restoringPurchases || _purchasing
+                  ? null
+                  : _restoreApplePurchases,
+              child: Text(
+                _restoringPurchases ? 'Restoring...' : 'Restore',
+                style: const TextStyle(color: Colors.white),
+              ),
+            ),
+        ],
         leading: IconButton(
           icon: const Icon(Icons.home_outlined),
           onPressed: () {
@@ -2257,104 +2625,113 @@ class _SmsPacksPageState extends State<SmsPacksPage> {
                 : _isPurchaseRestricted
                     ? _buildRestrictedBody()
                     : LayoutBuilder(
-                    builder: (context, constraints) {
-                      return Column(
-                        children: [
-                          Padding(
-                            padding: const EdgeInsets.fromLTRB(16, 12, 16, 6),
-                            child: _buildStepHeader(),
-                          ),
-                          Expanded(
-                            child: Stepper(
-                              type: StepperType.horizontal,
-                              currentStep: _currentStep,
-                              onStepContinue: _onContinue,
-                              onStepCancel: _onCancel,
-                              onStepTapped: (index) {
-                                if (index < _currentStep) {
-                                  setState(() {
-                                    _currentStep = index;
-                                  });
-                                }
-                              },
-                              controlsBuilder: (context, details) {
-                                final isLast =
-                                    _currentStep == _buildSteps().length - 1;
-                                final continueButton = ElevatedButton(
-                                  onPressed:
-                                      _purchasing ? null : details.onStepContinue,
-                                  child: Text(
-                                    _purchasing
-                                        ? loc.smsPacksSubmitting
-                                        : loc.smsPacksNext,
-                                  ),
-                                );
-                                return Padding(
-                                  padding: const EdgeInsets.only(top: 12),
-                                  child: isLast
-                                      ? Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.stretch,
-                                          children: [
-                                            ElevatedButton.icon(
-                                              onPressed: _purchasing
-                                                  ? null
-                                                  : details.onStepContinue,
-                                              icon: _purchasing
-                                                  ? const SizedBox(
-                                                      width: 16,
-                                                      height: 16,
-                                                      child:
-                                                          CircularProgressIndicator(
-                                                              strokeWidth: 2),
-                                                    )
-                                                  : const Icon(
-                                                      Icons.lock_outline),
-                                              style: ElevatedButton.styleFrom(
-                                                backgroundColor:
-                                                    Colors.indigo.shade600,
-                                                foregroundColor: Colors.white,
-                                                padding:
-                                                    const EdgeInsets.symmetric(
+                        builder: (context, constraints) {
+                          return Column(
+                            children: [
+                              Padding(
+                                padding:
+                                    const EdgeInsets.fromLTRB(16, 12, 16, 6),
+                                child: _buildStepHeader(),
+                              ),
+                              Expanded(
+                                child: Stepper(
+                                  type: StepperType.horizontal,
+                                  currentStep: _currentStep,
+                                  onStepContinue: _onContinue,
+                                  onStepCancel: _onCancel,
+                                  onStepTapped: (index) {
+                                    if (index < _currentStep) {
+                                      setState(() {
+                                        _currentStep = index;
+                                      });
+                                    }
+                                  },
+                                  controlsBuilder: (context, details) {
+                                    final isLast = _currentStep ==
+                                        _buildSteps().length - 1;
+                                    final continueButton = ElevatedButton(
+                                      onPressed: _purchasing
+                                          ? null
+                                          : details.onStepContinue,
+                                      child: Text(
+                                        _purchasing
+                                            ? loc.smsPacksSubmitting
+                                            : loc.smsPacksNext,
+                                      ),
+                                    );
+                                    return Padding(
+                                      padding: const EdgeInsets.only(top: 12),
+                                      child: isLast
+                                          ? Column(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.stretch,
+                                              children: [
+                                                ElevatedButton.icon(
+                                                  onPressed: _purchasing
+                                                      ? null
+                                                      : details.onStepContinue,
+                                                  icon: _purchasing
+                                                      ? const SizedBox(
+                                                          width: 16,
+                                                          height: 16,
+                                                          child:
+                                                              CircularProgressIndicator(
+                                                                  strokeWidth:
+                                                                      2),
+                                                        )
+                                                      : const Icon(
+                                                          Icons.lock_outline),
+                                                  style:
+                                                      ElevatedButton.styleFrom(
+                                                    backgroundColor:
+                                                        Colors.indigo.shade600,
+                                                    foregroundColor:
+                                                        Colors.white,
+                                                    padding: const EdgeInsets
+                                                        .symmetric(
                                                         vertical: 14),
-                                                shape: RoundedRectangleBorder(
-                                                  borderRadius:
-                                                      BorderRadius.circular(12),
+                                                    shape:
+                                                        RoundedRectangleBorder(
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                              12),
+                                                    ),
+                                                  ),
+                                                  label: Text(
+                                                    _purchasing
+                                                        ? loc.smsPacksSubmitting
+                                                        : loc.smsPacksBuy,
+                                                  ),
                                                 ),
-                                              ),
-                                              label: Text(
-                                                _purchasing
-                                                    ? loc.smsPacksSubmitting
-                                                    : loc.smsPacksBuy,
-                                              ),
+                                                const SizedBox(height: 8),
+                                                OutlinedButton(
+                                                  onPressed:
+                                                      details.onStepCancel,
+                                                  child: Text(loc.smsPacksBack),
+                                                ),
+                                              ],
+                                            )
+                                          : Wrap(
+                                              spacing: 12,
+                                              runSpacing: 8,
+                                              children: [
+                                                continueButton,
+                                                OutlinedButton(
+                                                  onPressed:
+                                                      details.onStepCancel,
+                                                  child: Text(loc.smsPacksBack),
+                                                ),
+                                              ],
                                             ),
-                                            const SizedBox(height: 8),
-                                            OutlinedButton(
-                                              onPressed: details.onStepCancel,
-                                              child: Text(loc.smsPacksBack),
-                                            ),
-                                          ],
-                                        )
-                                      : Wrap(
-                                          spacing: 12,
-                                          runSpacing: 8,
-                                          children: [
-                                            continueButton,
-                                            OutlinedButton(
-                                              onPressed: details.onStepCancel,
-                                              child: Text(loc.smsPacksBack),
-                                            ),
-                                          ],
-                                        ),
-                                );
-                              },
-                              steps: _buildSteps(),
-                            ),
-                          ),
-                        ],
-                      );
-                    },
-                  ),
+                                    );
+                                  },
+                                  steps: _buildSteps(),
+                                ),
+                              ),
+                            ],
+                          );
+                        },
+                      ),
       ),
     );
   }

@@ -2,7 +2,6 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:ui' as ui;
 
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:bagla_mobile/l10n/app_localizations.dart';
@@ -24,7 +23,7 @@ import 'pages/working_preferences.dart';
 import 'pages/appointments.dart';
 import 'pages/sms_templates.dart';
 import 'pages/calendar.dart';
-import 'pages/sms_packs.dart';
+import 'pages/pack_page_router.dart';
 import 'pages/orders.dart';
 import 'widgets/main_nav.dart';
 
@@ -45,7 +44,6 @@ class DashboardPage extends StatefulWidget {
 class _DashboardPageState extends State<DashboardPage> {
   static const int _maxDashboardTopLinks = 8;
   static const int _maxDashboardAppointments = 6;
-  bool get _isIosStorefront => !kIsWeb && Platform.isIOS;
   bool _loading = true;
   String? _error;
   bool _hasDashboardLoaded = false;
@@ -121,8 +119,9 @@ class _DashboardPageState extends State<DashboardPage> {
         nextNoInternet = e is SocketException ||
             e.toString().contains('SocketException') ||
             e.toString().contains('Failed host lookup');
-        nextError =
-            nextNoInternet ? loc.dashboardNoInternet : loc.dashboardLoadFailed(e.toString());
+        nextError = nextNoInternet
+            ? loc.dashboardNoInternet
+            : loc.dashboardLoadFailed(e.toString());
       }
     }
 
@@ -171,7 +170,8 @@ class _DashboardPageState extends State<DashboardPage> {
         );
       }
     }
-    _topLinks = parsedTopLinks.take(_maxDashboardTopLinks).toList(growable: false);
+    _topLinks =
+        parsedTopLinks.take(_maxDashboardTopLinks).toList(growable: false);
 
     final apptInfo = data['appointment_info'] as Map?;
     final todayCountRaw =
@@ -193,18 +193,21 @@ class _DashboardPageState extends State<DashboardPage> {
         parsedAppointments.add(
           _DashboardAppointment(
             customerId: map['customer_id']?.toString() ?? '',
-            customerName: (customerName?.isNotEmpty == true) ? customerName! : null,
+            customerName:
+                (customerName?.isNotEmpty == true) ? customerName! : null,
             phone: customer?['phone']?.toString() ?? '',
             date: map['date']?.toString(),
             time: map['time']?.toString(),
-            statusName:
-                status?['name']?.toString() ?? status?['alias']?.toString() ?? '',
+            statusName: status?['name']?.toString() ??
+                status?['alias']?.toString() ??
+                '',
           ),
         );
       }
     }
-    _todayAppointments =
-        parsedAppointments.take(_maxDashboardAppointments).toList(growable: false);
+    _todayAppointments = parsedAppointments
+        .take(_maxDashboardAppointments)
+        .toList(growable: false);
   }
 
   void _navigateToPage(Widget page, String routeName) {
@@ -464,8 +467,7 @@ class _DashboardPageState extends State<DashboardPage> {
         context,
         MaterialPageRoute(
           builder: (_) => _tabPageForIndex(tabIndex),
-          settings:
-              routeName != null ? RouteSettings(name: routeName) : null,
+          settings: routeName != null ? RouteSettings(name: routeName) : null,
         ),
       );
       return;
@@ -725,27 +727,24 @@ class _DashboardPageState extends State<DashboardPage> {
             ),
             const SizedBox(height: 10),
             Text(
-              _isIosStorefront
-                  ? loc.iosSmsPurchaseRestrictionMessage
-                  : loc.dashboardNoActivePackage,
+              loc.dashboardNoActivePackage,
               style: const TextStyle(color: Colors.black87),
             ),
-            if (!_isIosStorefront) ...[
-              const SizedBox(height: 12),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton.icon(
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (_) => const SmsPacksPage()),
-                    );
-                  },
-                  icon: const Icon(Icons.shopping_cart_outlined),
-                  label: Text(loc.dashboardBuyPackage),
-                ),
+            const SizedBox(height: 12),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (_) => buildPackPageForPlatform()),
+                  );
+                },
+                icon: const Icon(Icons.shopping_cart_outlined),
+                label: Text(loc.dashboardBuyPackage),
               ),
-            ],
+            ),
           ],
         ),
       );
@@ -1313,6 +1312,15 @@ class _DashboardPageState extends State<DashboardPage> {
             color: const Color(0xFF0284C7),
           ),
           _quickActionTile(
+            icon: Icons.sms_outlined,
+            label: loc.dashboardSmsTemplates,
+            onTap: () => _navigateToPage(
+              const SmsTemplatesPage(),
+              'sms_templates',
+            ),
+            color: const Color(0xFFDB2777),
+          ),
+          _quickActionTile(
             icon: Icons.support_agent_outlined,
             label: loc.support,
             onTap: () => _navigateToPage(const SupportPage(), 'support'),
@@ -1326,15 +1334,6 @@ class _DashboardPageState extends State<DashboardPage> {
               'working_preferences',
             ),
             color: const Color(0xFF7C3AED),
-          ),
-          _quickActionTile(
-            icon: Icons.sms_outlined,
-            label: loc.dashboardSmsTemplates,
-            onTap: () => _navigateToPage(
-              const SmsTemplatesPage(),
-              'sms_templates',
-            ),
-            color: const Color(0xFFDB2777),
           ),
         ],
       ),
@@ -1373,7 +1372,8 @@ class _DashboardPageState extends State<DashboardPage> {
                   Align(
                     alignment: Alignment.centerRight,
                     child: TextButton.icon(
-                      onPressed: () => _openTabOrPush(1, const AppointmentsPage()),
+                      onPressed: () =>
+                          _openTabOrPush(1, const AppointmentsPage()),
                       icon: const Icon(Icons.open_in_new, size: 18),
                       label: Text('+${hiddenAppointments.toInt()}'),
                     ),
@@ -1556,17 +1556,16 @@ class _DashboardPageState extends State<DashboardPage> {
                 );
               },
             ),
-            if (!_isIosStorefront)
-              ListTile(
-                leading: const Icon(Icons.sms_outlined),
-                title: Text(loc.dashboardSmsPacks),
-                onTap: () {
-                  _navigateFromDrawer(
-                    page: const SmsPacksPage(),
-                    routeName: 'sms_packs',
-                  );
-                },
-              ),
+            ListTile(
+              leading: const Icon(Icons.sms_outlined),
+              title: Text(loc.dashboardSmsPacks),
+              onTap: () {
+                _navigateFromDrawer(
+                  page: buildPackPageForPlatform(),
+                  routeName: 'sms_packs',
+                );
+              },
+            ),
             ListTile(
               leading: const Icon(Icons.receipt_long),
               title: Text(loc.dashboardOrders),
