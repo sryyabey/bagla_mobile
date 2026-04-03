@@ -5,8 +5,7 @@ import 'package:bagla_mobile/auth.dart';
 import 'package:bagla_mobile/config.dart';
 import 'package:bagla_mobile/l10n/app_localizations.dart';
 import 'package:bagla_mobile/main_tabs_page.dart';
-import 'package:bagla_mobile/pages/sms_packs.dart';
-import 'package:flutter/foundation.dart';
+import 'package:bagla_mobile/pages/pack_page_router.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -1395,8 +1394,6 @@ class _CustomerAppointmentsSheet extends StatefulWidget {
 class _CustomerAppointmentsSheetState
     extends State<_CustomerAppointmentsSheet> {
   AppLocalizations get loc => AppLocalizations.of(context);
-  bool get _isIosPaymentRestricted =>
-      !kIsWeb && defaultTargetPlatform == TargetPlatform.iOS;
 
   static const Color _primaryColor = Color(0xFF6366F1);
   static const Color _primaryLight = Color(0xFFEEF2FF);
@@ -1490,15 +1487,10 @@ class _CustomerAppointmentsSheetState
       final hasUserPack = extractedUserPack ?? true;
       if (hasUserPack) return true;
 
-      if (_isIosPaymentRestricted) {
-        _showSnack(loc.iosSmsPurchaseRestrictionMessage);
-        return false;
-      }
-
       _showSnack(loc.appointmentsPackageRequired);
       if (navigateOnAndroid && mounted) {
         await Navigator.of(context).push(
-          MaterialPageRoute(builder: (_) => const SmsPacksPage()),
+          MaterialPageRoute(builder: (_) => buildPackPageForPlatform()),
         );
       }
       return false;

@@ -124,6 +124,7 @@ class _IosPacksPageState extends State<IosPacksPage> {
       }
 
       final decoded = jsonDecode(response.body);
+      debugPrint('[PACKS_RAW] $decoded');
       final data = decoded['data'] ?? decoded;
       final List<String> types =
           (data['types'] as List?)
@@ -157,6 +158,12 @@ class _IosPacksPageState extends State<IosPacksPage> {
             _selectedType ?? (_types.isNotEmpty ? _types.first : null);
         _loading = false;
       });
+      debugPrint('[PACKS_PARSED] types=$_types keys=${parsed.keys}');
+      parsed.forEach((k, v) {
+        for (final p in v) {
+          debugPrint('[PACK] key=$k name=${p['name']} type=${p['type']}');
+        }
+      });
       _logStore(
         'packs loaded: types=$_types totalPacks=${parsed.values.fold<int>(0, (sum, items) => sum + items.length)}',
       );
@@ -188,6 +195,8 @@ class _IosPacksPageState extends State<IosPacksPage> {
     }
 
     final isAvailable = await _inAppPurchase.isAvailable();
+    debugPrint('[IAP] isAvailable=$isAvailable');
+    debugPrint('[IAP] platform=${defaultTargetPlatform.name}');
     _logStore('store availability: $isAvailable');
     if (!isAvailable) {
       if (!mounted) return;
@@ -210,6 +219,7 @@ class _IosPacksPageState extends State<IosPacksPage> {
     }
 
     try {
+      debugPrint('[IAP] querying: ${AppleSubscriptionCatalog.productIds}');
       _logStore(
         'querying products: ${AppleSubscriptionCatalog.productIds.join(', ')}',
       );
@@ -320,6 +330,119 @@ class _IosPacksPageState extends State<IosPacksPage> {
       return 'Product "$productId" was not loaded from App Store.';
     }
     return null;
+  }
+
+  List<String> _mappingIssues() {
+    final issues = <String>[];
+    for (final entry in _packsByType.entries) {
+      for (final pack in entry.value) {
+        final productId = _productIdForPack(pack);
+        if (productId == null) {
+          issues.add(
+            'Mapping failed for pack="${pack['name']}" type="${pack['type']}"',
+          );
+          continue;
+        }
+        if (_notFoundProductIds.contains(productId)) {
+          issues.add(
+            'App Store notFound for pack="${pack['name']}" -> $productId',
+          );
+        }
+      }
+    }
+    return issues;
+  }
+
+  String _overallDiagnosis() {
+    if (_loading || _loadingProducts) {
+      return 'Diagnosis pending. Packages or App Store products are still loading.';
+    }
+    if (!_storeKitAvailable) {
+      return 'StoreKit is unavailable on this device/session. Check App Store account state and sandbox readiness.';
+    }
+    if (_storeErrorDetails?.contains('storekit_no_response') == true) {
+      return 'StoreKit returned no product response. Most likely App Store Connect review-state, sandbox account, or Apple-side product availability issue.';
+    }
+    if (_notFoundProductIds.isNotEmpty) {
+      return 'App Store explicitly did not recognize one or more queried product IDs.';
+    }
+    if (_productsById.isEmpty) {
+      return 'No App Store products were loaded. Most likely App Store Connect configuration or sandbox availability issue.';
+    }
+    final mappingIssues = _mappingIssues();
+    if (mappingIssues.isNotEmpty) {
+      return 'App Store returned products, but one or more backend packs could not be matched cleanly.';
+    }
+    return 'App Store products loaded and backend pack mapping looks healthy.';
+  }
+
+  Widget _buildDiagnosticCard() {
+    final queriedIds = AppleSubscriptionCatalog.productIds.toList()..sort();
+    final loadedIds = _productsById.keys.toList()..sort();
+    final notFoundIds = _notFoundProductIds.toList()..sort();
+    final mappingIssues = _mappingIssues();
+
+    Widget line(String label, String value, {Color? color}) {
+      return Padding(
+        padding: const EdgeInsets.only(bottom: 6),
+        child: Text(
+          '$label$value',
+          style: TextStyle(
+            fontSize: 12,
+            color: color ?? Colors.black87,
+            fontWeight: label == 'Likely issue: ' ? FontWeight.w700 : FontWeight.w500,
+          ),
+        ),
+      );
+    }
+
+    return Container(
+      margin: const EdgeInsets.only(top: 12),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.blueGrey.shade50,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.blueGrey.shade100),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'IAP Diagnosis',
+            style: TextStyle(fontSize: 14, fontWeight: FontWeight.w800),
+          ),
+          const SizedBox(height: 10),
+          line('Likely issue: ', _overallDiagnosis()),
+          line('StoreKit available: ', _storeKitAvailable ? 'yes' : 'no'),
+          line('Backend types: ', _types.isEmpty ? '-' : _types.join(', ')),
+          line('Queried IDs: ', queriedIds.join(', ')),
+          line('Loaded IDs: ', loadedIds.isEmpty ? '-' : loadedIds.join(', ')),
+          line(
+            'Not found IDs: ',
+            notFoundIds.isEmpty ? '-' : notFoundIds.join(', '),
+            color: notFoundIds.isEmpty ? null : Colors.red.shade700,
+          ),
+          line(
+            'Query error: ',
+            _storeErrorDetails ?? '-',
+            color: _storeErrorDetails == null ? null : Colors.red.shade700,
+          ),
+          if (mappingIssues.isNotEmpty) ...[
+            const SizedBox(height: 6),
+            const Text(
+              'Mapping issues',
+              style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
+            ),
+            const SizedBox(height: 6),
+            for (final issue in mappingIssues)
+              Text(
+                issue,
+                style: TextStyle(fontSize: 12, color: Colors.red.shade700),
+              ),
+          ],
+        ],
+      ),
+    );
   }
 
   String _describePurchase(PurchaseDetails purchase) {
@@ -838,6 +961,7 @@ class _IosPacksPageState extends State<IosPacksPage> {
                             'iOS subscriptions are purchased directly with Apple. This screen only shows App Store products and does not request customer contact fields.',
                           ),
                         ),
+                        _buildDiagnosticCard(),
                         if (!_loadingProducts && _productsById.isEmpty) ...[
                           const SizedBox(height: 12),
                           Container(

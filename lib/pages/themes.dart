@@ -27,6 +27,7 @@ class _ThemesPageState extends State<ThemesPage> {
   bool _previewLoading = false;
   String? _previewUrl;
   String? _previewError;
+  String? _previewLastVisitedUrl;
 
   void _goHome() {
     Navigator.of(context).pushAndRemoveUntil(
@@ -197,16 +198,14 @@ class _ThemesPageState extends State<ThemesPage> {
   }
 
   String? _buildPreviewUrl() {
-    if (_userId == null ||
-        _selectedThemeName == null ||
-        _selectedThemeName!.isEmpty) {
+    if (_userId == null || _selectedThemeId == null) {
       return null;
     }
 
     final uri =
         Uri.parse('https://bagla.app/bio-pages/preview/$_userId').replace(
       queryParameters: {
-        'theme': _selectedThemeName!,
+        'theme': _selectedThemeId!.toString(),
       },
     );
     return uri.toString();
@@ -220,27 +219,61 @@ class _ThemesPageState extends State<ThemesPage> {
         _previewController = null;
         _previewError = null;
         _previewLoading = false;
+        _previewLastVisitedUrl = null;
       });
       return;
     }
+
+    debugPrint('[ThemesPreview] loading url=$url');
 
     final controller = WebViewController()
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
       ..setBackgroundColor(Colors.transparent)
       ..setNavigationDelegate(
         NavigationDelegate(
-          onPageFinished: (_) {
+          onPageStarted: (startedUrl) {
+            debugPrint('[ThemesPreview] page started url=$startedUrl');
+            if (mounted) {
+              setState(() {
+                _previewLastVisitedUrl = startedUrl;
+              });
+            }
+          },
+          onNavigationRequest: (request) {
+            debugPrint('[ThemesPreview] navigation request url=${request.url}');
+            if (mounted) {
+              setState(() {
+                _previewLastVisitedUrl = request.url;
+              });
+            }
+            return NavigationDecision.navigate;
+          },
+          onPageFinished: (finishedUrl) {
+            debugPrint('[ThemesPreview] page finished url=$finishedUrl');
             if (mounted) {
               setState(() {
                 _previewLoading = false;
+                _previewLastVisitedUrl = finishedUrl;
               });
             }
           },
           onWebResourceError: (error) {
+            final failingUrl = error.url ?? _previewLastVisitedUrl ?? url;
+            debugPrint(
+              '[ThemesPreview] error code=${error.errorCode} '
+              'type=${error.errorType} '
+              'description=${error.description} '
+              'url=$failingUrl',
+            );
             if (mounted) {
               setState(() {
                 _previewLoading = false;
-                _previewError = loc.themesPreviewError;
+                _previewLastVisitedUrl = failingUrl;
+                _previewError =
+                    '${loc.themesPreviewError}\n'
+                    'code: ${error.errorCode}\n'
+                    'description: ${error.description}\n'
+                    'url: $failingUrl';
               });
             }
           },
@@ -253,6 +286,7 @@ class _ThemesPageState extends State<ThemesPage> {
       _previewController = controller;
       _previewLoading = true;
       _previewError = null;
+      _previewLastVisitedUrl = url;
     });
   }
 

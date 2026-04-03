@@ -6,12 +6,11 @@ import 'package:bagla_mobile/dashboard_page.dart';
 import 'package:bagla_mobile/login_page.dart';
 import 'package:bagla_mobile/pages/working_preferences.dart';
 import 'package:dio/dio.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
-import 'sms_packs.dart';
+import 'pack_page_router.dart';
 import '../utils/appointment_date_utils.dart';
 import '../widgets/main_nav.dart';
 import 'package:bagla_mobile/l10n/app_localizations.dart';
@@ -451,9 +450,6 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
   bool? _hasUserPack;
 
   AppLocalizations get loc => AppLocalizations.of(context);
-  bool get _isIosPaymentRestricted =>
-      !kIsWeb && defaultTargetPlatform == TargetPlatform.iOS;
-
   bool _asBool(dynamic value) {
     if (value == null) return false;
     if (value is bool) return value;
@@ -548,15 +544,11 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
     switch (code) {
       case 'NO_PACKAGE':
         _hasUserPack = false;
-        _showSnack(
-          _isIosPaymentRestricted
-              ? loc.iosSmsPurchaseRestrictionMessage
-              : loc.appointmentsPackageRequired,
-        );
-        if (!_isIosPaymentRestricted && allowPackageNavigation && mounted) {
+        _showSnack(loc.appointmentsPackageRequired);
+        if (allowPackageNavigation && mounted) {
           await Navigator.push(
             context,
-            MaterialPageRoute(builder: (_) => const SmsPacksPage()),
+            MaterialPageRoute(builder: (_) => buildPackPageForPlatform()),
           );
         }
         return true;
@@ -610,9 +602,7 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
     final code = _normalizedIssueCode(envelope);
     switch (code) {
       case 'NO_PACKAGE':
-        return _isIosPaymentRestricted
-            ? loc.iosSmsPurchaseRestrictionMessage
-            : loc.appointmentsPackageRequired;
+        return loc.appointmentsPackageRequired;
       case 'HOLIDAY':
         return _holidayWarningMessage(envelope);
       case 'SLOT_BUSY':
@@ -687,21 +677,16 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
           context: context,
           builder: (ctx) => AlertDialog(
             title: Text(loc.appointmentsBuyPackage),
-            content: Text(
-              _isIosPaymentRestricted
-                  ? loc.iosSmsPurchaseRestrictionMessage
-                  : loc.appointmentsPackageRequired,
-            ),
+            content: Text(loc.appointmentsPackageRequired),
             actions: [
               TextButton(
                 onPressed: () => Navigator.of(ctx).pop(false),
                 child: Text(loc.appointmentsClose),
               ),
-              if (!_isIosPaymentRestricted)
-                ElevatedButton(
-                  onPressed: () => Navigator.of(ctx).pop(true),
-                  child: Text(loc.appointmentsBuyPackage),
-                ),
+              ElevatedButton(
+                onPressed: () => Navigator.of(ctx).pop(true),
+                child: Text(loc.appointmentsBuyPackage),
+              ),
             ],
           ),
         ) ??
@@ -710,7 +695,7 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
     if (navigateToPackagePage && mounted) {
       await Navigator.push(
         context,
-        MaterialPageRoute(builder: (_) => const SmsPacksPage()),
+        MaterialPageRoute(builder: (_) => buildPackPageForPlatform()),
       );
     }
     return false;
@@ -2590,8 +2575,8 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
                   _normalizeTimeToApi(localSelectedTime ?? timeCtrl.text) ?? '';
               final apiDate = _normalizeDateToApi(dateInput);
               final createDate = _normalizeSlotDate(dateInput);
-              final initialDateNormalized =
-                  _normalizeDateToApi(initialDate) ?? _normalizeSlotDate(initialDate);
+              final initialDateNormalized = _normalizeDateToApi(initialDate) ??
+                  _normalizeSlotDate(initialDate);
               final initialTimeNormalized =
                   _normalizeTimeToApi(initialTime) ?? initialTime.trim();
               if (localSelectedStatusId == null) {
