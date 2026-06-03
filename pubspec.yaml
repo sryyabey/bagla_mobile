@@ -2,7 +2,7 @@ name: bagla_mobile
 description: "bagla.app mobile application"
 publish_to: "none"
 
-version: 1.1.23+24
+version: 1.1.26+27
 
 environment:
   sdk: ">=3.3.0 <4.0.0"
@@ -59,3 +59,4 @@ flutter:
     - assets/onboarding_biolink.png
     - assets/onboarding_sms.png
     - assets/onboarding_free.png
+    - assets/ios_packs/

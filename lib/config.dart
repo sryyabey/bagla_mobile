@@ -5,6 +5,9 @@ import 'package:flutter/foundation.dart';
 const _prodBase = 'https://bagla.app';
 const _localHostBase = 'http://127.0.0.1:8000';
 const _androidEmulatorBase = 'http://10.0.2.2:8000';
+const standardAppleEulaUrl =
+    'https://www.apple.com/legal/internet-services/itunes/dev/stdeula/';
+const privacyPolicyUrl = 'https://bagla.app/contract/22';
 
 // Google Sign-In (Android)
 const googleAndroidPackageName = 'com.bagla.app';

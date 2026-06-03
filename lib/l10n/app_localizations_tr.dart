@@ -530,7 +530,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get appointmentsPackageRequired =>
-      'Randevu işlemleri için paket alınız.';
+      'Randevu işlemleri için aktif paket veya abonelik gereklidir. Bu kontrol SMS gönderimiyle aynı değildir; SMS bakiyesi yalnızca SMS ya da hatırlatma gönderildiğinde kullanılır.';
 
   @override
   String get appointmentsSessionMissingLogin =>
@@ -1585,6 +1585,169 @@ class AppLocalizationsTr extends AppLocalizations {
   @override
   String get smsPacksAndroidOnlyMessage =>
       'SMS paket satın alma adımları yalnızca Android uygulamasında kullanılabilir. Bu cihazda paketleri görüntüleyebilirsiniz.';
+
+  @override
+  String iosPacksPurchaseStreamError(Object error) {
+    return 'Apple satın alma akışı izlenemedi: $error';
+  }
+
+  @override
+  String get iosPacksPackIdMissing =>
+      'Bu paket için ios_product_id bulunamadı.';
+
+  @override
+  String iosPacksPackDetailsLoadFailed(Object error) {
+    return 'Paket detayları alınamadı: $error';
+  }
+
+  @override
+  String iosPacksPackDetailsTitle(Object name) {
+    return '$name Paket Detayları';
+  }
+
+  @override
+  String get iosPacksNoPackDetails => 'Bu paket için detay bulunamadı.';
+
+  @override
+  String iosPacksInvalidLink(Object value) {
+    return 'Geçersiz bağlantı: $value';
+  }
+
+  @override
+  String iosPacksLinkOpenFailed(Object value) {
+    return 'Bağlantı açılamadı: $value';
+  }
+
+  @override
+  String get iosPacksStoreKitUnavailable =>
+      'StoreKit kullanılamıyor. Cihaz veya App Store hesabı hazır olmayabilir.';
+
+  @override
+  String iosPacksStoreProductNotFound(Object productId) {
+    return 'App Store \"$productId\" ürünü için notFound döndürdü.';
+  }
+
+  @override
+  String iosPacksStoreProductMissing(Object productId) {
+    return '\"$productId\" ürünü App Store\'dan yüklenemedi.';
+  }
+
+  @override
+  String get iosPacksPlanSparkHeadline => 'Temiz ve sade bir başlangıç';
+
+  @override
+  String get iosPacksPlanBoostHeadline => 'Daha esnek bir akışla hızlan';
+
+  @override
+  String get iosPacksPlanPowerHeadline => 'Daha yoğun bir takvim için hazır';
+
+  @override
+  String get iosPacksPlanPrimeHeadline => 'Premium akışın için tam erişim';
+
+  @override
+  String get iosPacksPlanDefaultHeadline => 'Akışına uyan planı seç';
+
+  @override
+  String get iosPacksSubscriptionGeneric => 'abonelik';
+
+  @override
+  String iosPacksBenefitAppointmentAccess(Object duration) {
+    return 'Randevu işlemleri $duration planın boyunca aktif kalır.';
+  }
+
+  @override
+  String get iosPacksBenefitSecureCheckout =>
+      'Güvenli ödeme doğrudan Apple tarafından yönetilir.';
+
+  @override
+  String get iosPacksBenefitManageSubscription =>
+      'Yenileme ve iptal işlemlerini App Store hesabından yönetebilirsin.';
+
+  @override
+  String get iosPacksAppleSubscription => 'Apple aboneliği';
+
+  @override
+  String get iosPacksHeroDescription =>
+      'Faturalama dönemini seç, fiyatı incele ve güvenli App Store satın alma akışıyla devam et.';
+
+  @override
+  String iosPacksStoreProductUnavailable(Object diagnostic) {
+    return 'Bu App Store ürünü kullanılamıyor. $diagnostic';
+  }
+
+  @override
+  String get iosPacksPurchaseStartFailed =>
+      'App Store satın alma isteği başlatılamadı.';
+
+  @override
+  String iosPacksPurchaseFailed(Object error) {
+    return 'App Store satın alma hatası: $error';
+  }
+
+  @override
+  String get iosPacksRestoreStarted =>
+      'Apple satın alımları geri yükleniyor...';
+
+  @override
+  String iosPacksRestoreFailed(Object error) {
+    return 'Geri yükleme başlatılamadı: $error';
+  }
+
+  @override
+  String get iosPacksRestoreSuccess => 'Apple aboneliği geri yüklendi.';
+
+  @override
+  String get iosPacksPurchaseSuccess => 'Apple aboneliği başarıyla alındı.';
+
+  @override
+  String get iosPacksPurchaseUnknownError =>
+      'App Store satın alma işlemi başarısız oldu.';
+
+  @override
+  String get iosPacksPurchaseCancelled => 'Satın alma işlemi iptal edildi.';
+
+  @override
+  String get iosPacksUnavailableInStore => 'App Store\'da kullanılamıyor';
+
+  @override
+  String get iosPacksDetailsButton => 'Paket detayları';
+
+  @override
+  String get iosPacksNoProductsForType => 'Bu plan tipi için ürün bulunamadı.';
+
+  @override
+  String get iosPacksSelectedPlan => 'Seçilen plan';
+
+  @override
+  String get iosPacksActivationInfo =>
+      'Apple satın alımından hemen sonra aktif olur';
+
+  @override
+  String get iosPacksAgreementDetails => 'Detaylar';
+
+  @override
+  String get iosPacksAppointmentPackageInfo =>
+      'Randevu işlemleri paket erişimi kullanır. SMS bakiyesi yalnızca SMS veya hatırlatma gönderimi etkinse tüketilir.';
+
+  @override
+  String get iosPacksLegalConsent =>
+      'Devam ederek Kullanım Koşulları ve Gizlilik Politikası\'nı kabul etmiş olursun.';
+
+  @override
+  String get iosPacksTermsOfUse => 'Kullanım Koşulları';
+
+  @override
+  String get iosPacksPrivacyPolicy => 'Gizlilik Politikası';
+
+  @override
+  String get iosPacksStoreUnavailableNow =>
+      'App Store ürünleri şu anda kullanılamıyor.';
+
+  @override
+  String get iosPacksRestoreInProgress => 'Geri yükleniyor…';
+
+  @override
+  String get iosPacksRestore => 'Geri Yükle';
 
   @override
   String get ordersTitle => 'Siparişler';

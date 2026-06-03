@@ -168,7 +168,7 @@
     }
   },
   "appointmentsFilterSubtitle": "Müşteri, tarih ve saat aralığına göre filtreleyin",
-  "appointmentsPackageRequired": "Randevu işlemleri için paket alınız.",
+  "appointmentsPackageRequired": "Randevu işlemleri için aktif paket veya abonelik gereklidir. Bu kontrol SMS gönderimiyle aynı değildir; SMS bakiyesi yalnızca SMS ya da hatırlatma gönderildiğinde kullanılır.",
   "appointmentsSessionMissingLogin": "Oturum bulunamadı. Lütfen tekrar giriş yapın.",
   "appointmentsCountriesFetchFailedStatus": "Ülkeler alınamadı (HTTP {status}).",
   "@appointmentsCountriesFetchFailedStatus": {
@@ -548,6 +548,104 @@
   "smsPacksSubmitting": "Gönderiliyor...",
   "smsPacksAndroidOnlyTitle": "Satın Alma Android Uygulamasında",
   "smsPacksAndroidOnlyMessage": "SMS paket satın alma adımları yalnızca Android uygulamasında kullanılabilir. Bu cihazda paketleri görüntüleyebilirsiniz.",
+  "iosPacksPurchaseStreamError": "Apple satın alma akışı izlenemedi: {error}",
+  "@iosPacksPurchaseStreamError": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "iosPacksPackIdMissing": "Bu paket için ios_product_id bulunamadı.",
+  "iosPacksPackDetailsLoadFailed": "Paket detayları alınamadı: {error}",
+  "@iosPacksPackDetailsLoadFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "iosPacksPackDetailsTitle": "{name} Paket Detayları",
+  "@iosPacksPackDetailsTitle": {
+    "placeholders": {
+      "name": {}
+    }
+  },
+  "iosPacksNoPackDetails": "Bu paket için detay bulunamadı.",
+  "iosPacksInvalidLink": "Geçersiz bağlantı: {value}",
+  "@iosPacksInvalidLink": {
+    "placeholders": {
+      "value": {}
+    }
+  },
+  "iosPacksLinkOpenFailed": "Bağlantı açılamadı: {value}",
+  "@iosPacksLinkOpenFailed": {
+    "placeholders": {
+      "value": {}
+    }
+  },
+  "iosPacksStoreKitUnavailable": "StoreKit kullanılamıyor. Cihaz veya App Store hesabı hazır olmayabilir.",
+  "iosPacksStoreProductNotFound": "App Store \"{productId}\" ürünü için notFound döndürdü.",
+  "@iosPacksStoreProductNotFound": {
+    "placeholders": {
+      "productId": {}
+    }
+  },
+  "iosPacksStoreProductMissing": "\"{productId}\" ürünü App Store'dan yüklenemedi.",
+  "@iosPacksStoreProductMissing": {
+    "placeholders": {
+      "productId": {}
+    }
+  },
+  "iosPacksPlanSparkHeadline": "Temiz ve sade bir başlangıç",
+  "iosPacksPlanBoostHeadline": "Daha esnek bir akışla hızlan",
+  "iosPacksPlanPowerHeadline": "Daha yoğun bir takvim için hazır",
+  "iosPacksPlanPrimeHeadline": "Premium akışın için tam erişim",
+  "iosPacksPlanDefaultHeadline": "Akışına uyan planı seç",
+  "iosPacksSubscriptionGeneric": "abonelik",
+  "iosPacksBenefitAppointmentAccess": "Randevu işlemleri {duration} planın boyunca aktif kalır.",
+  "@iosPacksBenefitAppointmentAccess": {
+    "placeholders": {
+      "duration": {}
+    }
+  },
+  "iosPacksBenefitSecureCheckout": "Güvenli ödeme doğrudan Apple tarafından yönetilir.",
+  "iosPacksBenefitManageSubscription": "Yenileme ve iptal işlemlerini App Store hesabından yönetebilirsin.",
+  "iosPacksAppleSubscription": "Apple aboneliği",
+  "iosPacksHeroDescription": "Faturalama dönemini seç, fiyatı incele ve güvenli App Store satın alma akışıyla devam et.",
+  "iosPacksStoreProductUnavailable": "Bu App Store ürünü kullanılamıyor. {diagnostic}",
+  "@iosPacksStoreProductUnavailable": {
+    "placeholders": {
+      "diagnostic": {}
+    }
+  },
+  "iosPacksPurchaseStartFailed": "App Store satın alma isteği başlatılamadı.",
+  "iosPacksPurchaseFailed": "App Store satın alma hatası: {error}",
+  "@iosPacksPurchaseFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "iosPacksRestoreStarted": "Apple satın alımları geri yükleniyor...",
+  "iosPacksRestoreFailed": "Geri yükleme başlatılamadı: {error}",
+  "@iosPacksRestoreFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "iosPacksRestoreSuccess": "Apple aboneliği geri yüklendi.",
+  "iosPacksPurchaseSuccess": "Apple aboneliği başarıyla alındı.",
+  "iosPacksPurchaseUnknownError": "App Store satın alma işlemi başarısız oldu.",
+  "iosPacksPurchaseCancelled": "Satın alma işlemi iptal edildi.",
+  "iosPacksUnavailableInStore": "App Store'da kullanılamıyor",
+  "iosPacksDetailsButton": "Paket detayları",
+  "iosPacksNoProductsForType": "Bu plan tipi için ürün bulunamadı.",
+  "iosPacksSelectedPlan": "Seçilen plan",
+  "iosPacksActivationInfo": "Apple satın alımından hemen sonra aktif olur",
+  "iosPacksAgreementDetails": "Detaylar",
+  "iosPacksAppointmentPackageInfo": "Randevu işlemleri paket erişimi kullanır. SMS bakiyesi yalnızca SMS veya hatırlatma gönderimi etkinse tüketilir.",
+  "iosPacksLegalConsent": "Devam ederek Kullanım Koşulları ve Gizlilik Politikası'nı kabul etmiş olursun.",
+  "iosPacksTermsOfUse": "Kullanım Koşulları",
+  "iosPacksPrivacyPolicy": "Gizlilik Politikası",
+  "iosPacksStoreUnavailableNow": "App Store ürünleri şu anda kullanılamıyor.",
+  "iosPacksRestoreInProgress": "Geri yükleniyor…",
+  "iosPacksRestore": "Geri Yükle",
   "ordersTitle": "Siparişler",
   "ordersSessionExpired": "Oturum süresi doldu, lütfen tekrar giriş yapın.",
   "ordersSessionMissing": "Oturum bulunamadı. Lütfen tekrar giriş yapın.",

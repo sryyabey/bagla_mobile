@@ -263,6 +263,7 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
   bool _loadingStatuses = false;
   bool _showFilters = false;
   bool _hasUserPack = true;
+  String _remainingSms = '-';
 
   String? _error;
   String? _slotsError;
@@ -292,6 +293,7 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
         widget.initialQuickTime != null) _showQuickForm = true;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _fetchAppointments();
+      _refreshRemainingSms();
       _fetchCountries();
       _fetchStatuses();
       if (_showQuickForm && _quickDateCtrl.text.trim().isNotEmpty)
@@ -519,6 +521,56 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
     return s;
   }
 
+  String _appointmentDeliveryResultMessage({
+    required bool noSms,
+    required bool noReminder,
+  }) {
+    if (noSms && noReminder) {
+      return 'No SMS will be sent for this appointment. SMS balance will not be deducted.';
+    }
+    if (!noSms && !noReminder) {
+      return 'SMS balance is deducted only when confirmation SMS or reminder SMS is actually sent.';
+    }
+    if (!noSms) {
+      return 'SMS balance is deducted only if the confirmation SMS is sent.';
+    }
+    return 'SMS balance is deducted only if the reminder SMS is sent.';
+  }
+
+  Widget _buildSmsConsumptionCallout({
+    required bool noSms,
+    required bool noReminder,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFFFBEB),
+        borderRadius: BorderRadius.circular(_T.r10),
+        border: Border.all(color: const Color(0xFFFCD34D)),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Icon(Icons.info_outline, color: _T.warning, size: 16),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              _appointmentDeliveryResultMessage(
+                noSms: noSms,
+                noReminder: noReminder,
+              ),
+              style: const TextStyle(
+                fontSize: 12,
+                color: _T.inkSecondary,
+                height: 1.45,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Color _statusColor(String? hex) {
     if (hex == null) return Colors.blueGrey;
     final cleaned = hex.replaceAll('#', '');
@@ -597,6 +649,43 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
   void _navigateToDashboard() {
     Navigator.of(context).pushReplacement(
         MaterialPageRoute(builder: (_) => const DashboardPage()));
+  }
+
+  Future<void> _refreshRemainingSms() async {
+    final token = await _getToken();
+    if (token == null || token.isEmpty) {
+      return;
+    }
+    try {
+      final resp = await authGet(
+        Uri.parse('$apiBaseUrl/api/dashboard'),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Accept': 'application/json'
+        },
+      );
+      if (resp.statusCode != 200) {
+        return;
+      }
+      final decoded = jsonDecode(resp.body);
+      final data = decoded['data'] ?? decoded;
+      final packInfo = data is Map<String, dynamic>
+          ? data['pack_info']
+          : (data is Map ? Map<String, dynamic>.from(data)['pack_info'] : null);
+      final remaining =
+          packInfo is Map ? packInfo['remaining_sms']?.toString() : null;
+      if (!mounted || remaining == null || remaining.isEmpty) {
+        return;
+      }
+      setState(() {
+        _remainingSms = remaining;
+      });
+    } catch (_) {}
+  }
+
+  Future<void> _refreshAppointmentsPage() async {
+    await _fetchAppointments();
+    await _refreshRemainingSms();
   }
 
   // ── API calls ───────────────────────────────
@@ -998,8 +1087,12 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
           }));
       final env = _parseEnvelope(resp);
       if (env.isSuccess) {
-        _showSnack(loc.appointmentsCreateSuccess, success: true);
+        _showSnack(
+          '${loc.appointmentsCreateSuccess} ${_appointmentDeliveryResultMessage(noSms: _quickNoSms, noReminder: _quickNoReminder)}',
+          success: true,
+        );
         await _fetchAppointments();
+        await _refreshRemainingSms();
         _resetQuickForm();
       } else {
         final h = await _handleIssueByCode(env,
@@ -1096,8 +1189,12 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
           }));
       final env = _parseEnvelope(resp);
       if (env.isSuccess) {
-        _showSnack(loc.appointmentsUpdateSuccess, success: true);
+        _showSnack(
+          '${loc.appointmentsUpdateSuccess} ${_appointmentDeliveryResultMessage(noSms: noSms, noReminder: noReminder)}',
+          success: true,
+        );
         await _fetchAppointments();
+        await _refreshRemainingSms();
       } else {
         final h = await _handleIssueByCode(env);
         if (!h)
@@ -1180,8 +1277,12 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
           }));
       final env = _parseEnvelope(resp);
       if (env.isSuccess) {
-        _showSnack(loc.appointmentsRebookSuccess, success: true);
+        _showSnack(
+          '${loc.appointmentsRebookSuccess} ${_appointmentDeliveryResultMessage(noSms: noSms, noReminder: noReminder)}',
+          success: true,
+        );
         await _fetchAppointments();
+        await _refreshRemainingSms();
       } else {
         final h = await _handleIssueByCode(env);
         if (!h)
@@ -1336,16 +1437,36 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
                   ],
                 ),
               ),
-              _iconBtn(Icons.refresh, onTap: _fetchAppointments, light: true),
+              _iconBtn(
+                Icons.refresh,
+                onTap: _refreshAppointmentsPage,
+                light: true,
+              ),
             ],
           ),
           const SizedBox(height: 16),
-          Row(
+          Wrap(
+            spacing: 10,
+            runSpacing: 10,
             children: [
-              _statChip(loc.today, '$todayCount', Icons.today_outlined),
-              const SizedBox(width: 10),
-              _statChip(
-                  loc.total, '$totalCount', Icons.calendar_month_outlined),
+              SizedBox(
+                width: 110,
+                child:
+                    _statChip(loc.today, '$todayCount', Icons.today_outlined),
+              ),
+              SizedBox(
+                width: 110,
+                child: _statChip(
+                    loc.total, '$totalCount', Icons.calendar_month_outlined),
+              ),
+              SizedBox(
+                width: 140,
+                child: _statChip(
+                  loc.dashboardRemainingSms,
+                  _remainingSms,
+                  Icons.sms_outlined,
+                ),
+              ),
             ],
           ),
           const SizedBox(height: 16),
@@ -1380,7 +1501,7 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
             _headerBtn(
               label: loc.refreshList,
               icon: Icons.sync,
-              onTap: _fetchAppointments,
+              onTap: _refreshAppointmentsPage,
             ),
           ]),
         ],
@@ -1475,6 +1596,7 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     // Avatar with status color accent
                     Container(
@@ -1504,28 +1626,30 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
                         ],
                       ),
                     ),
-                    // Action buttons
-                    Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        _cardActionBtn(
-                            Icons.person_search_outlined,
-                            _T.primary,
-                            loc.appointmentsCustomerPreviewTooltip,
-                            () => _showCustomerInfo(appt)),
-                        const SizedBox(width: 6),
-                        _cardActionBtn(
-                            Icons.event_repeat_outlined,
-                            const Color(0xFF7C3AED),
-                            loc.appointmentsRebookTooltip,
-                            () => _showRebookSheet(appt)),
-                        const SizedBox(width: 6),
-                        _cardActionBtn(
-                            Icons.edit_outlined,
-                            _T.inkSecondary,
-                            loc.appointmentsEditTooltip,
-                            () => _showEditSheet(appt)),
-                      ],
+                    const SizedBox(width: 8),
+                    Flexible(
+                      child: Wrap(
+                        spacing: 6,
+                        runSpacing: 6,
+                        alignment: WrapAlignment.end,
+                        children: [
+                          _cardActionBtn(
+                              Icons.person_search_outlined,
+                              _T.primary,
+                              loc.appointmentsCustomerPreviewTooltip,
+                              () => _showCustomerInfo(appt)),
+                          _cardActionBtn(
+                              Icons.event_repeat_outlined,
+                              const Color(0xFF7C3AED),
+                              loc.appointmentsRebookTooltip,
+                              () => _showRebookSheet(appt)),
+                          _cardActionBtn(
+                              Icons.edit_outlined,
+                              _T.inkSecondary,
+                              loc.appointmentsEditTooltip,
+                              () => _showEditSheet(appt)),
+                        ],
+                      ),
                     ),
                   ],
                 ),
@@ -1536,15 +1660,15 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
                   decoration: BoxDecoration(
                       color: _T.surfaceAlt,
                       borderRadius: BorderRadius.circular(_T.r8)),
-                  child: Row(
+                  child: Wrap(
+                    spacing: 16,
+                    runSpacing: 8,
                     children: [
                       _metaItem(Icons.calendar_today_outlined,
                           _formatDate(appt['date'])),
-                      const SizedBox(width: 16),
                       _metaItem(Icons.access_time_outlined,
                           _formatTime(appt['time'])),
                       if (phone != null && phone.isNotEmpty) ...[
-                        const SizedBox(width: 16),
                         _metaItem(Icons.phone_outlined, phone),
                       ],
                     ],
@@ -2041,6 +2165,11 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
             onChanged: (v) => setState(() {
                   _quickNoReminder = v;
                 })),
+        const SizedBox(height: 10),
+        _buildSmsConsumptionCallout(
+          noSms: _quickNoSms,
+          noReminder: _quickNoReminder,
+        ),
         const SizedBox(height: 14),
         _primaryBtn(
           label: _savingQuick
@@ -2355,6 +2484,11 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
                         onChanged: (v) => setModal(() {
                               localNoReminder = v;
                             })),
+                    const SizedBox(height: 10),
+                    _buildSmsConsumptionCallout(
+                      noSms: localNoSms,
+                      noReminder: localNoReminder,
+                    ),
                     const SizedBox(height: 16),
                     _primaryBtn(
                       label: loc.save,
@@ -2879,6 +3013,11 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
                       onChanged: (v) => setModal(() {
                             localNoReminder = v;
                           })),
+                  const SizedBox(height: 10),
+                  _buildSmsConsumptionCallout(
+                    noSms: localNoSms,
+                    noReminder: localNoReminder,
+                  ),
                   const SizedBox(height: 16),
                   _primaryBtn(
                     label: loc.rescheduleAppointment,
@@ -3134,14 +3273,14 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
                 icon: const Icon(Icons.home_outlined, color: _T.inkSecondary),
                 tooltip: loc.appointmentsHomeTooltip),
           IconButton(
-              onPressed: _fetchAppointments,
+              onPressed: _refreshAppointmentsPage,
               icon: const Icon(Icons.refresh, color: _T.inkSecondary),
               tooltip: loc.refresh),
           const SizedBox(width: 4),
         ],
       ),
       body: RefreshIndicator(
-        onRefresh: _fetchAppointments,
+        onRefresh: _refreshAppointmentsPage,
         color: _T.primary,
         child: SingleChildScrollView(
           physics: const AlwaysScrollableScrollPhysics(),

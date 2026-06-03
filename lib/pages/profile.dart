@@ -13,6 +13,7 @@ import '../widgets/main_nav.dart';
 import 'package:bagla_mobile/l10n/app_localizations.dart';
 import '../main.dart';
 import '../login_page.dart';
+import '../dashboard_page.dart';
 
 class ProfilePage extends StatefulWidget {
   final bool showBottomNav;
@@ -477,12 +478,12 @@ class _ProfilePageState extends State<ProfilePage> {
         color: Colors.white,
         borderRadius: BorderRadius.circular(14),
         border: Border.all(color: Colors.grey.shade200),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.03),
-              blurRadius: 10,
-              offset: const Offset(0, 6),
-            )
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 10,
+            offset: const Offset(0, 6),
+          )
         ],
       ),
       padding: padding,
@@ -713,8 +714,8 @@ class _ProfilePageState extends State<ProfilePage> {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: _primaryColor,
                     foregroundColor: Colors.white,
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 20, vertical: 14),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
@@ -753,7 +754,8 @@ class _ProfilePageState extends State<ProfilePage> {
   Widget _buildPasswordForm() {
     return _sectionCard(
       title: loc.profilePasswordSectionTitle,
-      subtitle: _passwordSavedRecently ? loc.profilePasswordUpdatedSubtitle : null,
+      subtitle:
+          _passwordSavedRecently ? loc.profilePasswordUpdatedSubtitle : null,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -783,8 +785,8 @@ class _ProfilePageState extends State<ProfilePage> {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: _primaryColor,
                     foregroundColor: Colors.white,
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 20, vertical: 14),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
@@ -871,6 +873,17 @@ class _ProfilePageState extends State<ProfilePage> {
           style: const TextStyle(fontWeight: FontWeight.w700),
         ),
         actions: [
+          IconButton(
+            tooltip: loc.dashboardHome,
+            icon: const Icon(Icons.home_outlined),
+            onPressed: () {
+              Navigator.pushAndRemoveUntil(
+                context,
+                MaterialPageRoute(builder: (_) => const DashboardPage()),
+                (route) => false,
+              );
+            },
+          ),
           Padding(
             padding: const EdgeInsets.only(right: 12),
             child: DropdownButtonHideUnderline(

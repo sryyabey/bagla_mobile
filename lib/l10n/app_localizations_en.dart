@@ -531,7 +531,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get appointmentsPackageRequired =>
-      'Please purchase a package for appointment actions.';
+      'An active package or subscription is required for appointment actions. This check is separate from SMS sending; SMS balance is only used when an SMS or reminder is actually sent.';
 
   @override
   String get appointmentsSessionMissingLogin =>
@@ -1585,6 +1585,170 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get smsPacksAndroidOnlyMessage =>
       'SMS package purchase steps are available only in the Android app. You can view packages on this device.';
+
+  @override
+  String iosPacksPurchaseStreamError(Object error) {
+    return 'Apple purchase flow could not be monitored: $error';
+  }
+
+  @override
+  String get iosPacksPackIdMissing =>
+      'No ios_product_id was found for this package.';
+
+  @override
+  String iosPacksPackDetailsLoadFailed(Object error) {
+    return 'Package details could not be loaded: $error';
+  }
+
+  @override
+  String iosPacksPackDetailsTitle(Object name) {
+    return '$name Package Details';
+  }
+
+  @override
+  String get iosPacksNoPackDetails => 'No details were found for this package.';
+
+  @override
+  String iosPacksInvalidLink(Object value) {
+    return 'Invalid link: $value';
+  }
+
+  @override
+  String iosPacksLinkOpenFailed(Object value) {
+    return 'Link could not be opened: $value';
+  }
+
+  @override
+  String get iosPacksStoreKitUnavailable =>
+      'StoreKit unavailable. Device/App Store account may not be ready.';
+
+  @override
+  String iosPacksStoreProductNotFound(Object productId) {
+    return 'App Store returned notFound for \"$productId\".';
+  }
+
+  @override
+  String iosPacksStoreProductMissing(Object productId) {
+    return 'Product \"$productId\" was not loaded from App Store.';
+  }
+
+  @override
+  String get iosPacksPlanSparkHeadline => 'Start clean and simple';
+
+  @override
+  String get iosPacksPlanBoostHeadline => 'Move faster with more flexibility';
+
+  @override
+  String get iosPacksPlanPowerHeadline => 'Built for a busier schedule';
+
+  @override
+  String get iosPacksPlanPrimeHeadline => 'Full access for your premium flow';
+
+  @override
+  String get iosPacksPlanDefaultHeadline =>
+      'Choose the plan that fits your workflow';
+
+  @override
+  String get iosPacksSubscriptionGeneric => 'subscription';
+
+  @override
+  String iosPacksBenefitAppointmentAccess(Object duration) {
+    return 'Appointment actions stay active with your $duration plan.';
+  }
+
+  @override
+  String get iosPacksBenefitSecureCheckout =>
+      'Secure checkout is handled directly by Apple.';
+
+  @override
+  String get iosPacksBenefitManageSubscription =>
+      'Manage renewal and cancellation from your App Store account.';
+
+  @override
+  String get iosPacksAppleSubscription => 'Apple subscription';
+
+  @override
+  String get iosPacksHeroDescription =>
+      'Pick your billing period, review the price, and continue with a secure App Store purchase.';
+
+  @override
+  String iosPacksStoreProductUnavailable(Object diagnostic) {
+    return 'This App Store product is not available. $diagnostic';
+  }
+
+  @override
+  String get iosPacksPurchaseStartFailed =>
+      'The App Store purchase request could not be started.';
+
+  @override
+  String iosPacksPurchaseFailed(Object error) {
+    return 'App Store purchase error: $error';
+  }
+
+  @override
+  String get iosPacksRestoreStarted => 'Restoring Apple purchases...';
+
+  @override
+  String iosPacksRestoreFailed(Object error) {
+    return 'Restore could not be started: $error';
+  }
+
+  @override
+  String get iosPacksRestoreSuccess => 'Apple subscription restored.';
+
+  @override
+  String get iosPacksPurchaseSuccess =>
+      'Apple subscription purchased successfully.';
+
+  @override
+  String get iosPacksPurchaseUnknownError => 'The App Store purchase failed.';
+
+  @override
+  String get iosPacksPurchaseCancelled => 'Purchase cancelled.';
+
+  @override
+  String get iosPacksUnavailableInStore => 'Unavailable in App Store';
+
+  @override
+  String get iosPacksDetailsButton => 'Package details';
+
+  @override
+  String get iosPacksNoProductsForType =>
+      'No products were found for this plan type.';
+
+  @override
+  String get iosPacksSelectedPlan => 'Selected plan';
+
+  @override
+  String get iosPacksActivationInfo =>
+      'Instant activation after Apple purchase';
+
+  @override
+  String get iosPacksAgreementDetails => 'Details';
+
+  @override
+  String get iosPacksAppointmentPackageInfo =>
+      'Appointment actions use package access. SMS balance is only consumed when SMS or reminder sending is enabled.';
+
+  @override
+  String get iosPacksLegalConsent =>
+      'By continuing, you agree to the Terms of Use and Privacy Policy.';
+
+  @override
+  String get iosPacksTermsOfUse => 'Terms of Use';
+
+  @override
+  String get iosPacksPrivacyPolicy => 'Privacy Policy';
+
+  @override
+  String get iosPacksStoreUnavailableNow =>
+      'App Store products are not available right now.';
+
+  @override
+  String get iosPacksRestoreInProgress => 'Restoring…';
+
+  @override
+  String get iosPacksRestore => 'Restore';
 
   @override
   String get ordersTitle => 'Orders';

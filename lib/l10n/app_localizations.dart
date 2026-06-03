@@ -1049,7 +1049,7 @@ abstract class AppLocalizations {
   /// No description provided for @appointmentsPackageRequired.
   ///
   /// In en, this message translates to:
-  /// **'Please purchase a package for appointment actions.'**
+  /// **'An active package or subscription is required for appointment actions. This check is separate from SMS sending; SMS balance is only used when an SMS or reminder is actually sent.'**
   String get appointmentsPackageRequired;
 
   /// No description provided for @appointmentsSessionMissingLogin.
@@ -2929,6 +2929,264 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'SMS package purchase steps are available only in the Android app. You can view packages on this device.'**
   String get smsPacksAndroidOnlyMessage;
+
+  /// No description provided for @iosPacksPurchaseStreamError.
+  ///
+  /// In en, this message translates to:
+  /// **'Apple purchase flow could not be monitored: {error}'**
+  String iosPacksPurchaseStreamError(Object error);
+
+  /// No description provided for @iosPacksPackIdMissing.
+  ///
+  /// In en, this message translates to:
+  /// **'No ios_product_id was found for this package.'**
+  String get iosPacksPackIdMissing;
+
+  /// No description provided for @iosPacksPackDetailsLoadFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Package details could not be loaded: {error}'**
+  String iosPacksPackDetailsLoadFailed(Object error);
+
+  /// No description provided for @iosPacksPackDetailsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} Package Details'**
+  String iosPacksPackDetailsTitle(Object name);
+
+  /// No description provided for @iosPacksNoPackDetails.
+  ///
+  /// In en, this message translates to:
+  /// **'No details were found for this package.'**
+  String get iosPacksNoPackDetails;
+
+  /// No description provided for @iosPacksInvalidLink.
+  ///
+  /// In en, this message translates to:
+  /// **'Invalid link: {value}'**
+  String iosPacksInvalidLink(Object value);
+
+  /// No description provided for @iosPacksLinkOpenFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Link could not be opened: {value}'**
+  String iosPacksLinkOpenFailed(Object value);
+
+  /// No description provided for @iosPacksStoreKitUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'StoreKit unavailable. Device/App Store account may not be ready.'**
+  String get iosPacksStoreKitUnavailable;
+
+  /// No description provided for @iosPacksStoreProductNotFound.
+  ///
+  /// In en, this message translates to:
+  /// **'App Store returned notFound for \"{productId}\".'**
+  String iosPacksStoreProductNotFound(Object productId);
+
+  /// No description provided for @iosPacksStoreProductMissing.
+  ///
+  /// In en, this message translates to:
+  /// **'Product \"{productId}\" was not loaded from App Store.'**
+  String iosPacksStoreProductMissing(Object productId);
+
+  /// No description provided for @iosPacksPlanSparkHeadline.
+  ///
+  /// In en, this message translates to:
+  /// **'Start clean and simple'**
+  String get iosPacksPlanSparkHeadline;
+
+  /// No description provided for @iosPacksPlanBoostHeadline.
+  ///
+  /// In en, this message translates to:
+  /// **'Move faster with more flexibility'**
+  String get iosPacksPlanBoostHeadline;
+
+  /// No description provided for @iosPacksPlanPowerHeadline.
+  ///
+  /// In en, this message translates to:
+  /// **'Built for a busier schedule'**
+  String get iosPacksPlanPowerHeadline;
+
+  /// No description provided for @iosPacksPlanPrimeHeadline.
+  ///
+  /// In en, this message translates to:
+  /// **'Full access for your premium flow'**
+  String get iosPacksPlanPrimeHeadline;
+
+  /// No description provided for @iosPacksPlanDefaultHeadline.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose the plan that fits your workflow'**
+  String get iosPacksPlanDefaultHeadline;
+
+  /// No description provided for @iosPacksSubscriptionGeneric.
+  ///
+  /// In en, this message translates to:
+  /// **'subscription'**
+  String get iosPacksSubscriptionGeneric;
+
+  /// No description provided for @iosPacksBenefitAppointmentAccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Appointment actions stay active with your {duration} plan.'**
+  String iosPacksBenefitAppointmentAccess(Object duration);
+
+  /// No description provided for @iosPacksBenefitSecureCheckout.
+  ///
+  /// In en, this message translates to:
+  /// **'Secure checkout is handled directly by Apple.'**
+  String get iosPacksBenefitSecureCheckout;
+
+  /// No description provided for @iosPacksBenefitManageSubscription.
+  ///
+  /// In en, this message translates to:
+  /// **'Manage renewal and cancellation from your App Store account.'**
+  String get iosPacksBenefitManageSubscription;
+
+  /// No description provided for @iosPacksAppleSubscription.
+  ///
+  /// In en, this message translates to:
+  /// **'Apple subscription'**
+  String get iosPacksAppleSubscription;
+
+  /// No description provided for @iosPacksHeroDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick your billing period, review the price, and continue with a secure App Store purchase.'**
+  String get iosPacksHeroDescription;
+
+  /// No description provided for @iosPacksStoreProductUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'This App Store product is not available. {diagnostic}'**
+  String iosPacksStoreProductUnavailable(Object diagnostic);
+
+  /// No description provided for @iosPacksPurchaseStartFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'The App Store purchase request could not be started.'**
+  String get iosPacksPurchaseStartFailed;
+
+  /// No description provided for @iosPacksPurchaseFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'App Store purchase error: {error}'**
+  String iosPacksPurchaseFailed(Object error);
+
+  /// No description provided for @iosPacksRestoreStarted.
+  ///
+  /// In en, this message translates to:
+  /// **'Restoring Apple purchases...'**
+  String get iosPacksRestoreStarted;
+
+  /// No description provided for @iosPacksRestoreFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Restore could not be started: {error}'**
+  String iosPacksRestoreFailed(Object error);
+
+  /// No description provided for @iosPacksRestoreSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Apple subscription restored.'**
+  String get iosPacksRestoreSuccess;
+
+  /// No description provided for @iosPacksPurchaseSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Apple subscription purchased successfully.'**
+  String get iosPacksPurchaseSuccess;
+
+  /// No description provided for @iosPacksPurchaseUnknownError.
+  ///
+  /// In en, this message translates to:
+  /// **'The App Store purchase failed.'**
+  String get iosPacksPurchaseUnknownError;
+
+  /// No description provided for @iosPacksPurchaseCancelled.
+  ///
+  /// In en, this message translates to:
+  /// **'Purchase cancelled.'**
+  String get iosPacksPurchaseCancelled;
+
+  /// No description provided for @iosPacksUnavailableInStore.
+  ///
+  /// In en, this message translates to:
+  /// **'Unavailable in App Store'**
+  String get iosPacksUnavailableInStore;
+
+  /// No description provided for @iosPacksDetailsButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Package details'**
+  String get iosPacksDetailsButton;
+
+  /// No description provided for @iosPacksNoProductsForType.
+  ///
+  /// In en, this message translates to:
+  /// **'No products were found for this plan type.'**
+  String get iosPacksNoProductsForType;
+
+  /// No description provided for @iosPacksSelectedPlan.
+  ///
+  /// In en, this message translates to:
+  /// **'Selected plan'**
+  String get iosPacksSelectedPlan;
+
+  /// No description provided for @iosPacksActivationInfo.
+  ///
+  /// In en, this message translates to:
+  /// **'Instant activation after Apple purchase'**
+  String get iosPacksActivationInfo;
+
+  /// No description provided for @iosPacksAgreementDetails.
+  ///
+  /// In en, this message translates to:
+  /// **'Details'**
+  String get iosPacksAgreementDetails;
+
+  /// No description provided for @iosPacksAppointmentPackageInfo.
+  ///
+  /// In en, this message translates to:
+  /// **'Appointment actions use package access. SMS balance is only consumed when SMS or reminder sending is enabled.'**
+  String get iosPacksAppointmentPackageInfo;
+
+  /// No description provided for @iosPacksLegalConsent.
+  ///
+  /// In en, this message translates to:
+  /// **'By continuing, you agree to the Terms of Use and Privacy Policy.'**
+  String get iosPacksLegalConsent;
+
+  /// No description provided for @iosPacksTermsOfUse.
+  ///
+  /// In en, this message translates to:
+  /// **'Terms of Use'**
+  String get iosPacksTermsOfUse;
+
+  /// No description provided for @iosPacksPrivacyPolicy.
+  ///
+  /// In en, this message translates to:
+  /// **'Privacy Policy'**
+  String get iosPacksPrivacyPolicy;
+
+  /// No description provided for @iosPacksStoreUnavailableNow.
+  ///
+  /// In en, this message translates to:
+  /// **'App Store products are not available right now.'**
+  String get iosPacksStoreUnavailableNow;
+
+  /// No description provided for @iosPacksRestoreInProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'Restoring…'**
+  String get iosPacksRestoreInProgress;
+
+  /// No description provided for @iosPacksRestore.
+  ///
+  /// In en, this message translates to:
+  /// **'Restore'**
+  String get iosPacksRestore;
 
   /// No description provided for @ordersTitle.
   ///

@@ -168,7 +168,7 @@
     }
   },
   "appointmentsFilterSubtitle": "Filter by customer, date and time range",
-  "appointmentsPackageRequired": "Please purchase a package for appointment actions.",
+  "appointmentsPackageRequired": "An active package or subscription is required for appointment actions. This check is separate from SMS sending; SMS balance is only used when an SMS or reminder is actually sent.",
   "appointmentsSessionMissingLogin": "Session not found. Please log in again.",
   "appointmentsCountriesFetchFailedStatus": "Countries could not be fetched (HTTP {status}).",
   "@appointmentsCountriesFetchFailedStatus": {
@@ -548,6 +548,104 @@
   "smsPacksSubmitting": "Submitting...",
   "smsPacksAndroidOnlyTitle": "Purchases in Android App",
   "smsPacksAndroidOnlyMessage": "SMS package purchase steps are available only in the Android app. You can view packages on this device.",
+  "iosPacksPurchaseStreamError": "Apple purchase flow could not be monitored: {error}",
+  "@iosPacksPurchaseStreamError": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "iosPacksPackIdMissing": "No ios_product_id was found for this package.",
+  "iosPacksPackDetailsLoadFailed": "Package details could not be loaded: {error}",
+  "@iosPacksPackDetailsLoadFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "iosPacksPackDetailsTitle": "{name} Package Details",
+  "@iosPacksPackDetailsTitle": {
+    "placeholders": {
+      "name": {}
+    }
+  },
+  "iosPacksNoPackDetails": "No details were found for this package.",
+  "iosPacksInvalidLink": "Invalid link: {value}",
+  "@iosPacksInvalidLink": {
+    "placeholders": {
+      "value": {}
+    }
+  },
+  "iosPacksLinkOpenFailed": "Link could not be opened: {value}",
+  "@iosPacksLinkOpenFailed": {
+    "placeholders": {
+      "value": {}
+    }
+  },
+  "iosPacksStoreKitUnavailable": "StoreKit unavailable. Device/App Store account may not be ready.",
+  "iosPacksStoreProductNotFound": "App Store returned notFound for \"{productId}\".",
+  "@iosPacksStoreProductNotFound": {
+    "placeholders": {
+      "productId": {}
+    }
+  },
+  "iosPacksStoreProductMissing": "Product \"{productId}\" was not loaded from App Store.",
+  "@iosPacksStoreProductMissing": {
+    "placeholders": {
+      "productId": {}
+    }
+  },
+  "iosPacksPlanSparkHeadline": "Start clean and simple",
+  "iosPacksPlanBoostHeadline": "Move faster with more flexibility",
+  "iosPacksPlanPowerHeadline": "Built for a busier schedule",
+  "iosPacksPlanPrimeHeadline": "Full access for your premium flow",
+  "iosPacksPlanDefaultHeadline": "Choose the plan that fits your workflow",
+  "iosPacksSubscriptionGeneric": "subscription",
+  "iosPacksBenefitAppointmentAccess": "Appointment actions stay active with your {duration} plan.",
+  "@iosPacksBenefitAppointmentAccess": {
+    "placeholders": {
+      "duration": {}
+    }
+  },
+  "iosPacksBenefitSecureCheckout": "Secure checkout is handled directly by Apple.",
+  "iosPacksBenefitManageSubscription": "Manage renewal and cancellation from your App Store account.",
+  "iosPacksAppleSubscription": "Apple subscription",
+  "iosPacksHeroDescription": "Pick your billing period, review the price, and continue with a secure App Store purchase.",
+  "iosPacksStoreProductUnavailable": "This App Store product is not available. {diagnostic}",
+  "@iosPacksStoreProductUnavailable": {
+    "placeholders": {
+      "diagnostic": {}
+    }
+  },
+  "iosPacksPurchaseStartFailed": "The App Store purchase request could not be started.",
+  "iosPacksPurchaseFailed": "App Store purchase error: {error}",
+  "@iosPacksPurchaseFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "iosPacksRestoreStarted": "Restoring Apple purchases...",
+  "iosPacksRestoreFailed": "Restore could not be started: {error}",
+  "@iosPacksRestoreFailed": {
+    "placeholders": {
+      "error": {}
+    }
+  },
+  "iosPacksRestoreSuccess": "Apple subscription restored.",
+  "iosPacksPurchaseSuccess": "Apple subscription purchased successfully.",
+  "iosPacksPurchaseUnknownError": "The App Store purchase failed.",
+  "iosPacksPurchaseCancelled": "Purchase cancelled.",
+  "iosPacksUnavailableInStore": "Unavailable in App Store",
+  "iosPacksDetailsButton": "Package details",
+  "iosPacksNoProductsForType": "No products were found for this plan type.",
+  "iosPacksSelectedPlan": "Selected plan",
+  "iosPacksActivationInfo": "Instant activation after Apple purchase",
+  "iosPacksAgreementDetails": "Details",
+  "iosPacksAppointmentPackageInfo": "Appointment actions use package access. SMS balance is only consumed when SMS or reminder sending is enabled.",
+  "iosPacksLegalConsent": "By continuing, you agree to the Terms of Use and Privacy Policy.",
+  "iosPacksTermsOfUse": "Terms of Use",
+  "iosPacksPrivacyPolicy": "Privacy Policy",
+  "iosPacksStoreUnavailableNow": "App Store products are not available right now.",
+  "iosPacksRestoreInProgress": "Restoring…",
+  "iosPacksRestore": "Restore",
   "ordersTitle": "Orders",
   "ordersSessionExpired": "Session expired, please log in again.",
   "ordersSessionMissing": "Session not found. Please log in again.",
