@@ -703,6 +703,18 @@
   "workingPrefsHolidayStart": "Start",
   "workingPrefsHolidayEnd": "End",
   "workingPrefsHolidayReason": "Reason (optional)",
+  "workingPrefsTemplatesTitle": "Quick Templates",
+  "workingPrefsTemplatesSubtitle": "Select a template to get started quickly",
+  "workingPrefsTemplatesApply": "Apply",
+  "workingPrefsTemplatesApplied": "{name} template applied.",
+  "@workingPrefsTemplatesApplied": {
+    "placeholders": {
+      "name": { "type": "String" }
+    }
+  },
+  "workingPrefsTemplatesConfirmTitle": "Apply Template",
+  "workingPrefsTemplatesConfirmBody": "Are you sure you want to apply this template? Your current working hours will be replaced.",
+  "workingPrefsTemplatesCancel": "Cancel",
   "smsTemplatesTitle": "SMS Templates",
   "smsTemplatesSessionMissing": "Session not found. Please log in again.",
   "smsTemplatesFetchFailedStatus": "Templates could not be loaded (HTTP {status}).",
@@ -795,5 +807,97 @@
     }
   },
   "dashboardNoActivePackage": "You don't have an active package. Please buy a package for SMS operations.",
-  "dashboardBuyPackage": "Buy Package"
+  "dashboardBuyPackage": "Buy Package",
+
+  "aiProfileBannerBadge": "Bagla AI Assistant",
+  "aiProfileBannerTitle": "Create AI Profile",
+  "aiProfileBannerDesc": "AI writes the profile that turns your followers into appointments — you just share your expertise.",
+  "aiProfileTitle": "AI Profile",
+  "aiProfileAiBadge": "Bagla AI Assistant",
+  "aiProfileSubtitle": "Build your professional profile in seconds",
+  "aiProfileLoading": "Loading AI Profile...",
+  "aiProfileRetry": "Try Again",
+  "aiProfileSave": "Save",
+  "aiProfileSaving": "Saving...",
+  "aiProfileTabProfile": "Profile",
+  "aiProfileTabLinks": "Links",
+  "aiProfileTabTheme": "Theme",
+  "aiProfileRemainingNone": "Done",
+  "aiProfileGenerateTitle": "Generate with AI",
+  "aiProfileGenerateSubtitle": "Fill in your details and let AI create your profile",
+  "aiProfileGenerateButton": "Generate with AI",
+  "aiProfileGenerating": "Generating...",
+  "aiProfileGenerateLocked": "No AI generation credits left",
+  "aiProfileGenerateSuccess": "Your profile is ready!",
+  "aiProfileGenerateSuccessHint": "You can edit the content below",
+  "aiProfileMsgAnalyzing": "Analysing your profile...",
+  "aiProfileMsgPreparing": "Crafting content for your profession...",
+  "aiProfileMsgSelecting": "Picking the best expressions...",
+  "aiProfileMsgSeo": "Applying SEO optimisation...",
+  "aiProfileMsgFinalizing": "Adding the finishing touches...",
+  "aiProfileMsgWait": "This may take a few seconds",
+  "aiProfileFieldProfession": "Profession *",
+  "aiProfileFieldProfessionError": "Please select a profession",
+  "aiProfileFieldExpertise": "Area of Expertise *",
+  "aiProfileFieldExpertiseHint": "Sports nutrition, weight management",
+  "aiProfileFieldExpertiseError": "Required field",
+  "aiProfileFieldAudience": "Target Audience *",
+  "aiProfileFieldAudienceHint": "Adults who want to get fit",
+  "aiProfileFieldAudienceError": "Required field",
+  "aiProfileFieldExperience": "Experience (years)",
+  "aiProfileFieldExperienceHint": "0–50",
+  "aiProfileFieldExperienceError": "Must be between 0 and 50",
+  "aiProfileFieldTone": "Tone",
+  "aiProfileFieldAchievement": "Achievement / Membership",
+  "aiProfileFieldAchievementHint": "Turkish Dietitians Association",
+  "aiProfileFieldNote": "Additional Note",
+  "aiProfileFieldNoteHint": "Keep it short and clear",
+  "aiProfileFieldBio": "Bio / Description (min 20 chars)",
+  "aiProfileFieldFooter": "Footer",
+  "aiProfileSectionSeo": "SEO Settings",
+  "aiProfileFieldSeoTitle": "SEO Title (max 70)",
+  "aiProfileFieldSeoDesc": "Meta Description (max 170)",
+  "aiProfileFieldSeoKeywords": "Keywords — separate with commas (max 300)",
+  "aiProfileLinksSubtitle": "Add URLs and toggle them on or off.",
+  "aiProfileLinksSave": "Save Links",
+  "aiProfileLinksSaving": "Saving...",
+  "aiProfileThemeNoPreview": "Select a theme.",
+  "aiProfileThemeNoUser": "Could not load user info.",
+  "aiProfileReminderTitle": "Content is ready — don't forget to save!",
+  "aiProfileReminderSubtitle": "Tap the Save button in the top right",
+  "aiProfileSaveSuccess": "Saved!",
+  "aiProfileSaveBioMin": "Bio must be at least 20 characters.",
+  "aiProfileThemeApplied": "Theme applied.",
+  "aiProfileLinksSaved": "Links saved.",
+  "aiProfileLimitReached": "Daily AI limit reached.",
+  "aiProfileValidationErrors": "Please fix the errors in the form.",
+  "aiProfileSessionMissing": "Session not found. Please log in again.",
+  "aiProfileRemainingCount": "{count} left",
+  "@aiProfileRemainingCount": {
+    "placeholders": { "count": {} }
+  },
+  "aiProfileFetchError": "Could not load data (HTTP {status}).",
+  "@aiProfileFetchError": {
+    "placeholders": { "status": {} }
+  },
+  "aiProfileConnectionError": "Connection error: {error}",
+  "@aiProfileConnectionError": {
+    "placeholders": { "error": {} }
+  },
+  "aiProfileGenerateHttpError": "Generation failed (HTTP {status}).",
+  "@aiProfileGenerateHttpError": {
+    "placeholders": { "status": {} }
+  },
+  "aiProfileSaveHttpError": "Save failed (HTTP {status}).",
+  "@aiProfileSaveHttpError": {
+    "placeholders": { "status": {} }
+  },
+  "aiProfileThemeHttpError": "Could not save theme (HTTP {status}).",
+  "@aiProfileThemeHttpError": {
+    "placeholders": { "status": {} }
+  },
+  "aiProfileLinksHttpError": "Could not save links (HTTP {status}).",
+  "@aiProfileLinksHttpError": {
+    "placeholders": { "status": {} }
+  }
 }

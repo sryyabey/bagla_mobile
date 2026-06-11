@@ -3530,6 +3530,48 @@ abstract class AppLocalizations {
   /// **'Reason (optional)'**
   String get workingPrefsHolidayReason;
 
+  /// No description provided for @workingPrefsTemplatesTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Quick Templates'**
+  String get workingPrefsTemplatesTitle;
+
+  /// No description provided for @workingPrefsTemplatesSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Select a template to get started quickly'**
+  String get workingPrefsTemplatesSubtitle;
+
+  /// No description provided for @workingPrefsTemplatesApply.
+  ///
+  /// In en, this message translates to:
+  /// **'Apply'**
+  String get workingPrefsTemplatesApply;
+
+  /// No description provided for @workingPrefsTemplatesApplied.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} template applied.'**
+  String workingPrefsTemplatesApplied(String name);
+
+  /// No description provided for @workingPrefsTemplatesConfirmTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Apply Template'**
+  String get workingPrefsTemplatesConfirmTitle;
+
+  /// No description provided for @workingPrefsTemplatesConfirmBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Are you sure you want to apply this template? Your current working hours will be replaced.'**
+  String get workingPrefsTemplatesConfirmBody;
+
+  /// No description provided for @workingPrefsTemplatesCancel.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel'**
+  String get workingPrefsTemplatesCancel;
+
   /// No description provided for @smsTemplatesTitle.
   ///
   /// In en, this message translates to:
@@ -4057,6 +4099,426 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Buy Package'**
   String get dashboardBuyPackage;
+
+  /// No description provided for @aiProfileBannerBadge.
+  ///
+  /// In en, this message translates to:
+  /// **'Bagla AI Assistant'**
+  String get aiProfileBannerBadge;
+
+  /// No description provided for @aiProfileBannerTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Create AI Profile'**
+  String get aiProfileBannerTitle;
+
+  /// No description provided for @aiProfileBannerDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'AI writes the profile that turns your followers into appointments — you just share your expertise.'**
+  String get aiProfileBannerDesc;
+
+  /// No description provided for @aiProfileTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'AI Profile'**
+  String get aiProfileTitle;
+
+  /// No description provided for @aiProfileAiBadge.
+  ///
+  /// In en, this message translates to:
+  /// **'Bagla AI Assistant'**
+  String get aiProfileAiBadge;
+
+  /// No description provided for @aiProfileSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Build your professional profile in seconds'**
+  String get aiProfileSubtitle;
+
+  /// No description provided for @aiProfileLoading.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading AI Profile...'**
+  String get aiProfileLoading;
+
+  /// No description provided for @aiProfileRetry.
+  ///
+  /// In en, this message translates to:
+  /// **'Try Again'**
+  String get aiProfileRetry;
+
+  /// No description provided for @aiProfileSave.
+  ///
+  /// In en, this message translates to:
+  /// **'Save'**
+  String get aiProfileSave;
+
+  /// No description provided for @aiProfileSaving.
+  ///
+  /// In en, this message translates to:
+  /// **'Saving...'**
+  String get aiProfileSaving;
+
+  /// No description provided for @aiProfileTabProfile.
+  ///
+  /// In en, this message translates to:
+  /// **'Profile'**
+  String get aiProfileTabProfile;
+
+  /// No description provided for @aiProfileTabLinks.
+  ///
+  /// In en, this message translates to:
+  /// **'Links'**
+  String get aiProfileTabLinks;
+
+  /// No description provided for @aiProfileTabTheme.
+  ///
+  /// In en, this message translates to:
+  /// **'Theme'**
+  String get aiProfileTabTheme;
+
+  /// No description provided for @aiProfileRemainingNone.
+  ///
+  /// In en, this message translates to:
+  /// **'Done'**
+  String get aiProfileRemainingNone;
+
+  /// No description provided for @aiProfileGenerateTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Generate with AI'**
+  String get aiProfileGenerateTitle;
+
+  /// No description provided for @aiProfileGenerateSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Fill in your details and let AI create your profile'**
+  String get aiProfileGenerateSubtitle;
+
+  /// No description provided for @aiProfileGenerateButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Generate with AI'**
+  String get aiProfileGenerateButton;
+
+  /// No description provided for @aiProfileGenerating.
+  ///
+  /// In en, this message translates to:
+  /// **'Generating...'**
+  String get aiProfileGenerating;
+
+  /// No description provided for @aiProfileGenerateLocked.
+  ///
+  /// In en, this message translates to:
+  /// **'No AI generation credits left'**
+  String get aiProfileGenerateLocked;
+
+  /// No description provided for @aiProfileGenerateSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Your profile is ready!'**
+  String get aiProfileGenerateSuccess;
+
+  /// No description provided for @aiProfileGenerateSuccessHint.
+  ///
+  /// In en, this message translates to:
+  /// **'You can edit the content below'**
+  String get aiProfileGenerateSuccessHint;
+
+  /// No description provided for @aiProfileMsgAnalyzing.
+  ///
+  /// In en, this message translates to:
+  /// **'Analysing your profile...'**
+  String get aiProfileMsgAnalyzing;
+
+  /// No description provided for @aiProfileMsgPreparing.
+  ///
+  /// In en, this message translates to:
+  /// **'Crafting content for your profession...'**
+  String get aiProfileMsgPreparing;
+
+  /// No description provided for @aiProfileMsgSelecting.
+  ///
+  /// In en, this message translates to:
+  /// **'Picking the best expressions...'**
+  String get aiProfileMsgSelecting;
+
+  /// No description provided for @aiProfileMsgSeo.
+  ///
+  /// In en, this message translates to:
+  /// **'Applying SEO optimisation...'**
+  String get aiProfileMsgSeo;
+
+  /// No description provided for @aiProfileMsgFinalizing.
+  ///
+  /// In en, this message translates to:
+  /// **'Adding the finishing touches...'**
+  String get aiProfileMsgFinalizing;
+
+  /// No description provided for @aiProfileMsgWait.
+  ///
+  /// In en, this message translates to:
+  /// **'This may take a few seconds'**
+  String get aiProfileMsgWait;
+
+  /// No description provided for @aiProfileFieldProfession.
+  ///
+  /// In en, this message translates to:
+  /// **'Profession *'**
+  String get aiProfileFieldProfession;
+
+  /// No description provided for @aiProfileFieldProfessionError.
+  ///
+  /// In en, this message translates to:
+  /// **'Please select a profession'**
+  String get aiProfileFieldProfessionError;
+
+  /// No description provided for @aiProfileFieldExpertise.
+  ///
+  /// In en, this message translates to:
+  /// **'Area of Expertise *'**
+  String get aiProfileFieldExpertise;
+
+  /// No description provided for @aiProfileFieldExpertiseHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Sports nutrition, weight management'**
+  String get aiProfileFieldExpertiseHint;
+
+  /// No description provided for @aiProfileFieldExpertiseError.
+  ///
+  /// In en, this message translates to:
+  /// **'Required field'**
+  String get aiProfileFieldExpertiseError;
+
+  /// No description provided for @aiProfileFieldAudience.
+  ///
+  /// In en, this message translates to:
+  /// **'Target Audience *'**
+  String get aiProfileFieldAudience;
+
+  /// No description provided for @aiProfileFieldAudienceHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Adults who want to get fit'**
+  String get aiProfileFieldAudienceHint;
+
+  /// No description provided for @aiProfileFieldAudienceError.
+  ///
+  /// In en, this message translates to:
+  /// **'Required field'**
+  String get aiProfileFieldAudienceError;
+
+  /// No description provided for @aiProfileFieldExperience.
+  ///
+  /// In en, this message translates to:
+  /// **'Experience (years)'**
+  String get aiProfileFieldExperience;
+
+  /// No description provided for @aiProfileFieldExperienceHint.
+  ///
+  /// In en, this message translates to:
+  /// **'0–50'**
+  String get aiProfileFieldExperienceHint;
+
+  /// No description provided for @aiProfileFieldExperienceError.
+  ///
+  /// In en, this message translates to:
+  /// **'Must be between 0 and 50'**
+  String get aiProfileFieldExperienceError;
+
+  /// No description provided for @aiProfileFieldTone.
+  ///
+  /// In en, this message translates to:
+  /// **'Tone'**
+  String get aiProfileFieldTone;
+
+  /// No description provided for @aiProfileFieldAchievement.
+  ///
+  /// In en, this message translates to:
+  /// **'Achievement / Membership'**
+  String get aiProfileFieldAchievement;
+
+  /// No description provided for @aiProfileFieldAchievementHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Turkish Dietitians Association'**
+  String get aiProfileFieldAchievementHint;
+
+  /// No description provided for @aiProfileFieldNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Additional Note'**
+  String get aiProfileFieldNote;
+
+  /// No description provided for @aiProfileFieldNoteHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep it short and clear'**
+  String get aiProfileFieldNoteHint;
+
+  /// No description provided for @aiProfileFieldBio.
+  ///
+  /// In en, this message translates to:
+  /// **'Bio / Description (min 20 chars)'**
+  String get aiProfileFieldBio;
+
+  /// No description provided for @aiProfileFieldFooter.
+  ///
+  /// In en, this message translates to:
+  /// **'Footer'**
+  String get aiProfileFieldFooter;
+
+  /// No description provided for @aiProfileSectionSeo.
+  ///
+  /// In en, this message translates to:
+  /// **'SEO Settings'**
+  String get aiProfileSectionSeo;
+
+  /// No description provided for @aiProfileFieldSeoTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'SEO Title (max 70)'**
+  String get aiProfileFieldSeoTitle;
+
+  /// No description provided for @aiProfileFieldSeoDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'Meta Description (max 170)'**
+  String get aiProfileFieldSeoDesc;
+
+  /// No description provided for @aiProfileFieldSeoKeywords.
+  ///
+  /// In en, this message translates to:
+  /// **'Keywords — separate with commas (max 300)'**
+  String get aiProfileFieldSeoKeywords;
+
+  /// No description provided for @aiProfileLinksSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Add URLs and toggle them on or off.'**
+  String get aiProfileLinksSubtitle;
+
+  /// No description provided for @aiProfileLinksSave.
+  ///
+  /// In en, this message translates to:
+  /// **'Save Links'**
+  String get aiProfileLinksSave;
+
+  /// No description provided for @aiProfileLinksSaving.
+  ///
+  /// In en, this message translates to:
+  /// **'Saving...'**
+  String get aiProfileLinksSaving;
+
+  /// No description provided for @aiProfileThemeNoPreview.
+  ///
+  /// In en, this message translates to:
+  /// **'Select a theme.'**
+  String get aiProfileThemeNoPreview;
+
+  /// No description provided for @aiProfileThemeNoUser.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not load user info.'**
+  String get aiProfileThemeNoUser;
+
+  /// No description provided for @aiProfileReminderTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Content is ready — don\'t forget to save!'**
+  String get aiProfileReminderTitle;
+
+  /// No description provided for @aiProfileReminderSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap the Save button in the top right'**
+  String get aiProfileReminderSubtitle;
+
+  /// No description provided for @aiProfileSaveSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved!'**
+  String get aiProfileSaveSuccess;
+
+  /// No description provided for @aiProfileSaveBioMin.
+  ///
+  /// In en, this message translates to:
+  /// **'Bio must be at least 20 characters.'**
+  String get aiProfileSaveBioMin;
+
+  /// No description provided for @aiProfileThemeApplied.
+  ///
+  /// In en, this message translates to:
+  /// **'Theme applied.'**
+  String get aiProfileThemeApplied;
+
+  /// No description provided for @aiProfileLinksSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Links saved.'**
+  String get aiProfileLinksSaved;
+
+  /// No description provided for @aiProfileLimitReached.
+  ///
+  /// In en, this message translates to:
+  /// **'Daily AI limit reached.'**
+  String get aiProfileLimitReached;
+
+  /// No description provided for @aiProfileValidationErrors.
+  ///
+  /// In en, this message translates to:
+  /// **'Please fix the errors in the form.'**
+  String get aiProfileValidationErrors;
+
+  /// No description provided for @aiProfileSessionMissing.
+  ///
+  /// In en, this message translates to:
+  /// **'Session not found. Please log in again.'**
+  String get aiProfileSessionMissing;
+
+  /// No description provided for @aiProfileRemainingCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} left'**
+  String aiProfileRemainingCount(Object count);
+
+  /// No description provided for @aiProfileFetchError.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not load data (HTTP {status}).'**
+  String aiProfileFetchError(Object status);
+
+  /// No description provided for @aiProfileConnectionError.
+  ///
+  /// In en, this message translates to:
+  /// **'Connection error: {error}'**
+  String aiProfileConnectionError(Object error);
+
+  /// No description provided for @aiProfileGenerateHttpError.
+  ///
+  /// In en, this message translates to:
+  /// **'Generation failed (HTTP {status}).'**
+  String aiProfileGenerateHttpError(Object status);
+
+  /// No description provided for @aiProfileSaveHttpError.
+  ///
+  /// In en, this message translates to:
+  /// **'Save failed (HTTP {status}).'**
+  String aiProfileSaveHttpError(Object status);
+
+  /// No description provided for @aiProfileThemeHttpError.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not save theme (HTTP {status}).'**
+  String aiProfileThemeHttpError(Object status);
+
+  /// No description provided for @aiProfileLinksHttpError.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not save links (HTTP {status}).'**
+  String aiProfileLinksHttpError(Object status);
 }
 
 class _AppLocalizationsDelegate

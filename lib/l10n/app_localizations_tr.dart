@@ -1940,6 +1940,31 @@ class AppLocalizationsTr extends AppLocalizations {
   String get workingPrefsHolidayReason => 'Açıklama (isteğe bağlı)';
 
   @override
+  String get workingPrefsTemplatesTitle => 'Hazır Şablonlar';
+
+  @override
+  String get workingPrefsTemplatesSubtitle =>
+      'Hızlı başlamak için bir şablon seçin';
+
+  @override
+  String get workingPrefsTemplatesApply => 'Uygula';
+
+  @override
+  String workingPrefsTemplatesApplied(String name) {
+    return '$name şablonu uygulandı.';
+  }
+
+  @override
+  String get workingPrefsTemplatesConfirmTitle => 'Şablon Uygula';
+
+  @override
+  String get workingPrefsTemplatesConfirmBody =>
+      'Bu şablonu uygulamak istediğinizden emin misiniz? Mevcut çalışma saatleri değişecek.';
+
+  @override
+  String get workingPrefsTemplatesCancel => 'İptal';
+
+  @override
   String get smsTemplatesTitle => 'SMS Şablonları';
 
   @override
@@ -2248,4 +2273,234 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get dashboardBuyPackage => 'Paket Al';
+
+  @override
+  String get aiProfileBannerBadge => 'Bagla Yapay Zeka Asistanı';
+
+  @override
+  String get aiProfileBannerTitle => 'AI Profil Oluştur';
+
+  @override
+  String get aiProfileBannerDesc =>
+      'Takipçini randevuya dönüştüren profili yapay zeka yazar — sen sadece uzmanlığını anlat.';
+
+  @override
+  String get aiProfileTitle => 'AI Profil';
+
+  @override
+  String get aiProfileAiBadge => 'Bagla Yapay Zeka Asistanı';
+
+  @override
+  String get aiProfileSubtitle =>
+      'Profesyonel profilinizi saniyeler içinde oluşturun';
+
+  @override
+  String get aiProfileLoading => 'AI Profil yükleniyor...';
+
+  @override
+  String get aiProfileRetry => 'Tekrar Dene';
+
+  @override
+  String get aiProfileSave => 'Kaydet';
+
+  @override
+  String get aiProfileSaving => 'Kaydediliyor...';
+
+  @override
+  String get aiProfileTabProfile => 'Profil';
+
+  @override
+  String get aiProfileTabLinks => 'Linkler';
+
+  @override
+  String get aiProfileTabTheme => 'Tema';
+
+  @override
+  String get aiProfileRemainingNone => 'Bitti';
+
+  @override
+  String get aiProfileGenerateTitle => 'AI ile Oluştur';
+
+  @override
+  String get aiProfileGenerateSubtitle =>
+      'Bilgilerinizi girin, AI saniyeler içinde oluştursun';
+
+  @override
+  String get aiProfileGenerateButton => 'AI ile Oluştur';
+
+  @override
+  String get aiProfileGenerating => 'Oluşturuluyor...';
+
+  @override
+  String get aiProfileGenerateLocked => 'AI üretim hakkı kalmadı';
+
+  @override
+  String get aiProfileGenerateSuccess => 'Profiliniz hazır!';
+
+  @override
+  String get aiProfileGenerateSuccessHint =>
+      'İçerikleri aşağıdan düzenleyebilirsiniz';
+
+  @override
+  String get aiProfileMsgAnalyzing => 'Profiliniz analiz ediliyor...';
+
+  @override
+  String get aiProfileMsgPreparing => 'Mesleğinize özel içerik hazırlanıyor...';
+
+  @override
+  String get aiProfileMsgSelecting => 'En iyi ifadeler seçiliyor...';
+
+  @override
+  String get aiProfileMsgSeo => 'SEO optimizasyonu yapılıyor...';
+
+  @override
+  String get aiProfileMsgFinalizing => 'Son dokunuşlar tamamlanıyor...';
+
+  @override
+  String get aiProfileMsgWait => 'Bu işlem birkaç saniye sürebilir';
+
+  @override
+  String get aiProfileFieldProfession => 'Meslek *';
+
+  @override
+  String get aiProfileFieldProfessionError => 'Meslek seçiniz';
+
+  @override
+  String get aiProfileFieldExpertise => 'Uzmanlık Alanı *';
+
+  @override
+  String get aiProfileFieldExpertiseHint => 'Spor beslenmesi, kilo yönetimi';
+
+  @override
+  String get aiProfileFieldExpertiseError => 'Zorunlu alan';
+
+  @override
+  String get aiProfileFieldAudience => 'Hedef Kitle *';
+
+  @override
+  String get aiProfileFieldAudienceHint => 'Fit olmak isteyen yetişkinler';
+
+  @override
+  String get aiProfileFieldAudienceError => 'Zorunlu alan';
+
+  @override
+  String get aiProfileFieldExperience => 'Deneyim (yıl)';
+
+  @override
+  String get aiProfileFieldExperienceHint => '0–50';
+
+  @override
+  String get aiProfileFieldExperienceError => '0–50 arası olmalı';
+
+  @override
+  String get aiProfileFieldTone => 'Ton';
+
+  @override
+  String get aiProfileFieldAchievement => 'Başarı / Üyelik';
+
+  @override
+  String get aiProfileFieldAchievementHint => 'Türkiye Diyetisyenler Derneği';
+
+  @override
+  String get aiProfileFieldNote => 'Ek Not';
+
+  @override
+  String get aiProfileFieldNoteHint => 'Kısa ve net yaz';
+
+  @override
+  String get aiProfileFieldBio => 'Bio / Açıklama (min 20 karakter)';
+
+  @override
+  String get aiProfileFieldFooter => 'Alt Bilgi (Footer)';
+
+  @override
+  String get aiProfileSectionSeo => 'SEO Ayarları';
+
+  @override
+  String get aiProfileFieldSeoTitle => 'SEO Başlık (max 70)';
+
+  @override
+  String get aiProfileFieldSeoDesc => 'Meta Açıklama (max 170)';
+
+  @override
+  String get aiProfileFieldSeoKeywords =>
+      'Anahtar Kelimeler — virgülle ayırın (max 300)';
+
+  @override
+  String get aiProfileLinksSubtitle => 'URL ekleyin ve aktif/pasif yapın.';
+
+  @override
+  String get aiProfileLinksSave => 'Linkleri Kaydet';
+
+  @override
+  String get aiProfileLinksSaving => 'Kaydediliyor...';
+
+  @override
+  String get aiProfileThemeNoPreview => 'Bir tema seçin.';
+
+  @override
+  String get aiProfileThemeNoUser => 'Kullanıcı bilgisi yüklenemedi.';
+
+  @override
+  String get aiProfileReminderTitle => 'İçerikler hazır, kaydetmeyi unutmayın!';
+
+  @override
+  String get aiProfileReminderSubtitle => 'Sağ üstteki Kaydet butonuna dokunun';
+
+  @override
+  String get aiProfileSaveSuccess => 'Kaydedildi!';
+
+  @override
+  String get aiProfileSaveBioMin => 'Bio en az 20 karakter olmalı.';
+
+  @override
+  String get aiProfileThemeApplied => 'Tema uygulandı.';
+
+  @override
+  String get aiProfileLinksSaved => 'Linkler kaydedildi.';
+
+  @override
+  String get aiProfileLimitReached => 'Günlük AI limitine ulaştınız.';
+
+  @override
+  String get aiProfileValidationErrors => 'Lütfen formdaki hataları düzeltin.';
+
+  @override
+  String get aiProfileSessionMissing =>
+      'Oturum bulunamadı. Lütfen tekrar giriş yapın.';
+
+  @override
+  String aiProfileRemainingCount(Object count) {
+    return '$count hak';
+  }
+
+  @override
+  String aiProfileFetchError(Object status) {
+    return 'Veri alınamadı (HTTP $status).';
+  }
+
+  @override
+  String aiProfileConnectionError(Object error) {
+    return 'Bağlantı hatası: $error';
+  }
+
+  @override
+  String aiProfileGenerateHttpError(Object status) {
+    return 'Oluşturma başarısız (HTTP $status).';
+  }
+
+  @override
+  String aiProfileSaveHttpError(Object status) {
+    return 'Kaydetme başarısız (HTTP $status).';
+  }
+
+  @override
+  String aiProfileThemeHttpError(Object status) {
+    return 'Tema kaydedilemedi (HTTP $status).';
+  }
+
+  @override
+  String aiProfileLinksHttpError(Object status) {
+    return 'Linkler kaydedilemedi (HTTP $status).';
+  }
 }

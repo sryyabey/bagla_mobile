@@ -25,7 +25,10 @@ import 'pages/sms_templates.dart';
 import 'pages/calendar.dart';
 import 'pages/pack_page_router.dart';
 import 'pages/orders.dart';
+import 'pages/ai_profile_page.dart';
+import 'pages/announcements_page.dart';
 import 'widgets/main_nav.dart';
+import 'package:in_app_review/in_app_review.dart';
 
 class DashboardPage extends StatefulWidget {
   final bool showBottomNav;
@@ -55,13 +58,78 @@ class _DashboardPageState extends State<DashboardPage> {
   List<_DashboardTopLink> _topLinks = const [];
   int _todayAppointmentCount = 0;
   List<_DashboardAppointment> _todayAppointments = const [];
+  Map<String, dynamic>? _welcomePromo;
+  bool _hasAiProfileContent = false; // true → AI banner gizlenir
+  int _unreadAnnouncementCount = 0;
+  bool _showRatingCard = false;
 
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
       _fetchDashboard();
+      await _checkRatingPrompt();
     });
+  }
+
+  Future<void> _checkRatingPrompt() async {
+    final prefs = await SharedPreferences.getInstance();
+
+    final firstOpen = prefs.getString('first_open_date');
+    if (firstOpen == null) {
+      await prefs.setString(
+          'first_open_date', DateTime.now().toIso8601String());
+      return;
+    }
+
+    final firstDate = DateTime.tryParse(firstOpen);
+    if (firstDate == null) return;
+
+    if (DateTime.now().difference(firstDate).inDays < 3) return;
+
+    if (prefs.getBool('rating_declined') == true) return;
+
+    final lastAsked = prefs.getString('rating_last_asked');
+    if (lastAsked != null) {
+      final lastDate = DateTime.tryParse(lastAsked);
+      if (lastDate != null &&
+          DateTime.now().difference(lastDate).inDays < 30) return;
+    }
+
+    if (mounted) setState(() => _showRatingCard = true);
+  }
+
+  Future<void> _declineReview() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('rating_declined', true);
+    setState(() => _showRatingCard = false);
+  }
+
+  void _openRatingModal() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => _RatingModal(
+        onSubmit: (stars, comment) async {
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.setString(
+              'rating_last_asked', DateTime.now().toIso8601String());
+          if (mounted) setState(() => _showRatingCard = false);
+
+          // 4+ yıldızda native store rating'i aç
+          if (stars >= 4) {
+            final inAppReview = InAppReview.instance;
+            if (await inAppReview.isAvailable()) {
+              await inAppReview.requestReview();
+            } else {
+              await inAppReview.openStoreListing(appStoreId: appleAppStoreId);
+            }
+          }
+        },
+        onDecline: _declineReview,
+      ),
+    );
   }
 
   Future<String?> _getToken() async {
@@ -135,6 +203,34 @@ class _DashboardPageState extends State<DashboardPage> {
       _noInternet = nextNoInternet;
       _loading = false;
     });
+
+    if (token != null && token.isNotEmpty) {
+      _fetchWelcomePromo(token);
+    }
+  }
+
+  Future<void> _fetchWelcomePromo(String token) async {
+    try {
+      final response = await authGet(
+        Uri.parse('$apiBaseUrl/api/welcome'),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Accept': 'application/json',
+        },
+      );
+      if (response.statusCode == 200 && mounted) {
+        final decoded = jsonDecode(response.body);
+        // Sunucu hata kodu döndürdüyse (örn. "Welcome form şu an aktif değil") kartı gösterme
+        if (decoded['code'] == 'SERVER_ERROR' ||
+            decoded['type'] == 'error') return;
+        final data = decoded['data'] ?? decoded;
+        if (data is Map) {
+          setState(() {
+            _welcomePromo = Map<String, dynamic>.from(data);
+          });
+        }
+      }
+    } catch (_) {}
   }
 
   void _applyDashboardData(Map<String, dynamic> data) {
@@ -145,6 +241,10 @@ class _DashboardPageState extends State<DashboardPage> {
             : null);
     _totalClicks = data['total_clicks']?.toString() ?? '0';
     _bioPageLink = data['bio_page']?.toString();
+    final profileDesc = data['profile_description']?.toString() ?? '';
+    _hasAiProfileContent = profileDesc.isNotEmpty;
+    _unreadAnnouncementCount =
+        (data['unread_announcements_count'] as int? ?? 0);
     _dailyClicks = data['daily_clicks'] is Map<String, dynamic>
         ? data['daily_clicks'] as Map<String, dynamic>
         : (data['daily_clicks'] is Map
@@ -566,7 +666,108 @@ class _DashboardPageState extends State<DashboardPage> {
               ),
             ],
           ),
+          if (_bioPageLink != null && _bioPageLink!.isNotEmpty) ...[
+            const SizedBox(height: 14),
+            _buildHeroBioSection(loc),
+          ],
         ],
+      ),
+    );
+  }
+
+  Widget _buildHeroBioSection(AppLocalizations loc) {
+    final link = _bioPageLink!;
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.link_rounded, size: 14, color: Colors.white70),
+              const SizedBox(width: 6),
+              Text(
+                loc.dashboardBioPage,
+                style: const TextStyle(
+                  color: Colors.white70,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: 0.3,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              Expanded(
+                child: GestureDetector(
+                  onTap: () => _openBioLink(link),
+                  child: Text(
+                    link,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w500,
+                      decoration: TextDecoration.underline,
+                      decorationColor: Colors.white54,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              _heroBioButton(
+                icon: Icons.copy_outlined,
+                tooltip: 'Kopyala',
+                onTap: () async {
+                  await Clipboard.setData(ClipboardData(text: link));
+                  _showSnack(loc.dashboardLinkCopied, success: true);
+                },
+              ),
+              const SizedBox(width: 6),
+              Builder(
+                builder: (ctx) => _heroBioButton(
+                  icon: Icons.share_outlined,
+                  tooltip: 'Paylaş',
+                  onTap: () => _shareBioSystem(ctx, link),
+                ),
+              ),
+              const SizedBox(width: 6),
+              _heroBioButton(
+                icon: Icons.qr_code_outlined,
+                tooltip: 'QR Kod',
+                onTap: () => _showQrModal(link),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _heroBioButton({
+    required IconData icon,
+    required String tooltip,
+    required VoidCallback onTap,
+  }) {
+    return Tooltip(
+      message: tooltip,
+      child: GestureDetector(
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.all(7),
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.15),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Icon(icon, size: 16, color: Colors.white),
+        ),
       ),
     );
   }
@@ -605,81 +806,6 @@ class _DashboardPageState extends State<DashboardPage> {
             )
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _buildBioCard(String? link) {
-    final loc = AppLocalizations.of(context);
-    if (link == null || link.isEmpty) {
-      return const SizedBox.shrink();
-    }
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey.shade200),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.03),
-            blurRadius: 8,
-            offset: const Offset(0, 4),
-          )
-        ],
-      ),
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            loc.dashboardBioPage,
-            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 8),
-          Row(
-            children: [
-              Expanded(
-                child: GestureDetector(
-                  onTap: () => _openBioLink(link),
-                  child: Text(
-                    link,
-                    style: const TextStyle(
-                      color: Colors.blue,
-                      decoration: TextDecoration.underline,
-                    ),
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-              ),
-              IconButton(
-                icon: const Icon(Icons.copy),
-                onPressed: () async {
-                  await Clipboard.setData(ClipboardData(text: link));
-                  _showSnack(loc.dashboardLinkCopied, success: true);
-                },
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: [
-              Builder(
-                builder: (buttonContext) => ElevatedButton.icon(
-                  onPressed: () => _shareBioSystem(buttonContext, link),
-                  icon: const Icon(Icons.share),
-                  label: Text(loc.dashboardShare),
-                ),
-              ),
-              OutlinedButton.icon(
-                onPressed: () => _showQrModal(link),
-                icon: const Icon(Icons.qr_code),
-                label: Text(loc.dashboardQr),
-              ),
-            ],
-          ),
-        ],
       ),
     );
   }
@@ -1284,6 +1410,866 @@ class _DashboardPageState extends State<DashboardPage> {
     );
   }
 
+  Future<List<Map<String, dynamic>>> _fetchGroupedProfessions() async {
+    try {
+      final response = await authGet(
+        Uri.parse('$apiBaseUrl/api/professions/grouped'),
+        headers: {'Accept': 'application/json'},
+      );
+      if (response.statusCode == 200) {
+        final decoded = jsonDecode(response.body);
+        final data = decoded['data'] as List<dynamic>;
+        return data.cast<Map<String, dynamic>>();
+      }
+    } catch (_) {}
+    return [];
+  }
+
+  Future<String?> _showProfessionPicker(
+      BuildContext ctx, List<Map<String, dynamic>> groups) async {
+    final searchCtrl = TextEditingController();
+    String query = '';
+
+    return showModalBottomSheet<String>(
+      context: ctx,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (pickerCtx) {
+        return StatefulBuilder(builder: (pickerCtx, setPickerState) {
+          final filteredGroups = groups
+              .map((g) {
+                final profs = (g['professions'] as List<dynamic>)
+                    .cast<String>()
+                    .where((p) =>
+                        p.toLowerCase().contains(query.toLowerCase()))
+                    .toList();
+                return {'category': g['category'], 'professions': profs};
+              })
+              .where((g) =>
+                  (g['professions'] as List).isNotEmpty)
+              .toList();
+
+          return DraggableScrollableSheet(
+            initialChildSize: 0.75,
+            minChildSize: 0.5,
+            maxChildSize: 0.95,
+            expand: false,
+            builder: (_, scrollCtrl) {
+              return Padding(
+                padding: EdgeInsets.only(
+                  bottom: MediaQuery.of(pickerCtx).viewInsets.bottom,
+                ),
+                child: Column(
+                  children: [
+                    const SizedBox(height: 12),
+                    Container(
+                      width: 48,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: Colors.black12,
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: TextField(
+                        controller: searchCtrl,
+                        autofocus: true,
+                        decoration: InputDecoration(
+                          hintText: 'Meslek ara...',
+                          prefixIcon: const Icon(Icons.search),
+                          suffixIcon: query.isNotEmpty
+                              ? IconButton(
+                                  icon: const Icon(Icons.clear),
+                                  onPressed: () {
+                                    searchCtrl.clear();
+                                    setPickerState(() => query = '');
+                                  },
+                                )
+                              : null,
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          contentPadding: const EdgeInsets.symmetric(
+                              vertical: 10, horizontal: 12),
+                        ),
+                        onChanged: (v) => setPickerState(() => query = v),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Expanded(
+                      child: filteredGroups.isEmpty
+                          ? const Center(child: Text('Sonuç bulunamadı'))
+                          : ListView.builder(
+                              controller: scrollCtrl,
+                              itemCount: filteredGroups.length,
+                              itemBuilder: (_, i) {
+                                final group = filteredGroups[i];
+                                final profs =
+                                    (group['professions'] as List<String>);
+                                return Column(
+                                  crossAxisAlignment:
+                                      CrossAxisAlignment.start,
+                                  children: [
+                                    Padding(
+                                      padding: const EdgeInsets.fromLTRB(
+                                          16, 12, 16, 4),
+                                      child: Text(
+                                        group['category'] as String,
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.w700,
+                                          color: Colors.grey.shade500,
+                                          letterSpacing: 0.5,
+                                        ),
+                                      ),
+                                    ),
+                                    ...profs.map((p) => ListTile(
+                                          dense: true,
+                                          title: Text(p),
+                                          onTap: () =>
+                                              Navigator.of(pickerCtx)
+                                                  .pop(p),
+                                        )),
+                                    const Divider(height: 1),
+                                  ],
+                                );
+                              },
+                            ),
+                    ),
+                  ],
+                ),
+              );
+            },
+          );
+        });
+      },
+    );
+  }
+
+  Future<void> _submitWelcomeForm({
+    required String profession,
+    required String city,
+    String? instagram,
+  }) async {
+    final token = await _getToken();
+    if (token == null || token.isEmpty) return;
+    final body = <String, dynamic>{
+      'profession': profession,
+      'city': city,
+    };
+    if (instagram != null && instagram.trim().isNotEmpty) {
+      body['instagram'] = instagram.trim();
+    }
+    final response = await authPost(
+      Uri.parse('$apiBaseUrl/api/welcome'),
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+      },
+      body: jsonEncode(body),
+    );
+    if (!mounted) return;
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      setState(() => _welcomePromo = null);
+      _showSnack('Paketiniz aktifleştirildi! 🎉', success: true);
+    } else {
+      String msg = 'Bir hata oluştu.';
+      try {
+        final decoded = jsonDecode(response.body);
+        msg = decoded['message']?.toString() ?? msg;
+      } catch (_) {}
+      _showSnack(msg);
+    }
+  }
+
+  void _showWelcomeFormSheet() {
+    String selectedProfession = '';
+    List<Map<String, dynamic>> professionGroups = [];
+    bool loadingProfessions = true;
+    final cityCtrl = TextEditingController();
+    final igCtrl = TextEditingController();
+    final formKey = GlobalKey<FormState>();
+    bool submitting = false;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) {
+        return StatefulBuilder(builder: (ctx, setSheetState) {
+          if (loadingProfessions) {
+            loadingProfessions = false;
+            _fetchGroupedProfessions().then((groups) {
+              if (ctx.mounted) {
+                setSheetState(() => professionGroups = groups);
+              }
+            });
+          }
+
+          return Padding(
+            padding: EdgeInsets.fromLTRB(
+              20,
+              20,
+              20,
+              MediaQuery.of(ctx).viewInsets.bottom + 24,
+            ),
+            child: Form(
+              key: formKey,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Center(
+                    child: Container(
+                      width: 48,
+                      height: 4,
+                      margin: const EdgeInsets.only(bottom: 16),
+                      decoration: BoxDecoration(
+                        color: Colors.black12,
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                  ),
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          gradient: const LinearGradient(
+                            colors: [Color(0xFFFF6B35), Color(0xFFFF8C42)],
+                          ),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: const Icon(Icons.card_giftcard,
+                            color: Colors.white, size: 20),
+                      ),
+                      const SizedBox(width: 10),
+                      const Expanded(
+                        child: Text(
+                          'Yeni Üyelik Hediyeni Al',
+                          style: TextStyle(
+                            fontSize: 17,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 6),
+                  const Text(
+                    'Formu doldur, 1 ay ücretsiz 100 SMS paketini hemen aktifleştir.',
+                    style: TextStyle(color: Colors.black54, fontSize: 13),
+                  ),
+                  const SizedBox(height: 20),
+                  FormField<String>(
+                    validator: (_) => selectedProfession.trim().isEmpty
+                        ? 'Zorunlu alan'
+                        : null,
+                    builder: (fieldState) => Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        InkWell(
+                          borderRadius: BorderRadius.circular(4),
+                          onTap: professionGroups.isEmpty
+                              ? null
+                              : () async {
+                                  final picked =
+                                      await _showProfessionPicker(
+                                          ctx, professionGroups);
+                                  if (picked != null) {
+                                    setSheetState(() =>
+                                        selectedProfession = picked);
+                                    fieldState.didChange(picked);
+                                  }
+                                },
+                          child: InputDecorator(
+                            decoration: InputDecoration(
+                              labelText: 'Mesleğiniz *',
+                              prefixIcon: const Icon(Icons.work_outline),
+                              border: const OutlineInputBorder(),
+                              errorText: fieldState.errorText,
+                              suffixIcon: professionGroups.isEmpty
+                                  ? const SizedBox(
+                                      width: 20,
+                                      height: 20,
+                                      child: Padding(
+                                        padding: EdgeInsets.all(12),
+                                        child: CircularProgressIndicator(
+                                            strokeWidth: 2),
+                                      ),
+                                    )
+                                  : const Icon(
+                                      Icons.keyboard_arrow_down),
+                            ),
+                            isEmpty: selectedProfession.isEmpty,
+                            child: Text(
+                              selectedProfession.isEmpty
+                                  ? 'Seçiniz...'
+                                  : selectedProfession,
+                              style: TextStyle(
+                                color: selectedProfession.isEmpty
+                                    ? Colors.black38
+                                    : Colors.black87,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  TextFormField(
+                    controller: cityCtrl,
+                    decoration: const InputDecoration(
+                      labelText: 'Şehir *',
+                      hintText: 'ör. İstanbul',
+                      prefixIcon: Icon(Icons.location_city_outlined),
+                      border: OutlineInputBorder(),
+                    ),
+                    validator: (v) =>
+                        (v == null || v.trim().isEmpty) ? 'Zorunlu alan' : null,
+                  ),
+                  const SizedBox(height: 12),
+                  TextFormField(
+                    controller: igCtrl,
+                    decoration: const InputDecoration(
+                      labelText: 'Instagram (isteğe bağlı)',
+                      hintText: '@kullaniciadi',
+                      prefixIcon: Icon(Icons.alternate_email),
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      onPressed: submitting
+                          ? null
+                          : () async {
+                              if (!formKey.currentState!.validate()) return;
+                              setSheetState(() => submitting = true);
+                              Navigator.of(ctx).pop();
+                              await _submitWelcomeForm(
+                                profession: selectedProfession.trim(),
+                                city: cityCtrl.text.trim(),
+                                instagram: igCtrl.text.trim().isNotEmpty
+                                    ? igCtrl.text.trim()
+                                    : null,
+                              );
+                            },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFFFF6B35),
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      icon: submitting
+                          ? const SizedBox(
+                              width: 16,
+                              height: 16,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.white,
+                              ),
+                            )
+                          : const Icon(Icons.rocket_launch_outlined),
+                      label: const Text(
+                        'Paketi Aktifleştir',
+                        style: TextStyle(
+                            fontSize: 15, fontWeight: FontWeight.w700),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        });
+      },
+    );
+  }
+
+  Widget _buildWelcomePromoCard() {
+    if (_welcomePromo == null) return const SizedBox.shrink();
+    final bool alreadyClaimed = _welcomePromo!['completed'] == true ||
+        _welcomePromo!['claimed'] == true;
+    if (alreadyClaimed) return const SizedBox.shrink();
+
+    return GestureDetector(
+      onTap: _showWelcomeFormSheet,
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 14),
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            colors: [Color(0xFFFF6B35), Color(0xFFFF8C42), Color(0xFFFFB347)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(18),
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFFFF6B35).withValues(alpha: 0.35),
+              blurRadius: 18,
+              offset: const Offset(0, 6),
+            ),
+          ],
+        ),
+        padding: const EdgeInsets.all(18),
+        child: Stack(
+          children: [
+            Positioned(
+              top: -10,
+              right: 10,
+              child: Icon(
+                Icons.card_giftcard,
+                size: 80,
+                color: Colors.white.withValues(alpha: 0.1),
+              ),
+            ),
+            Row(
+              children: [
+                Container(
+                  width: 52,
+                  height: 52,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.2),
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: const Icon(
+                    Icons.card_giftcard,
+                    color: Colors.white,
+                    size: 28,
+                  ),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 8, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.2),
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: const Text(
+                          'YENİ ÜYELİK HEDİYESİ',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 10,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: 0.5,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 5),
+                      const Text(
+                        '1 Ay Ücretsiz 100 SMS',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: -0.3,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        'Seni bekliyor! Hemen formu doldur, paketini aktifleştir.',
+                        style: TextStyle(
+                          color: Colors.white.withValues(alpha: 0.85),
+                          fontSize: 12,
+                          height: 1.4,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.2),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Icon(
+                    Icons.arrow_forward_ios_rounded,
+                    color: Colors.white,
+                    size: 14,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAiProfileBanner() {
+    final loc = AppLocalizations.of(context);
+    return GestureDetector(
+      onTap: () => _navigateToPage(const AiProfilePage(), 'ai_profile'),
+      child: Container(
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            colors: [Color(0xFF0D0B1E), Color(0xFF1E1050), Color(0xFF2D1060)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(18),
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFF6366F1).withValues(alpha: 0.3),
+              blurRadius: 20,
+              offset: const Offset(0, 6),
+            ),
+          ],
+        ),
+        padding: const EdgeInsets.all(20),
+        child: Stack(
+          children: [
+            // Dekoratif arka plan noktaları
+            Positioned(
+              top: -8,
+              right: 16,
+              child: Container(
+                width: 70,
+                height: 70,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: const Color(0xFF6366F1).withValues(alpha: 0.12),
+                ),
+              ),
+            ),
+            Positioned(
+              bottom: -12,
+              right: 60,
+              child: Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: const Color(0xFF9333EA).withValues(alpha: 0.1),
+                ),
+              ),
+            ),
+            // İçerik
+            Row(
+              children: [
+                // Sol: AI ikonu
+                Container(
+                  width: 52,
+                  height: 52,
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFF6366F1), Color(0xFF9333EA)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    borderRadius: BorderRadius.circular(14),
+                    boxShadow: [
+                      BoxShadow(
+                        color: const Color(0xFF6366F1).withValues(alpha: 0.4),
+                        blurRadius: 12,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: const Icon(
+                    Icons.auto_awesome,
+                    color: Colors.white,
+                    size: 26,
+                  ),
+                ),
+                const SizedBox(width: 16),
+                // Orta: Metin
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // AI rozeti
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 8, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF6366F1).withValues(alpha: 0.2),
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(
+                            color:
+                                const Color(0xFFA78BFA).withValues(alpha: 0.4),
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Container(
+                              width: 5,
+                              height: 5,
+                              decoration: const BoxDecoration(
+                                color: Color(0xFFA78BFA),
+                                shape: BoxShape.circle,
+                              ),
+                            ),
+                            const SizedBox(width: 5),
+                            Text(
+                              loc.aiProfileBannerBadge,
+                              style: TextStyle(
+                                color: Color(0xFFA78BFA),
+                                fontSize: 10,
+                                fontWeight: FontWeight.w700,
+                                letterSpacing: 0.4,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        loc.aiProfileBannerTitle,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: -0.3,
+                        ),
+                      ),
+                      const SizedBox(height: 3),
+                      Text(
+                        loc.aiProfileBannerDesc,
+                        style: TextStyle(
+                          color: Colors.white.withValues(alpha: 0.55),
+                          fontSize: 12,
+                          height: 1.4,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 12),
+                // Sağ: Ok
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Icon(
+                    Icons.arrow_forward_ios_rounded,
+                    color: Colors.white,
+                    size: 14,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildRatingCard() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFE5E7EB)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: const Color(0xFFFFF7ED),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: const Text('⭐', style: TextStyle(fontSize: 22)),
+          ),
+          const SizedBox(width: 12),
+          const Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Bagla\'yı beğeniyor musunuz?',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w800,
+                    color: Color(0xFF1E1E2D),
+                  ),
+                ),
+                SizedBox(height: 3),
+                Text(
+                  'Değerlendirmeniz büyümemize katkı sağlar.',
+                  style: TextStyle(fontSize: 12, color: Color(0xFF6B7280)),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 10),
+          Column(
+            children: [
+              ElevatedButton(
+                onPressed: _openRatingModal,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFFF59E0B),
+                  foregroundColor: Colors.white,
+                  elevation: 0,
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10)),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
+                  minimumSize: Size.zero,
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                ),
+                child: const Text('Değerlendir',
+                    style:
+                        TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),
+              ),
+              TextButton(
+                onPressed: _declineReview,
+                style: TextButton.styleFrom(
+                  foregroundColor: const Color(0xFF9CA3AF),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  minimumSize: Size.zero,
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                ),
+                child: const Text('Kapat',
+                    style: TextStyle(fontSize: 11)),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAnnouncementBanner() {
+    return GestureDetector(
+      onTap: () async {
+        await Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const AnnouncementsPage()),
+        );
+        // Geri dönünce sayacı sıfırla (okudular)
+        setState(() => _unreadAnnouncementCount = 0);
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            colors: [Color(0xFF4F46E5), Color(0xFF7C3AED)],
+            begin: Alignment.centerLeft,
+            end: Alignment.centerRight,
+          ),
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFF6366F1).withValues(alpha: 0.3),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(7),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.15),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.campaign_outlined,
+                  color: Colors.white, size: 18),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                '$_unreadAnnouncementCount yeni duyurunuz var',
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w700,
+                  fontSize: 14,
+                ),
+              ),
+            ),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.2),
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: const Text('Gör',
+                  style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w700,
+                      fontSize: 12)),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLowSmsWarning(int remaining, AppLocalizations loc) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFFF7ED),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFFFED7AA)),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.warning_amber_rounded,
+              color: Color(0xFFD97706), size: 20),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              'SMS krediniz azalıyor — $remaining mesaj kaldı.',
+              style: const TextStyle(
+                color: Color(0xFF92400E),
+                fontSize: 13,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+          TextButton(
+            onPressed: () => Navigator.push(context,
+                MaterialPageRoute(builder: (_) => buildPackPageForPlatform())),
+            style: TextButton.styleFrom(
+              foregroundColor: const Color(0xFFD97706),
+              padding: const EdgeInsets.symmetric(horizontal: 8),
+              minimumSize: Size.zero,
+              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            ),
+            child: const Text('Yükle',
+                style:
+                    TextStyle(fontWeight: FontWeight.w700, fontSize: 13)),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildQuickActions() {
     final loc = AppLocalizations.of(context);
     return _buildSectionCard(
@@ -1306,12 +2292,6 @@ class _DashboardPageState extends State<DashboardPage> {
             color: const Color(0xFF16A34A),
           ),
           _quickActionTile(
-            icon: Icons.palette_outlined,
-            label: loc.themes,
-            onTap: () => _navigateToPage(const ThemesPage(), 'themes'),
-            color: const Color(0xFF0284C7),
-          ),
-          _quickActionTile(
             icon: Icons.sms_outlined,
             label: loc.dashboardSmsTemplates,
             onTap: () => _navigateToPage(
@@ -1319,12 +2299,6 @@ class _DashboardPageState extends State<DashboardPage> {
               'sms_templates',
             ),
             color: const Color(0xFFDB2777),
-          ),
-          _quickActionTile(
-            icon: Icons.support_agent_outlined,
-            label: loc.support,
-            onTap: () => _navigateToPage(const SupportPage(), 'support'),
-            color: const Color(0xFFDC2626),
           ),
           _quickActionTile(
             icon: Icons.schedule_outlined,
@@ -1344,6 +2318,9 @@ class _DashboardPageState extends State<DashboardPage> {
     final loc = AppLocalizations.of(context);
     final hiddenAppointments =
         (_todayAppointmentCount - _todayAppointments.length).clamp(0, 9999);
+    final remainingSms =
+        _packInfo != null ? (_packInfo!['remaining_sms'] ?? 0) as int : 0;
+    final lowSms = remainingSms > 0 && remainingSms <= 10;
 
     return RefreshIndicator(
       onRefresh: () => _fetchDashboard(force: true),
@@ -1351,13 +2328,17 @@ class _DashboardPageState extends State<DashboardPage> {
         physics: const AlwaysScrollableScrollPhysics(),
         padding: const EdgeInsets.all(16),
         children: [
+          // 1 — Hero
           _heroSection(_packInfo, _totalClicks),
-          _buildBioCard(_bioPageLink),
           const SizedBox(height: 12),
-          _buildQuickActions(),
-          const SizedBox(height: 16),
-          _buildPackInfo(_packInfo),
-          const SizedBox(height: 16),
+
+          // 2 — Duyurular (okunmamış varsa)
+          if (_unreadAnnouncementCount > 0) ...[
+            _buildAnnouncementBanner(),
+            const SizedBox(height: 12),
+          ],
+
+          // 3 — Bugünkü randevular (en kritik günlük bilgi)
           _buildSectionCard(
             icon: Icons.event_available_outlined,
             title: loc.dashboardTodayAppointments,
@@ -1381,7 +2362,38 @@ class _DashboardPageState extends State<DashboardPage> {
               ],
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 12),
+
+          // 3 — Welcome promo (yeni kullanıcı)
+          _buildWelcomePromoCard(),
+
+          // 4 — SMS uyarısı (kritik, paketi olanlar için)
+          if (lowSms) ...[
+            _buildLowSmsWarning(remainingSms, loc),
+            const SizedBox(height: 12),
+          ],
+
+          // 5 — AI profil banner (açıklama/alt bilgi henüz girilmemişse)
+          if (!_hasAiProfileContent) ...[
+            _buildAiProfileBanner(),
+            const SizedBox(height: 12),
+          ],
+
+          // 6 — Paket bilgisi
+          _buildPackInfo(_packInfo),
+          const SizedBox(height: 12),
+
+          // 7 — Hızlı işlemler (sadece sık kullanılanlar)
+          _buildQuickActions(),
+          const SizedBox(height: 12),
+
+          // 8 — Değerlendirme kartı (koşulları sağlandığında)
+          if (_showRatingCard) ...[
+            _buildRatingCard(),
+            const SizedBox(height: 12),
+          ],
+
+          // 9 — Analitik
           _buildSectionCard(
             icon: Icons.bar_chart_rounded,
             title: loc.dashboardDailyClicks,
@@ -1553,6 +2565,16 @@ class _DashboardPageState extends State<DashboardPage> {
                 _navigateFromDrawer(
                   page: const ThemesPage(),
                   routeName: 'themes',
+                );
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.auto_awesome),
+              title: const Text('AI Profil'),
+              onTap: () {
+                _navigateFromDrawer(
+                  page: const AiProfilePage(),
+                  routeName: 'ai_profile',
                 );
               },
             ),
@@ -1729,4 +2751,209 @@ class _DashboardAppointment {
   final String? date;
   final String? time;
   final String statusName;
+}
+
+// ── Rating Modal ──────────────────────────────────────────────────────────────
+
+class _RatingModal extends StatefulWidget {
+  final Future<void> Function(int stars, String comment) onSubmit;
+  final VoidCallback onDecline;
+
+  const _RatingModal({required this.onSubmit, required this.onDecline});
+
+  @override
+  State<_RatingModal> createState() => _RatingModalState();
+}
+
+class _RatingModalState extends State<_RatingModal> {
+  int _selectedStars = 0;
+  final _commentCtrl = TextEditingController();
+  bool _submitting = false;
+
+  @override
+  void dispose() {
+    _commentCtrl.dispose();
+    super.dispose();
+  }
+
+  Future<void> _submit() async {
+    if (_selectedStars == 0) return;
+    setState(() => _submitting = true);
+    await widget.onSubmit(_selectedStars, _commentCtrl.text.trim());
+    if (mounted) Navigator.pop(context);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final bottomPadding = MediaQuery.of(context).viewInsets.bottom;
+
+    return Container(
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      padding: EdgeInsets.fromLTRB(24, 20, 24, 24 + bottomPadding),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Handle
+          Container(
+            width: 40,
+            height: 4,
+            margin: const EdgeInsets.only(bottom: 20),
+            decoration: BoxDecoration(
+              color: const Color(0xFFE5E7EB),
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+
+          // Emoji + başlık
+          const Text('😊', style: TextStyle(fontSize: 44)),
+          const SizedBox(height: 12),
+          const Text(
+            'Bagla\'yı nasıl buluyorsunuz?',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w800,
+              color: Color(0xFF1E1E2D),
+            ),
+          ),
+          const SizedBox(height: 6),
+          const Text(
+            'Deneyiminizi paylaşarak büyümemize katkı sağlayın.',
+            textAlign: TextAlign.center,
+            style: TextStyle(fontSize: 13, color: Color(0xFF6B7280)),
+          ),
+          const SizedBox(height: 24),
+
+          // Yıldızlar
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: List.generate(5, (i) {
+              final filled = i < _selectedStars;
+              return GestureDetector(
+                onTap: () => setState(() => _selectedStars = i + 1),
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 150),
+                  margin: const EdgeInsets.symmetric(horizontal: 6),
+                  child: Icon(
+                    filled ? Icons.star_rounded : Icons.star_outline_rounded,
+                    size: 44,
+                    color: filled
+                        ? const Color(0xFFF59E0B)
+                        : const Color(0xFFD1D5DB),
+                  ),
+                ),
+              );
+            }),
+          ),
+          const SizedBox(height: 8),
+
+          // Yıldız etiketi
+          AnimatedSwitcher(
+            duration: const Duration(milliseconds: 200),
+            child: Text(
+              _starLabel(_selectedStars),
+              key: ValueKey(_selectedStars),
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: _selectedStars > 0
+                    ? const Color(0xFFF59E0B)
+                    : const Color(0xFF9CA3AF),
+              ),
+            ),
+          ),
+          const SizedBox(height: 20),
+
+          // Yorum alanı
+          TextField(
+            controller: _commentCtrl,
+            maxLines: 3,
+            maxLength: 500,
+            decoration: InputDecoration(
+              hintText: 'Yorumunuz (isteğe bağlı)...',
+              hintStyle: const TextStyle(color: Color(0xFFD1D5DB)),
+              filled: true,
+              fillColor: const Color(0xFFF9FAFB),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide:
+                    const BorderSide(color: Color(0xFF6366F1), width: 1.5),
+              ),
+              contentPadding: const EdgeInsets.all(14),
+              counterStyle:
+                  const TextStyle(fontSize: 11, color: Color(0xFF9CA3AF)),
+            ),
+          ),
+          const SizedBox(height: 20),
+
+          // Butonlar
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: (_selectedStars > 0 && !_submitting) ? _submit : null,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF6366F1),
+                foregroundColor: Colors.white,
+                disabledBackgroundColor: const Color(0xFFE5E7EB),
+                disabledForegroundColor: const Color(0xFF9CA3AF),
+                elevation: 0,
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12)),
+              ),
+              child: _submitting
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                          strokeWidth: 2, color: Colors.white),
+                    )
+                  : const Text('Değerlendirmeyi Gönder',
+                      style: TextStyle(
+                          fontSize: 15, fontWeight: FontWeight.w700)),
+            ),
+          ),
+          const SizedBox(height: 10),
+          TextButton(
+            onPressed: () {
+              widget.onDecline();
+              Navigator.pop(context);
+            },
+            style: TextButton.styleFrom(
+              foregroundColor: const Color(0xFF9CA3AF),
+            ),
+            child: const Text('Şimdi değil',
+                style: TextStyle(fontSize: 13)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _starLabel(int stars) {
+    switch (stars) {
+      case 1:
+        return 'Çok kötü';
+      case 2:
+        return 'Kötü';
+      case 3:
+        return 'Orta';
+      case 4:
+        return 'İyi';
+      case 5:
+        return 'Mükemmel!';
+      default:
+        return 'Puan seçin';
+    }
+  }
 }

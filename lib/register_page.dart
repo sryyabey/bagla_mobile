@@ -8,6 +8,7 @@ import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 
 import 'auth.dart';
 import 'config.dart';
+import 'email_verification_page.dart';
 import 'main_tabs_page.dart';
 import 'services/apple_auth_service.dart';
 
@@ -65,12 +66,24 @@ class _RegisterPageState extends State<RegisterPage> {
     await saveTokens(accessToken: token, refreshToken: refresh);
   }
 
-  Future<void> _handleRegisterSuccess(String token) async {
+  // E-posta ile kayıt: doğrulama ekranına yönlendir
+  Future<void> _handleEmailRegisterSuccess(String token, String email) async {
+    if (!mounted) return;
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(
+        builder: (_) => EmailVerificationPage(email: email, token: token),
+      ),
+    );
+  }
+
+  // Google / Apple ile kayıt: direkt ana sayfaya
+  Future<void> _handleSocialRegisterSuccess(String token) async {
     await _storeToken(token);
     if (!mounted) return;
     Navigator.pushReplacement(
       context,
-      MaterialPageRoute(builder: (context) => const MainTabsPage()),
+      MaterialPageRoute(builder: (_) => const MainTabsPage()),
     );
   }
 
@@ -141,7 +154,7 @@ class _RegisterPageState extends State<RegisterPage> {
             (data['data'] != null ? data['data']['token'] : null) ??
             data['access_token'];
         if (token != null) {
-          await _handleRegisterSuccess(token.toString());
+          await _handleEmailRegisterSuccess(token.toString(), email);
         } else {
           _showError('Token alınamadı.');
         }
@@ -201,7 +214,7 @@ class _RegisterPageState extends State<RegisterPage> {
             (data['data'] != null ? data['data']['token'] : null) ??
             data['access_token'];
         if (token != null) {
-          await _handleRegisterSuccess(token.toString());
+          await _handleSocialRegisterSuccess(token.toString());
         } else {
           _showError('Token alınamadı.');
         }
@@ -231,7 +244,7 @@ class _RegisterPageState extends State<RegisterPage> {
 
     try {
       final result = await _appleAuthService.login();
-      await _handleRegisterSuccess(result.token);
+      await _handleSocialRegisterSuccess(result.token);
     } on AppleAuthException catch (e) {
       _showError(e.message);
     } catch (e) {

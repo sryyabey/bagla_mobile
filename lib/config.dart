@@ -5,6 +5,9 @@ import 'package:flutter/foundation.dart';
 const _prodBase = 'https://bagla.app';
 const _localHostBase = 'http://127.0.0.1:8000';
 const _androidEmulatorBase = 'http://10.0.2.2:8000';
+// App Store ID (in_app_review için)
+const appleAppStoreId = '6744039002';
+
 const standardAppleEulaUrl =
     'https://www.apple.com/legal/internet-services/itunes/dev/stdeula/';
 const privacyPolicyUrl = 'https://bagla.app/contract/22';
@@ -22,7 +25,7 @@ const googleWebServerClientId =
 
 String get apiBaseUrl {
   // APP_ENV=prod -> prod, APP_ENV=dev/local -> local; varsayılan prod. prod olursa bagla.app dev olursa localhost
-  const env = String.fromEnvironment('APP_ENV', defaultValue: 'prod');
+  const env = String.fromEnvironment('APP_ENV', defaultValue: 'dev');
   const useLocal = env == 'dev' || env == 'local';
 
   if (useLocal) {

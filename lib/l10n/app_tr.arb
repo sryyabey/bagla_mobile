@@ -703,6 +703,18 @@
   "workingPrefsHolidayStart": "Başlangıç",
   "workingPrefsHolidayEnd": "Bitiş",
   "workingPrefsHolidayReason": "Açıklama (isteğe bağlı)",
+  "workingPrefsTemplatesTitle": "Hazır Şablonlar",
+  "workingPrefsTemplatesSubtitle": "Hızlı başlamak için bir şablon seçin",
+  "workingPrefsTemplatesApply": "Uygula",
+  "workingPrefsTemplatesApplied": "{name} şablonu uygulandı.",
+  "@workingPrefsTemplatesApplied": {
+    "placeholders": {
+      "name": { "type": "String" }
+    }
+  },
+  "workingPrefsTemplatesConfirmTitle": "Şablon Uygula",
+  "workingPrefsTemplatesConfirmBody": "Bu şablonu uygulamak istediğinizden emin misiniz? Mevcut çalışma saatleri değişecek.",
+  "workingPrefsTemplatesCancel": "İptal",
   "smsTemplatesTitle": "SMS Şablonları",
   "smsTemplatesSessionMissing": "Oturum bulunamadı. Lütfen tekrar giriş yapın.",
   "smsTemplatesFetchFailedStatus": "Şablonlar alınamadı (HTTP {status}).",
@@ -795,5 +807,97 @@
     }
   },
   "dashboardNoActivePackage": "Aktif paketiniz bulunmuyor. SMS işlemleri için paket alın.",
-  "dashboardBuyPackage": "Paket Al"
+  "dashboardBuyPackage": "Paket Al",
+
+  "aiProfileBannerBadge": "Bagla Yapay Zeka Asistanı",
+  "aiProfileBannerTitle": "AI Profil Oluştur",
+  "aiProfileBannerDesc": "Takipçini randevuya dönüştüren profili yapay zeka yazar — sen sadece uzmanlığını anlat.",
+  "aiProfileTitle": "AI Profil",
+  "aiProfileAiBadge": "Bagla Yapay Zeka Asistanı",
+  "aiProfileSubtitle": "Profesyonel profilinizi saniyeler içinde oluşturun",
+  "aiProfileLoading": "AI Profil yükleniyor...",
+  "aiProfileRetry": "Tekrar Dene",
+  "aiProfileSave": "Kaydet",
+  "aiProfileSaving": "Kaydediliyor...",
+  "aiProfileTabProfile": "Profil",
+  "aiProfileTabLinks": "Linkler",
+  "aiProfileTabTheme": "Tema",
+  "aiProfileRemainingNone": "Bitti",
+  "aiProfileGenerateTitle": "AI ile Oluştur",
+  "aiProfileGenerateSubtitle": "Bilgilerinizi girin, AI saniyeler içinde oluştursun",
+  "aiProfileGenerateButton": "AI ile Oluştur",
+  "aiProfileGenerating": "Oluşturuluyor...",
+  "aiProfileGenerateLocked": "AI üretim hakkı kalmadı",
+  "aiProfileGenerateSuccess": "Profiliniz hazır!",
+  "aiProfileGenerateSuccessHint": "İçerikleri aşağıdan düzenleyebilirsiniz",
+  "aiProfileMsgAnalyzing": "Profiliniz analiz ediliyor...",
+  "aiProfileMsgPreparing": "Mesleğinize özel içerik hazırlanıyor...",
+  "aiProfileMsgSelecting": "En iyi ifadeler seçiliyor...",
+  "aiProfileMsgSeo": "SEO optimizasyonu yapılıyor...",
+  "aiProfileMsgFinalizing": "Son dokunuşlar tamamlanıyor...",
+  "aiProfileMsgWait": "Bu işlem birkaç saniye sürebilir",
+  "aiProfileFieldProfession": "Meslek *",
+  "aiProfileFieldProfessionError": "Meslek seçiniz",
+  "aiProfileFieldExpertise": "Uzmanlık Alanı *",
+  "aiProfileFieldExpertiseHint": "Spor beslenmesi, kilo yönetimi",
+  "aiProfileFieldExpertiseError": "Zorunlu alan",
+  "aiProfileFieldAudience": "Hedef Kitle *",
+  "aiProfileFieldAudienceHint": "Fit olmak isteyen yetişkinler",
+  "aiProfileFieldAudienceError": "Zorunlu alan",
+  "aiProfileFieldExperience": "Deneyim (yıl)",
+  "aiProfileFieldExperienceHint": "0–50",
+  "aiProfileFieldExperienceError": "0–50 arası olmalı",
+  "aiProfileFieldTone": "Ton",
+  "aiProfileFieldAchievement": "Başarı / Üyelik",
+  "aiProfileFieldAchievementHint": "Türkiye Diyetisyenler Derneği",
+  "aiProfileFieldNote": "Ek Not",
+  "aiProfileFieldNoteHint": "Kısa ve net yaz",
+  "aiProfileFieldBio": "Bio / Açıklama (min 20 karakter)",
+  "aiProfileFieldFooter": "Alt Bilgi (Footer)",
+  "aiProfileSectionSeo": "SEO Ayarları",
+  "aiProfileFieldSeoTitle": "SEO Başlık (max 70)",
+  "aiProfileFieldSeoDesc": "Meta Açıklama (max 170)",
+  "aiProfileFieldSeoKeywords": "Anahtar Kelimeler — virgülle ayırın (max 300)",
+  "aiProfileLinksSubtitle": "URL ekleyin ve aktif/pasif yapın.",
+  "aiProfileLinksSave": "Linkleri Kaydet",
+  "aiProfileLinksSaving": "Kaydediliyor...",
+  "aiProfileThemeNoPreview": "Bir tema seçin.",
+  "aiProfileThemeNoUser": "Kullanıcı bilgisi yüklenemedi.",
+  "aiProfileReminderTitle": "İçerikler hazır, kaydetmeyi unutmayın!",
+  "aiProfileReminderSubtitle": "Sağ üstteki Kaydet butonuna dokunun",
+  "aiProfileSaveSuccess": "Kaydedildi!",
+  "aiProfileSaveBioMin": "Bio en az 20 karakter olmalı.",
+  "aiProfileThemeApplied": "Tema uygulandı.",
+  "aiProfileLinksSaved": "Linkler kaydedildi.",
+  "aiProfileLimitReached": "Günlük AI limitine ulaştınız.",
+  "aiProfileValidationErrors": "Lütfen formdaki hataları düzeltin.",
+  "aiProfileSessionMissing": "Oturum bulunamadı. Lütfen tekrar giriş yapın.",
+  "aiProfileRemainingCount": "{count} hak",
+  "@aiProfileRemainingCount": {
+    "placeholders": { "count": {} }
+  },
+  "aiProfileFetchError": "Veri alınamadı (HTTP {status}).",
+  "@aiProfileFetchError": {
+    "placeholders": { "status": {} }
+  },
+  "aiProfileConnectionError": "Bağlantı hatası: {error}",
+  "@aiProfileConnectionError": {
+    "placeholders": { "error": {} }
+  },
+  "aiProfileGenerateHttpError": "Oluşturma başarısız (HTTP {status}).",
+  "@aiProfileGenerateHttpError": {
+    "placeholders": { "status": {} }
+  },
+  "aiProfileSaveHttpError": "Kaydetme başarısız (HTTP {status}).",
+  "@aiProfileSaveHttpError": {
+    "placeholders": { "status": {} }
+  },
+  "aiProfileThemeHttpError": "Tema kaydedilemedi (HTTP {status}).",
+  "@aiProfileThemeHttpError": {
+    "placeholders": { "status": {} }
+  },
+  "aiProfileLinksHttpError": "Linkler kaydedilemedi (HTTP {status}).",
+  "@aiProfileLinksHttpError": {
+    "placeholders": { "status": {} }
+  }
 }

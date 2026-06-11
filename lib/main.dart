@@ -155,70 +155,79 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     );
   }
 
+  void _switchLocale(BuildContext context) {
+    final current = Localizations.localeOf(context).languageCode;
+    final next = current == 'tr' ? const Locale('en') : const Locale('tr');
+    widget.onLocaleChange(next);
+  }
+
   @override
   Widget build(BuildContext context) {
-    final loc = AppLocalizations.of(context);
     final isTr = Localizations.localeOf(context).languageCode == 'tr';
     final skipLabel = isTr ? 'Atla' : 'Skip';
     final nextLabel = isTr ? 'İleri' : 'Next';
     final startLabel = isTr ? 'Başlayalım' : "Let's start";
-    final headerTitle = isTr
-        ? 'Bio link ve randevu yönetimi'
-        : 'Bio link and appointment management';
-    final headerSubtitle = isTr
-        ? 'Bireysel çalışan profesyoneller için tek uygulama'
-        : 'One app for independent professionals';
 
     final pages = <_OnboardPage>[
       _OnboardPage(
-        title: loc.onboardTitle1,
-        desc: loc.onboardDesc1,
-        image: 'assets/onboarding_biolink.png',
-        badge: isTr ? 'Bio Link' : 'Bio Link',
+        badge: isTr ? 'Büyüme Platformu' : 'Growth Platform',
+        title: isTr
+            ? 'Sosyal medyadan\ngelen ziyaretçiyi\nrandevuya dönüştür'
+            : 'Turn social media\nvisitors into\nbookings',
+        desc: isTr
+            ? 'Bagla, uzmanların dijital ortamda daha profesyonel görünmesini, daha az zaman harcamasını ve sosyal medyadan gelen kişileri daha kolay danışana dönüştürmesini sağlayan bir büyüme platformudur.'
+            : 'Bagla is a growth platform that helps professionals look more polished online, spend less time on admin, and convert social media visitors into real clients.',
+        icon: Icons.trending_up_rounded,
         highlights: isTr
-            ? const ['Tek link', 'Kişisel sayfa', 'Hızlı paylaşım']
-            : const ['Single link', 'Personal page', 'Fast sharing'],
-        gradient: const [Color(0xFF0B1020), Color(0xFF1F3B73)],
-        accent: const Color(0xFF4F9CF9),
+            ? const ['Profesyonel dijital varlık', 'Daha az zaman kaybı', 'Daha fazla randevu']
+            : const ['Professional presence', 'Less admin work', 'More bookings'],
+        gradient: const [Color(0xFF0A0E1A), Color(0xFF0D2137), Color(0xFF0B3D5E)],
+        accent: const Color(0xFF38BDF8),
+        iconBgGradient: const [Color(0xFF0EA5E9), Color(0xFF2563EB)],
       ),
       _OnboardPage(
-        title: loc.onboardTitle2,
-        desc: loc.onboardDesc2,
-        image: 'assets/onboarding_sms.png',
-        badge: isTr ? 'Randevu' : 'Appointments',
+        badge: isTr ? 'Yapay Zeka' : 'AI-Powered',
+        title: isTr
+            ? 'Yapay zeka ile\nprofesyonel\nprofilini oluştur'
+            : 'Build your\nprofessional profile\nwith AI',
+        desc: isTr
+            ? 'AI destekli profil oluşturucu ile Google\'da öne çık. Mesleğine özel açıklama, hizmet listesi ve SEO uyumlu bio linkini saniyeler içinde oluştur.'
+            : 'Stand out on Google with AI-powered profile creation. Generate profession-specific descriptions, service lists and an SEO-ready bio link in seconds.',
+        icon: Icons.auto_awesome_rounded,
         highlights: isTr
-            ? const ['Takvim kontrolü', 'SMS hatırlatma', 'Müşteri takibi']
-            : const ['Calendar control', 'SMS reminders', 'Client tracking'],
-        gradient: const [Color(0xFF101927), Color(0xFF0C6A7A)],
-        accent: const Color(0xFF1FC7B6),
+            ? const ['Google\'da öne çık', 'SEO uyumlu profil', 'Anında yayın']
+            : const ['Rank on Google', 'SEO-ready profile', 'Instant publish'],
+        gradient: const [Color(0xFF0D0B1E), Color(0xFF1A1050), Color(0xFF2D1060)],
+        accent: const Color(0xFFA78BFA),
+        iconBgGradient: const [Color(0xFF6366F1), Color(0xFF9333EA)],
       ),
       _OnboardPage(
-        title: loc.onboardTitle3,
-        desc: loc.onboardDesc3,
-        image: 'assets/onboarding_free.png',
-        badge: isTr ? 'Hızlı Başlangıç' : 'Quick Start',
+        badge: isTr ? 'Randevu & SMS' : 'Appointments & SMS',
+        title: isTr
+            ? 'Randevularını\nyönet, SMS ile\nmüşterini koru'
+            : 'Manage bookings\nand retain clients\nwith SMS',
+        desc: isTr
+            ? 'Takvim, otomatik SMS hatırlatma ve müşteri takibi ile gününü düzenle. Daha az no-show, daha dolu randevu defteri.'
+            : 'Calendar, automatic SMS reminders and client tracking. Fewer no-shows, a fuller schedule every day.',
+        icon: Icons.calendar_month_rounded,
         highlights: isTr
-            ? const [
-                'Dakikalar içinde yayında',
-                'Büyüdükçe yükselt',
-                'İşine odaklan'
-              ]
-            : const [
-                'Go live in minutes',
-                'Upgrade as you grow',
-                'Focus on your work'
-              ],
-        gradient: const [Color(0xFF151326), Color(0xFF15514F)],
-        accent: const Color(0xFF45D483),
+            ? const ['Otomatik hatırlatma', 'Müşteri takibi', 'No-show önleme']
+            : const ['Auto reminders', 'Client tracking', 'No-show prevention'],
+        gradient: const [Color(0xFF051510), Color(0xFF073D2A), Color(0xFF0A5C3E)],
+        accent: const Color(0xFF34D399),
+        iconBgGradient: const [Color(0xFF059669), Color(0xFF0D9488)],
       ),
     ];
 
+    final page = pages[_currentPage];
+
     return Scaffold(
       body: AnimatedContainer(
-        duration: const Duration(milliseconds: 400),
+        duration: const Duration(milliseconds: 450),
+        curve: Curves.easeInOut,
         decoration: BoxDecoration(
           gradient: LinearGradient(
-            colors: pages[_currentPage].gradient,
+            colors: page.gradient,
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
@@ -226,270 +235,258 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         child: SafeArea(
           child: Column(
             children: [
+              // Top bar
               Padding(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 12, vertical: 6),
-                            decoration: BoxDecoration(
-                              color: pages[_currentPage]
-                                  .accent
-                                  .withValues(alpha: 0.16),
-                              borderRadius: BorderRadius.circular(99),
-                            ),
-                            child: Text(
-                              'bagla.app',
-                              style: TextStyle(
-                                color: pages[_currentPage].accent,
-                                fontWeight: FontWeight.w700,
-                                fontSize: 13,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 10),
-                          Text(
-                            headerTitle,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.w700,
-                              fontSize: 18,
-                              height: 1.25,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            headerSubtitle,
-                            style: const TextStyle(
-                              color: Colors.white70,
-                              fontSize: 13,
-                            ),
-                          ),
-                        ],
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: page.accent.withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(99),
+                        border: Border.all(color: page.accent.withValues(alpha: 0.25)),
                       ),
-                    ),
-                    const SizedBox(width: 12),
-                    TextButton(
-                      onPressed: _goToLogin,
                       child: Text(
-                        skipLabel,
-                        style: const TextStyle(
-                          color: Colors.white70,
-                          decoration: TextDecoration.underline,
+                        'bagla.app',
+                        style: TextStyle(
+                          color: page.accent,
+                          fontWeight: FontWeight.w800,
+                          fontSize: 13,
                         ),
                       ),
+                    ),
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        // Dil değiştirici
+                        GestureDetector(
+                          onTap: () => _switchLocale(context),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(99),
+                              border: Border.all(
+                                color: Colors.white.withValues(alpha: 0.18),
+                              ),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  isTr ? '🇹🇷' : '🇬🇧',
+                                  style: const TextStyle(fontSize: 14),
+                                ),
+                                const SizedBox(width: 5),
+                                Text(
+                                  isTr ? 'TR' : 'EN',
+                                  style: TextStyle(
+                                    color: Colors.white.withValues(alpha: 0.8),
+                                    fontWeight: FontWeight.w700,
+                                    fontSize: 12,
+                                  ),
+                                ),
+                                const SizedBox(width: 3),
+                                Icon(
+                                  Icons.swap_horiz_rounded,
+                                  color: Colors.white.withValues(alpha: 0.5),
+                                  size: 14,
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        TextButton(
+                          onPressed: _goToLogin,
+                          style: TextButton.styleFrom(
+                            minimumSize: Size.zero,
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                          ),
+                          child: Text(
+                            skipLabel,
+                            style: TextStyle(
+                              color: Colors.white.withValues(alpha: 0.55),
+                              fontSize: 14,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),
               ),
+
+              // Pages
               Expanded(
                 child: PageView.builder(
                   controller: _pageController,
                   itemCount: pages.length,
-                  onPageChanged: (index) {
-                    setState(() {
-                      _currentPage = index;
-                    });
-                  },
+                  onPageChanged: (index) => setState(() => _currentPage = index),
                   itemBuilder: (context, index) {
-                    final page = pages[index];
+                    final p = pages[index];
                     return Padding(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 24, vertical: 20),
-                      child: Container(
-                        padding: const EdgeInsets.fromLTRB(20, 20, 20, 18),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.06),
-                          borderRadius: BorderRadius.circular(28),
-                          border: Border.all(
-                            color: Colors.white.withValues(alpha: 0.12),
-                          ),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.25),
-                              blurRadius: 18,
-                              offset: const Offset(0, 10),
+                      padding: const EdgeInsets.symmetric(horizontal: 24),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          // Icon hero
+                          Container(
+                            width: 100,
+                            height: 100,
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                colors: p.iconBgGradient,
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                              ),
+                              borderRadius: BorderRadius.circular(28),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: p.accent.withValues(alpha: 0.35),
+                                  blurRadius: 28,
+                                  offset: const Offset(0, 10),
+                                ),
+                              ],
                             ),
-                          ],
-                        ),
-                        child: LayoutBuilder(
-                          builder: (context, constraints) {
-                            return SingleChildScrollView(
-                              child: ConstrainedBox(
-                                constraints: BoxConstraints(
-                                    minHeight: constraints.maxHeight),
-                                child: IntrinsicHeight(
-                                  child: Column(
-                                    children: [
-                                      Stack(
-                                        children: [
-                                          Container(
-                                            width: double.infinity,
-                                            height: 184,
-                                            decoration: BoxDecoration(
-                                              color: Colors.white
-                                                  .withValues(alpha: 0.08),
-                                              borderRadius:
-                                                  BorderRadius.circular(20),
-                                              border: Border.all(
-                                                color: Colors.white
-                                                    .withValues(alpha: 0.1),
-                                              ),
-                                            ),
-                                            clipBehavior: Clip.antiAlias,
-                                            child: page.image != null
-                                                ? Image.asset(
-                                                    page.image!,
-                                                    fit: BoxFit.cover,
-                                                  )
-                                                : const SizedBox.shrink(),
-                                          ),
-                                          Positioned(
-                                            top: 10,
-                                            left: 10,
-                                            child: Container(
-                                              padding:
-                                                  const EdgeInsets.symmetric(
-                                                      horizontal: 10,
-                                                      vertical: 6),
-                                              decoration: BoxDecoration(
-                                                color: Colors.black
-                                                    .withValues(alpha: 0.45),
-                                                borderRadius:
-                                                    BorderRadius.circular(99),
-                                              ),
-                                              child: Text(
-                                                page.badge,
-                                                style: TextStyle(
-                                                  color: page.accent,
-                                                  fontWeight: FontWeight.w700,
-                                                  fontSize: 12,
-                                                ),
-                                              ),
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                      const SizedBox(height: 20),
-                                      Text(
-                                        page.title,
-                                        style: const TextStyle(
-                                          fontSize: 25,
-                                          fontWeight: FontWeight.w800,
-                                          color: Colors.white,
-                                          height: 1.2,
-                                        ),
-                                        textAlign: TextAlign.center,
-                                      ),
-                                      const SizedBox(height: 10),
-                                      Text(
-                                        page.desc,
-                                        style: const TextStyle(
-                                          fontSize: 15.5,
-                                          color: Colors.white70,
-                                          height: 1.45,
-                                        ),
-                                        textAlign: TextAlign.center,
-                                      ),
-                                      const SizedBox(height: 16),
-                                      Wrap(
-                                        alignment: WrapAlignment.center,
-                                        spacing: 8,
-                                        runSpacing: 8,
-                                        children: page.highlights
-                                            .map(
-                                              (item) => Container(
-                                                padding:
-                                                    const EdgeInsets.symmetric(
-                                                  horizontal: 12,
-                                                  vertical: 7,
-                                                ),
-                                                decoration: BoxDecoration(
-                                                  color: Colors.white
-                                                      .withValues(alpha: 0.08),
-                                                  borderRadius:
-                                                      BorderRadius.circular(99),
-                                                  border: Border.all(
-                                                    color: Colors.white
-                                                        .withValues(
-                                                            alpha: 0.15),
-                                                  ),
-                                                ),
-                                                child: Text(
-                                                  item,
-                                                  style: const TextStyle(
-                                                    color: Colors.white70,
-                                                    fontSize: 12.5,
-                                                    fontWeight: FontWeight.w600,
-                                                  ),
-                                                ),
-                                              ),
-                                            )
-                                            .toList(),
-                                      ),
-                                      const Spacer(),
-                                      const SizedBox(height: 18),
-                                      Row(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.center,
-                                        children: List.generate(
-                                          pages.length,
-                                          (i) => AnimatedContainer(
-                                            duration: const Duration(
-                                                milliseconds: 250),
-                                            margin: const EdgeInsets.symmetric(
-                                                horizontal: 5),
-                                            height: 9,
-                                            width: _currentPage == i ? 30 : 11,
-                                            decoration: BoxDecoration(
-                                              color: _currentPage == i
-                                                  ? page.accent
-                                                  : Colors.white24,
-                                              borderRadius:
-                                                  BorderRadius.circular(16),
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
+                            child: Icon(p.icon, color: Colors.white, size: 48),
+                          ),
+                          const SizedBox(height: 32),
+
+                          // Badge
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                            decoration: BoxDecoration(
+                              color: p.accent.withValues(alpha: 0.15),
+                              borderRadius: BorderRadius.circular(99),
+                              border: Border.all(color: p.accent.withValues(alpha: 0.3)),
+                            ),
+                            child: Text(
+                              p.badge,
+                              style: TextStyle(
+                                color: p.accent,
+                                fontWeight: FontWeight.w700,
+                                fontSize: 12,
+                                letterSpacing: 0.5,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 18),
+
+                          // Title
+                          Text(
+                            p.title,
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 28,
+                              fontWeight: FontWeight.w900,
+                              height: 1.2,
+                              letterSpacing: -0.5,
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+
+                          // Description
+                          Text(
+                            p.desc,
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              color: Colors.white.withValues(alpha: 0.65),
+                              fontSize: 15,
+                              height: 1.55,
+                            ),
+                          ),
+                          const SizedBox(height: 28),
+
+                          // Highlights
+                          Wrap(
+                            alignment: WrapAlignment.center,
+                            spacing: 8,
+                            runSpacing: 8,
+                            children: p.highlights.map((item) => Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withValues(alpha: 0.07),
+                                borderRadius: BorderRadius.circular(99),
+                                border: Border.all(
+                                  color: Colors.white.withValues(alpha: 0.13),
                                 ),
                               ),
-                            );
-                          },
-                        ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Container(
+                                    width: 6,
+                                    height: 6,
+                                    decoration: BoxDecoration(
+                                      color: p.accent,
+                                      shape: BoxShape.circle,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 7),
+                                  Text(
+                                    item,
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            )).toList(),
+                          ),
+                        ],
                       ),
                     );
                   },
                 ),
               ),
+
+              // Dots
               Padding(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                padding: const EdgeInsets.only(bottom: 20),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: List.generate(pages.length, (i) => AnimatedContainer(
+                    duration: const Duration(milliseconds: 250),
+                    margin: const EdgeInsets.symmetric(horizontal: 5),
+                    height: 8,
+                    width: _currentPage == i ? 28 : 8,
+                    decoration: BoxDecoration(
+                      color: _currentPage == i
+                          ? page.accent
+                          : Colors.white.withValues(alpha: 0.25),
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                  )),
+                ),
+              ),
+
+              // CTA button
+              Padding(
+                padding: const EdgeInsets.fromLTRB(24, 0, 24, 28),
                 child: SizedBox(
                   width: double.infinity,
-                  height: 54,
+                  height: 56,
                   child: ElevatedButton(
                     onPressed: () {
                       if (_currentPage == pages.length - 1) {
                         _goToLogin();
                       } else {
                         _pageController.nextPage(
-                          duration: const Duration(milliseconds: 320),
+                          duration: const Duration(milliseconds: 350),
                           curve: Curves.easeInOutCubic,
                         );
                       }
                     },
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: pages[_currentPage].accent,
+                      backgroundColor: page.accent,
+                      foregroundColor: Colors.white,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(18),
                       ),
@@ -498,9 +495,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     child: Text(
                       _currentPage == pages.length - 1 ? startLabel : nextLabel,
                       style: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w700,
-                        color: Colors.white,
+                        fontSize: 17,
+                        fontWeight: FontWeight.w800,
                       ),
                     ),
                   ),
@@ -523,19 +519,22 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 class _OnboardPage {
   final String title;
   final String desc;
-  final String? image;
   final String badge;
+  final IconData icon;
   final List<String> highlights;
   final List<Color> gradient;
   final Color accent;
+  final List<Color> iconBgGradient;
 
   _OnboardPage({
     required this.title,
     required this.desc,
-    required this.image,
     required this.badge,
+    required this.icon,
     required this.highlights,
     required this.gradient,
     required this.accent,
+    required this.iconBgGradient,
   });
 }
+

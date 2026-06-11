@@ -356,6 +356,85 @@ class _WorkingPreferencesPageState extends State<WorkingPreferencesPage> {
     );
   }
 
+  Future<void> _applyTemplate(_ScheduleTemplate template) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(loc.workingPrefsTemplatesConfirmTitle),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              template.name,
+              style: const TextStyle(
+                fontWeight: FontWeight.w700,
+                fontSize: 15,
+                color: _accent,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              template.description,
+              style: const TextStyle(color: _textSecondary, fontSize: 13),
+            ),
+            const SizedBox(height: 12),
+            Text(loc.workingPrefsTemplatesConfirmBody),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: Text(loc.workingPrefsTemplatesCancel),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: Text(
+              loc.workingPrefsTemplatesApply,
+              style: const TextStyle(
+                color: _accent,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+    if (confirmed == true) {
+      setState(() {
+        _preferences = template.build();
+      });
+      _showSnack(
+        loc.workingPrefsTemplatesApplied(template.name),
+        success: true,
+      );
+    }
+  }
+
+  Widget _buildTemplatesCard() {
+    final templates = _buildTemplates();
+    return _sectionCard(
+      title: loc.workingPrefsTemplatesTitle,
+      subtitle: loc.workingPrefsTemplatesSubtitle,
+      icon: Icons.auto_awesome_rounded,
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Row(
+          children: templates.map((t) {
+            return Padding(
+              padding: const EdgeInsets.only(right: 10),
+              child: _TemplateChip(
+                template: t,
+                onTap: () => _applyTemplate(t),
+              ),
+            );
+          }).toList(),
+        ),
+      ),
+    );
+  }
+
   void _addSlot(_DayPreference pref) {
     setState(() {
       pref.timeSlots.add(
@@ -601,6 +680,8 @@ class _WorkingPreferencesPageState extends State<WorkingPreferencesPage> {
           padding: const EdgeInsets.fromLTRB(16, 20, 16, 108),
           physics: const AlwaysScrollableScrollPhysics(),
           children: [
+            _buildTemplatesCard(),
+            const SizedBox(height: 12),
             _sectionCard(
               title: loc.workingPrefsFirstSessionTitle,
               icon: Icons.tune_rounded,
@@ -929,6 +1010,71 @@ class _WorkingPreferencesPageState extends State<WorkingPreferencesPage> {
   }
 }
 
+class _TemplateChip extends StatelessWidget {
+  final _ScheduleTemplate template;
+  final VoidCallback onTap;
+
+  const _TemplateChip({required this.template, required this.onTap});
+
+  static const Color _accent = Color(0xFF5B5FD9);
+  static const Color _accentLight = Color(0xFFEEEEFF);
+  static const Color _textPrimary = Color(0xFF1A1A2E);
+  static const Color _textSecondary = Color(0xFF6B7280);
+  static const Color _border = Color(0xFFE8EAF0);
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(12),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(12),
+        onTap: onTap,
+        child: Container(
+          width: 140,
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: _border),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                width: 32,
+                height: 32,
+                decoration: BoxDecoration(
+                  color: _accentLight,
+                  borderRadius: BorderRadius.circular(9),
+                ),
+                child: Icon(template.icon, size: 18, color: _accent),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                template.name,
+                style: const TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700,
+                  color: _textPrimary,
+                ),
+              ),
+              const SizedBox(height: 3),
+              Text(
+                template.description,
+                style: const TextStyle(
+                  fontSize: 11,
+                  color: _textSecondary,
+                  height: 1.3,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _SectionLabel extends StatelessWidget {
   final String text;
   const _SectionLabel({required this.text});
@@ -1128,6 +1274,104 @@ class _TimeSlot {
           : int.tryParse(json['period']?.toString() ?? '') ?? 15,
     );
   }
+}
+
+class _ScheduleTemplate {
+  final String name;
+  final String description;
+  final IconData icon;
+  final List<_DayPreference> Function() build;
+
+  const _ScheduleTemplate({
+    required this.name,
+    required this.description,
+    required this.icon,
+    required this.build,
+  });
+}
+
+List<_ScheduleTemplate> _buildTemplates() {
+  _TimeSlot slot(String start, String end, int period) =>
+      _TimeSlot(start: '$start:00', end: '$end:00', period: period);
+
+  return [
+    _ScheduleTemplate(
+      name: 'Standart',
+      description: 'Pzt–Cum  09:00–12:00 / 13:00–17:00  •  20 dk',
+      icon: Icons.work_outline_rounded,
+      build: () => List.generate(7, (i) {
+        final day = i + 1;
+        final working = day <= 5;
+        return _DayPreference(
+          dayOfWeek: day,
+          isWorking: working,
+          timeSlots: [
+            slot('09:00', '12:00', 20),
+            slot('13:00', '17:00', 20),
+          ],
+        );
+      }),
+    ),
+    _ScheduleTemplate(
+      name: 'Öğleden Sonra',
+      description: 'Pzt–Cum  13:00–17:00  •  20 dk',
+      icon: Icons.wb_sunny_outlined,
+      build: () => List.generate(7, (i) {
+        final day = i + 1;
+        final working = day <= 5;
+        return _DayPreference(
+          dayOfWeek: day,
+          isWorking: working,
+          timeSlots: [slot('13:00', '17:00', 20)],
+        );
+      }),
+    ),
+    _ScheduleTemplate(
+      name: 'Uzman',
+      description: 'Pzt–Cmt  09:00–12:00 / 13:00–17:00  •  20 dk',
+      icon: Icons.star_outline_rounded,
+      build: () => List.generate(7, (i) {
+        final day = i + 1;
+        final working = day <= 6;
+        return _DayPreference(
+          dayOfWeek: day,
+          isWorking: working,
+          timeSlots: [
+            slot('09:00', '12:00', 20),
+            slot('13:00', '17:00', 20),
+          ],
+        );
+      }),
+    ),
+    _ScheduleTemplate(
+      name: 'Akşam',
+      description: 'Pzt–Cmt  17:00–21:00  •  45 dk',
+      icon: Icons.nights_stay_outlined,
+      build: () => List.generate(7, (i) {
+        final day = i + 1;
+        final working = day <= 6;
+        return _DayPreference(
+          dayOfWeek: day,
+          isWorking: working,
+          timeSlots: [slot('17:00', '21:00', 45)],
+        );
+      }),
+    ),
+    _ScheduleTemplate(
+      name: 'Hafta Sonu',
+      description: 'Cmt–Paz  10:00–17:00  •  30 dk',
+      icon: Icons.weekend_outlined,
+      build: () => List.generate(7, (i) {
+        final day = i + 1;
+        final working = day >= 6;
+        return _DayPreference(
+          dayOfWeek: day,
+          isWorking: working,
+          timeSlots: [slot('10:00', '17:00', 30)],
+        );
+      }),
+    ),
+  ];
 }
 
 class _Holiday {

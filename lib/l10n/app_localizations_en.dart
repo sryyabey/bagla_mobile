@@ -1939,6 +1939,31 @@ class AppLocalizationsEn extends AppLocalizations {
   String get workingPrefsHolidayReason => 'Reason (optional)';
 
   @override
+  String get workingPrefsTemplatesTitle => 'Quick Templates';
+
+  @override
+  String get workingPrefsTemplatesSubtitle =>
+      'Select a template to get started quickly';
+
+  @override
+  String get workingPrefsTemplatesApply => 'Apply';
+
+  @override
+  String workingPrefsTemplatesApplied(String name) {
+    return '$name template applied.';
+  }
+
+  @override
+  String get workingPrefsTemplatesConfirmTitle => 'Apply Template';
+
+  @override
+  String get workingPrefsTemplatesConfirmBody =>
+      'Are you sure you want to apply this template? Your current working hours will be replaced.';
+
+  @override
+  String get workingPrefsTemplatesCancel => 'Cancel';
+
+  @override
   String get smsTemplatesTitle => 'SMS Templates';
 
   @override
@@ -2246,4 +2271,235 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get dashboardBuyPackage => 'Buy Package';
+
+  @override
+  String get aiProfileBannerBadge => 'Bagla AI Assistant';
+
+  @override
+  String get aiProfileBannerTitle => 'Create AI Profile';
+
+  @override
+  String get aiProfileBannerDesc =>
+      'AI writes the profile that turns your followers into appointments — you just share your expertise.';
+
+  @override
+  String get aiProfileTitle => 'AI Profile';
+
+  @override
+  String get aiProfileAiBadge => 'Bagla AI Assistant';
+
+  @override
+  String get aiProfileSubtitle => 'Build your professional profile in seconds';
+
+  @override
+  String get aiProfileLoading => 'Loading AI Profile...';
+
+  @override
+  String get aiProfileRetry => 'Try Again';
+
+  @override
+  String get aiProfileSave => 'Save';
+
+  @override
+  String get aiProfileSaving => 'Saving...';
+
+  @override
+  String get aiProfileTabProfile => 'Profile';
+
+  @override
+  String get aiProfileTabLinks => 'Links';
+
+  @override
+  String get aiProfileTabTheme => 'Theme';
+
+  @override
+  String get aiProfileRemainingNone => 'Done';
+
+  @override
+  String get aiProfileGenerateTitle => 'Generate with AI';
+
+  @override
+  String get aiProfileGenerateSubtitle =>
+      'Fill in your details and let AI create your profile';
+
+  @override
+  String get aiProfileGenerateButton => 'Generate with AI';
+
+  @override
+  String get aiProfileGenerating => 'Generating...';
+
+  @override
+  String get aiProfileGenerateLocked => 'No AI generation credits left';
+
+  @override
+  String get aiProfileGenerateSuccess => 'Your profile is ready!';
+
+  @override
+  String get aiProfileGenerateSuccessHint => 'You can edit the content below';
+
+  @override
+  String get aiProfileMsgAnalyzing => 'Analysing your profile...';
+
+  @override
+  String get aiProfileMsgPreparing => 'Crafting content for your profession...';
+
+  @override
+  String get aiProfileMsgSelecting => 'Picking the best expressions...';
+
+  @override
+  String get aiProfileMsgSeo => 'Applying SEO optimisation...';
+
+  @override
+  String get aiProfileMsgFinalizing => 'Adding the finishing touches...';
+
+  @override
+  String get aiProfileMsgWait => 'This may take a few seconds';
+
+  @override
+  String get aiProfileFieldProfession => 'Profession *';
+
+  @override
+  String get aiProfileFieldProfessionError => 'Please select a profession';
+
+  @override
+  String get aiProfileFieldExpertise => 'Area of Expertise *';
+
+  @override
+  String get aiProfileFieldExpertiseHint =>
+      'Sports nutrition, weight management';
+
+  @override
+  String get aiProfileFieldExpertiseError => 'Required field';
+
+  @override
+  String get aiProfileFieldAudience => 'Target Audience *';
+
+  @override
+  String get aiProfileFieldAudienceHint => 'Adults who want to get fit';
+
+  @override
+  String get aiProfileFieldAudienceError => 'Required field';
+
+  @override
+  String get aiProfileFieldExperience => 'Experience (years)';
+
+  @override
+  String get aiProfileFieldExperienceHint => '0–50';
+
+  @override
+  String get aiProfileFieldExperienceError => 'Must be between 0 and 50';
+
+  @override
+  String get aiProfileFieldTone => 'Tone';
+
+  @override
+  String get aiProfileFieldAchievement => 'Achievement / Membership';
+
+  @override
+  String get aiProfileFieldAchievementHint => 'Turkish Dietitians Association';
+
+  @override
+  String get aiProfileFieldNote => 'Additional Note';
+
+  @override
+  String get aiProfileFieldNoteHint => 'Keep it short and clear';
+
+  @override
+  String get aiProfileFieldBio => 'Bio / Description (min 20 chars)';
+
+  @override
+  String get aiProfileFieldFooter => 'Footer';
+
+  @override
+  String get aiProfileSectionSeo => 'SEO Settings';
+
+  @override
+  String get aiProfileFieldSeoTitle => 'SEO Title (max 70)';
+
+  @override
+  String get aiProfileFieldSeoDesc => 'Meta Description (max 170)';
+
+  @override
+  String get aiProfileFieldSeoKeywords =>
+      'Keywords — separate with commas (max 300)';
+
+  @override
+  String get aiProfileLinksSubtitle => 'Add URLs and toggle them on or off.';
+
+  @override
+  String get aiProfileLinksSave => 'Save Links';
+
+  @override
+  String get aiProfileLinksSaving => 'Saving...';
+
+  @override
+  String get aiProfileThemeNoPreview => 'Select a theme.';
+
+  @override
+  String get aiProfileThemeNoUser => 'Could not load user info.';
+
+  @override
+  String get aiProfileReminderTitle =>
+      'Content is ready — don\'t forget to save!';
+
+  @override
+  String get aiProfileReminderSubtitle =>
+      'Tap the Save button in the top right';
+
+  @override
+  String get aiProfileSaveSuccess => 'Saved!';
+
+  @override
+  String get aiProfileSaveBioMin => 'Bio must be at least 20 characters.';
+
+  @override
+  String get aiProfileThemeApplied => 'Theme applied.';
+
+  @override
+  String get aiProfileLinksSaved => 'Links saved.';
+
+  @override
+  String get aiProfileLimitReached => 'Daily AI limit reached.';
+
+  @override
+  String get aiProfileValidationErrors => 'Please fix the errors in the form.';
+
+  @override
+  String get aiProfileSessionMissing =>
+      'Session not found. Please log in again.';
+
+  @override
+  String aiProfileRemainingCount(Object count) {
+    return '$count left';
+  }
+
+  @override
+  String aiProfileFetchError(Object status) {
+    return 'Could not load data (HTTP $status).';
+  }
+
+  @override
+  String aiProfileConnectionError(Object error) {
+    return 'Connection error: $error';
+  }
+
+  @override
+  String aiProfileGenerateHttpError(Object status) {
+    return 'Generation failed (HTTP $status).';
+  }
+
+  @override
+  String aiProfileSaveHttpError(Object status) {
+    return 'Save failed (HTTP $status).';
+  }
+
+  @override
+  String aiProfileThemeHttpError(Object status) {
+    return 'Could not save theme (HTTP $status).';
+  }
+
+  @override
+  String aiProfileLinksHttpError(Object status) {
+    return 'Could not save links (HTTP $status).';
+  }
 }
