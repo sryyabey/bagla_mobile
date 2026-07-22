@@ -27,6 +27,7 @@ import 'pages/pack_page_router.dart';
 import 'pages/orders.dart';
 import 'pages/ai_profile_page.dart';
 import 'pages/announcements_page.dart';
+import 'pages/blog_page.dart';
 import 'widgets/main_nav.dart';
 import 'package:in_app_review/in_app_review.dart';
 
@@ -205,8 +206,30 @@ class _DashboardPageState extends State<DashboardPage> {
     });
 
     if (token != null && token.isNotEmpty) {
+      _fetchActivePack(token);
       _fetchWelcomePromo(token);
     }
+  }
+
+  // Paket bilgisi kartı için aktif paketi tek doğruluk kaynağından çek.
+  Future<void> _fetchActivePack(String token) async {
+    try {
+      final response = await authGet(
+        Uri.parse('$apiBaseUrl/api/packs/active'),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Accept': 'application/json',
+        },
+      );
+      if (response.statusCode == 200 && mounted) {
+        final decoded = jsonDecode(response.body);
+        final data = decoded['data'];
+        final pack = data is Map ? data['pack'] : null;
+        setState(() {
+          _packInfo = pack is Map ? Map<String, dynamic>.from(pack) : null;
+        });
+      }
+    } catch (_) {}
   }
 
   Future<void> _fetchWelcomePromo(String token) async {
@@ -985,7 +1008,12 @@ class _DashboardPageState extends State<DashboardPage> {
             leading:
                 const Icon(Icons.timer_off_outlined, color: Color(0xFFFBBF24)),
             title: Text(
-              packInfo['expired_at']?.toString() ?? '-',
+              (packInfo['expired_at'] ??
+                      packInfo['expiry_date'] ??
+                      packInfo['expires_at'] ??
+                      packInfo['ends_at'])
+                  ?.toString() ??
+                  '-',
               style: const TextStyle(color: Colors.white),
             ),
             subtitle: Text(
@@ -2385,7 +2413,11 @@ class _DashboardPageState extends State<DashboardPage> {
 
           // 7 — Hızlı işlemler (sadece sık kullanılanlar)
           _buildQuickActions(),
-          const SizedBox(height: 12),
+          const SizedBox(height: 16),
+
+          // 7b — Blog / İçerikler şeridi (web trafiğine yönlendirir)
+          const BlogHighlightsStrip(),
+          const SizedBox(height: 16),
 
           // 8 — Değerlendirme kartı (koşulları sağlandığında)
           if (_showRatingCard) ...[
@@ -2615,6 +2647,16 @@ class _DashboardPageState extends State<DashboardPage> {
                 _navigateFromDrawer(
                   page: const SmsTemplatesPage(),
                   routeName: 'sms_templates',
+                );
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.menu_book_outlined),
+              title: const Text('Blog'),
+              onTap: () {
+                _navigateFromDrawer(
+                  page: const BlogPage(),
+                  routeName: 'blog',
                 );
               },
             ),

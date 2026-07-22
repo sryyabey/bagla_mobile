@@ -25,7 +25,7 @@ const googleWebServerClientId =
 
 String get apiBaseUrl {
   // APP_ENV=prod -> prod, APP_ENV=dev/local -> local; varsayılan prod. prod olursa bagla.app dev olursa localhost
-  const env = String.fromEnvironment('APP_ENV', defaultValue: 'dev');
+  const env = String.fromEnvironment('APP_ENV', defaultValue: 'prod');
   const useLocal = env == 'dev' || env == 'local';
 
   if (useLocal) {
